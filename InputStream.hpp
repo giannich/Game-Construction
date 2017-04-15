@@ -7,7 +7,7 @@
 #inclue<queue.h>
 
 enum TurnAxisState = {Left, Neutral, Right};
-enum AccelerationAxisState = {Accelerating, Neutral, Braking, Reversing};
+enum AccelerationAxisState = {Accelerating, Neutral, Reversing};
 enum FiringState = {NotFiring, Firing};
 
 class InputState {
