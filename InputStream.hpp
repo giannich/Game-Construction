@@ -4,6 +4,7 @@
 //#include<SDL>
 //#include<AI>
 //#include<NetworkPlayer>
+#inclue<queue.h>
 
 enum TurnAxisState = {Left, Neutral, Right};
 enum AccelerationAxisState = {Accelerating, Neutral, Braking, Reversing};
@@ -20,18 +21,21 @@ public:
 };
 
 class InputStream {
+	int frameNumber;
+	std::queue<InputState> input;
 public:
 	virtual InputState updateInputState(GameState &gs) = 0;
 };
 
-class PlayerInputStream: public InputStream {
+class LocalPlayerInputStream: public InputStream {
 public:
+	std::string hostIP;
 	// Need some SDL Data?
+	// Send commands to remote host if necessary
 	InputState updateInputState(GameState &gs);
 };
 
 class AIInputStream: public InputStream {
-	InputState currentState;
 public:
 	// This will have access to the input state from the last frame, and the gamestate for this frame.
 	// After this function is called, the currentState for the AIInputStream should be updated to what we want for next frame.
