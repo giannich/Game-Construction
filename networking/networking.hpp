@@ -17,7 +17,7 @@ void error(const char *msg)
 }
 
 // Function for sending a datagram
-void sendDatagram(void *msgObject, size_t objLen, char *destIPAddress, int destPortNum)
+void sendDatagram(void *msgObject, size_t objLen, std::string destIPAddress, int destPortNum)
 {
 	// Initialize some values
 	int socketDescriptor, msgLen;
@@ -29,8 +29,12 @@ void sendDatagram(void *msgObject, size_t objLen, char *destIPAddress, int destP
 	if (socketDescriptor < 0)
 		error("ERROR opening socket");
 
+	// Converts the string into a char*
+	char *destAddressPtr = new char[destIPAddress.length() + 1];
+	std::strcpy(destAddressPtr, destIPAddress.c_str());
+
 	// Gets the servername
-	server = gethostbyname(destIPAddress);
+	server = gethostbyname(destAddressPtr);
 	if (server == NULL) 
 		error("ERROR no such host");
 
