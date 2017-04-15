@@ -9,11 +9,9 @@ class Boat {
 	float soulCollectionRadius;
 
 	b2Body rigidBody;
-	//All four of the below physics variables will be handled by the above rigid body
-	Vec2 position;
-	Vec2 velocity;
-	float rotation;
-	float angularVelocity;
+	float forwardForce;
+	float turningTorque;
+	float firingForce;
 public:
 	float getCurrentMaxSpeed();
 	//Called every frame - updates the input state from it's InputStream, and adds forces/torque as necessary through the physics engine
