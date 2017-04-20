@@ -5,19 +5,20 @@
 //  Created by Steven Jordan Kozmary on 4/12/17.
 //
 //
+#include "Boat.hpp"
+#include "InputStream.hpp"
 
 #ifndef BoatTrack_h
 #define BoatTrack_h
 
+
 class BoatTest: public Test
 {
 public:
+    Boat *m_boat;
     
     BoatTest()
     {
-        // Read Test Spec from File
-        
-        
         //Zero-G
         m_world->SetGravity(b2Vec2(0.0f, 0.0f));
         
@@ -41,32 +42,11 @@ public:
             }
         }
         
-        //Create boat
+        //Create Boat
         {
-            b2BodyDef bd;
-            bd.type = b2_dynamicBody;
-            bd.position.Set(0.0f, 0.0f);
-            m_body = m_world->CreateBody(&bd);
-            
-            b2PolygonShape shape;
-            b2Vec2 vertices[6];
-            vertices[0].Set(-6.0f, 0.0f);
-            vertices[1].Set(-4.0f, 4.0f);
-            vertices[2].Set(4.0f, 4.0f);
-            vertices[3].Set(6.0f, 0.0f);
-            vertices[4].Set(4.0f, -4.0f);
-            vertices[5].Set(-4.0f, -4.0f);
-            shape.Set(vertices,6);
-            
-            b2FixtureDef fd;
-            fd.shape = &shape;
-            fd.density = 1.0f;
-            m_body->SetLinearDamping(1.0f);
-            m_body->SetAngularDamping(1.0f);
-            m_body->CreateFixture(&fd);
+            b2World& m_worldRef = *m_world;
+            m_boat = new Boat(5.0f, m_worldRef);
         }
-        
-        
     }
     
     void Keyboard(int key)
@@ -75,32 +55,63 @@ public:
         {
             case GLFW_KEY_W:
             {
-                b2Vec2 f = m_body->GetWorldVector(b2Vec2(20000.0f, 0.0f));
-                b2Vec2 p = m_body->GetWorldPoint(b2Vec2(0.0f, 0.0f));
-                m_body->ApplyForce(f, p, true);
+                m_boat->inputState->acc = Accelerating;
             }
                 break;
                 
             case GLFW_KEY_A:
             {
-                m_body->ApplyTorque(50.0f, true);
+                m_boat->inputState->turn = Left;
             }
                 break;
                 
             case GLFW_KEY_D:
             {
-                m_body->ApplyTorque(-50.0f, true);
+                m_boat->inputState->turn = Right;
             }
                 break;
         }
+    }
+    
+    void KeyboardUp(int key)
+    {
+        switch (key)
+        {
+            case GLFW_KEY_W:
+            {
+                m_boat->inputState->acc = Idling;
+            }
+                break;
+                
+            case GLFW_KEY_A:
+            {
+                m_boat->inputState->turn = Neutral;
+            }
+                break;
+                
+            case GLFW_KEY_D:
+            {
+                m_boat->inputState->turn = Neutral;
+            }
+                break;
+        }
+    }
+    
+    void Step(Settings* settings)
+    {
+        //Center Camera
+        g_camera.m_center = m_boat->rigidBody->GetPosition();
+        
+        //Apply forces based on input state
+        m_boat->update(settings->hz);
+        
+        Test::Step(settings);
     }
     
     static Test* Create()
     {
         return new BoatTest;
     }
-    
-    b2Body* m_body;
 };
 
 #endif /* BoatTrack_h */
