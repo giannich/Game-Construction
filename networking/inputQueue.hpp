@@ -3,89 +3,40 @@
 #include <sstream>
 #include <string>
 
+#define N 50
+
 using std::cout;
+
+typedef enum E_Code = {E_Success, E_Failure} E_Code;
 
 class InputQueue
 {
 public:
 
-   // Constructor
-      InputQueue(int InputQueueSize, int networkPlayer)
-         : queueSize(InputQueueSize)
-         , playerID(networkPlayer)
+      // Constructor
+      InputQueue()
       {
-         //cout << "In Constructor\n";
-
-         queueBuffer = (InputState *) malloc(sizeof(int) * queueSize);
-         readBuffer = (InputState *) malloc(sizeof(int) * queueSize);
-
-         nextPointer = 0;
+         inQueue = new boost::circular_buffer(N);
+         lastFrame = 0;
       }
 
       // Destructor
       ~InputQueue()
       {
-         //cout << "In Destructor\n";
-         free(readBuffer);
-         free(queueBuffer);
+         free(inQueue);
       }
 
-      // Returns player id
-      int playerNum()
-      {
-         return playerID;
-      }
+      // Gets a specific frame InputState
+      E_Code getStateForFrame(int frameNum, InputState &inputAddr);
 
-      // Returns the frame number
-      int frameNum()
-      {
-         return nextPointer;
-      }
-
-      // Pushes a bunch of input states
-      void pushBlob(InputState *inputArray, int numItems)
-      {
-         //cout << "In pushBlob\n";
-
-         // nextPointer is incremented ad infinitum, this is pretty much the frame number
-         for (int i = 0; i < numItems; i++)
-         {
-            queueBuffer[nextPointer % queueSize] = inputArray[i];
-            nextPointer++;
-         }
-      }
+      // Inserts a bunch of inputStates
+      void writeInputQueue(InputState inputArray[N]);
 
       // Reads a bunch of inputStates
-      InputState *readBlob(int numItems)
-      {
-         //cout << "In readBlob\n";
-
-         int tempPointer;
-
-         // Will only return up to the original queue size elements
-         if (numItems > queueSize)
-            numItems = queueSize;
-
-         // If there are at least queueSize elements, just starts from nextPointer
-         // Otherwise starts from 0
-         if (nextPointer > queueSize)
-            tempPointer = nextPointer % queueSize;
-         else
-            tempPointer = 0;
-
-         // Appends the each inputState object into the readBuffer
-         for (int i = 0; i < numItems; i++)
-            readBuffer[i] = queueBuffer[tempPointer++ % queueSize];
-
-         // Finally returns the readBuffer
-         return readBuffer;
-      }
+      void recentInputStates(InputState &outputAddr[]);
 
 private:
 
-      int queueSize;
-      int nextPointer;
-      int playerID;
-      InputState *readBuffer;
-      InputState *queueBuffer;
+      int lastFrame;
+      boost::circular_buffer inQueue;
 };
