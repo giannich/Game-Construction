@@ -9,13 +9,13 @@
 #include "Boat.hpp"
 
 
-Boat::Boat(float collectionRadius, b2World& m_world)
+Boat::Boat(b2Vec2 initPos, b2World& m_world)
 {
     //Create rigidbody
     {
         b2BodyDef bd;
         bd.type = b2_dynamicBody;
-        bd.position.Set(0.0f, 0.0f);
+        bd.position.Set(initPos.x, initPos.y);
         rigidBody = m_world.CreateBody(&bd);
         
         b2PolygonShape shape;
@@ -33,15 +33,16 @@ Boat::Boat(float collectionRadius, b2World& m_world)
         fd.density = 1.0f;
         fd.restitution = 0.2f;
         rigidBody->SetLinearDamping(1.0f);
-        rigidBody->SetAngularDamping(1.0f);
+        rigidBody->SetAngularDamping(5.0f);
         rigidBody->CreateFixture(&fd);
     }
     
     currentSouls = 0;
     soulCollectionRadius = 5.0f;
-    forwardForce = 2000.0f;
-    reverseForce = -1000.0f;
-    turningImpulse = 1.0f;
+    forwardForce = 100.0f;
+    reverseForce = -20.0f;
+    turnRate = 0.0005f;
+    //turningImpulse = 1.0f;
     //firingForce = 0.0f;
     
     //Input Stream
@@ -71,12 +72,14 @@ void Boat::update(float deltaT)
     switch (inputState->turn) {
         case Left:
         {
-            rigidBody->ApplyAngularImpulse(turningImpulse * deltaT, true);
+            rigidBody->SetTransform(rigidBody->GetPosition(), rigidBody->GetAngle() + turnRate * deltaT);
+            //rigidBody->ApplyAngularImpulse(turningImpulse * deltaT, true);
         }
             break;
         case Right:
         {
-            rigidBody->ApplyAngularImpulse(-1.0f * turningImpulse * deltaT, true);
+            rigidBody->SetTransform(rigidBody->GetPosition(), rigidBody->GetAngle() - turnRate * deltaT);
+            //rigidBody->ApplyAngularImpulse(-1.0f * turningImpulse * deltaT, true);
         }
             break;
     }

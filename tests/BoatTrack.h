@@ -7,10 +7,11 @@
 //
 #include "Boat.hpp"
 #include "InputStream.hpp"
+#include <math.h>
 
 #ifndef BoatTrack_h
 #define BoatTrack_h
-
+#define CIRCLE_SEGMENTS 30
 
 class BoatTest: public Test
 {
@@ -24,28 +25,41 @@ public:
         
         //Create track sides
         {
-            // Chain shape
+            float innerRadius = 50.0f;
+            float outerRadius = 100.0f;
+            
             {
-                // Add track edges here
                 b2BodyDef bd;
-                bd.angle = 0.25f * b2_pi;
                 b2Body* ground = m_world->CreateBody(&bd);
                 
-                b2Vec2 vs[8];
-                for(int i = 0; i < 8; ++i)
+                // One more to close the loop
+                b2Vec2 inner[CIRCLE_SEGMENTS+1];
+                b2Vec2 outer[CIRCLE_SEGMENTS+1];
+                
+                for(int i = 0; i < CIRCLE_SEGMENTS+1; ++i)
                 {
-                    vs[i].Set(0.0f, i * 8.0f);
+                    float theta = i * 2 * b2_pi /CIRCLE_SEGMENTS;
+                    inner[i].Set(innerRadius * cos(theta),
+                                 innerRadius * sin(theta));
+                    outer[i].Set(outerRadius * cos(theta),
+                                 outerRadius * sin(theta));
                 }
-                b2ChainShape shape;
-                shape.CreateChain(vs, 8);
-                ground->CreateFixture(&shape, 0.0f);
+                                 
+                b2ChainShape innerShape;
+                innerShape.CreateChain(inner, CIRCLE_SEGMENTS+1);
+                ground->CreateFixture(&innerShape, 0.0f);
+                
+                b2ChainShape outerShape;
+                outerShape.CreateChain(outer, CIRCLE_SEGMENTS+1);
+                ground->CreateFixture(&outerShape, 0.0f);
             }
         }
         
         //Create Boat
         {
             b2World& m_worldRef = *m_world;
-            m_boat = new Boat(5.0f, m_worldRef);
+            b2Vec2 initPos = b2Vec2(0.0f,-75.0f);
+            m_boat = new Boat(initPos, m_worldRef);
         }
     }
     
@@ -56,6 +70,11 @@ public:
             case GLFW_KEY_W:
             {
                 m_boat->inputState->acc = Accelerating;
+            }
+                break;
+            case GLFW_KEY_S:
+            {
+                m_boat->inputState->acc = Reversing;
             }
                 break;
                 
@@ -82,6 +101,12 @@ public:
                 m_boat->inputState->acc = Idling;
             }
                 break;
+            case GLFW_KEY_S:
+            {
+                m_boat->inputState->acc = Idling;
+            }
+                break;
+
                 
             case GLFW_KEY_A:
             {

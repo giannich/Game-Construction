@@ -24,12 +24,13 @@ class Boat
     
     float forwardForce;
     float reverseForce;
-    float turningImpulse;
+    //float turningImpulse;
+    float turnRate;
     //float firingForce;
 public:
     InputState* inputState;
     b2Body *rigidBody;
-    Boat(float, b2World&);
+    Boat(b2Vec2 , b2World&);
     //float getMaxSpeed();
     void update(float deltaT);
 };
