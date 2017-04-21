@@ -54,7 +54,7 @@ class Track
 		int N;             //Number of segments
 		vec2 *l, *r, *p;   
 		float *c;
-		Track(int N, float step, float width, float smoothness)
+		Track(int N, float step, float width, float smoothness=15)
 		{
 			this->N = N;
 			l = new vec2[N];
@@ -120,7 +120,7 @@ class Track
 
 int main()
 {
-	Track a(100,1.2,2.3,10);
+	Track a(100,1.2,2.3,5);
 	for(int i=0; i<a.N; i++)
 		//cout<<"("<<a.r[i].x<<", "<<a.r[i].y<<"),("<<a.l[i].x<<", "<<a.l[i].y<<")\n";
 		cout<<a.r[i].x<<" "<<a.r[i].y<<" "<<a.l[i].x<<" "<<a.l[i].y<<"\n";
