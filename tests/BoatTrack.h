@@ -8,6 +8,7 @@
 #include "Boat.hpp"
 #include "InputStream.hpp"
 #include <math.h>
+#include "trackmaker.hpp"
 
 #ifndef BoatTrack_h
 #define BoatTrack_h
@@ -25,32 +26,39 @@ public:
         
         //Create track sides
         {
-            float innerRadius = 50.0f;
-            float outerRadius = 100.0f;
+//            float innerRadius = 50.0f;
+//            float outerRadius = 100.0f;
             
             {
                 b2BodyDef bd;
                 b2Body* ground = m_world->CreateBody(&bd);
                 
-                // One more to close the loop
-                b2Vec2 inner[CIRCLE_SEGMENTS+1];
-                b2Vec2 outer[CIRCLE_SEGMENTS+1];
-                
-                for(int i = 0; i < CIRCLE_SEGMENTS+1; ++i)
-                {
-                    float theta = i * 2 * b2_pi /CIRCLE_SEGMENTS;
-                    inner[i].Set(innerRadius * cos(theta),
-                                 innerRadius * sin(theta));
-                    outer[i].Set(outerRadius * cos(theta),
-                                 outerRadius * sin(theta));
+//                // One more to close the loop
+//                b2Vec2 inner[CIRCLE_SEGMENTS+1];
+//                b2Vec2 outer[CIRCLE_SEGMENTS+1];
+
+//                for(int i = 0; i < CIRCLE_SEGMENTS+1; ++i)
+//                {
+//                    float theta = i * 2 * b2_pi /CIRCLE_SEGMENTS;
+//                    inner[i].Set(innerRadius * cos(theta),
+//                                 innerRadius * sin(theta));
+//                    outer[i].Set(outerRadius * cos(theta),
+//                                 outerRadius * sin(theta));
+//                }
+                Track a(5000,25.0f,50.0f);
+                b2Vec2 left[5000];
+                b2Vec2 right[5000];
+                for(int i = 0; i < 5000; i++) {
+                    left[i].Set(a.l[i].x,a.l[i].y);
+                    right[i].Set(a.r[i].x,a.r[i].y);
                 }
-                                 
+                
                 b2ChainShape innerShape;
-                innerShape.CreateChain(inner, CIRCLE_SEGMENTS+1);
+                innerShape.CreateChain(left, 1000);
                 ground->CreateFixture(&innerShape, 0.0f);
                 
                 b2ChainShape outerShape;
-                outerShape.CreateChain(outer, CIRCLE_SEGMENTS+1);
+                outerShape.CreateChain(right, 1000);
                 ground->CreateFixture(&outerShape, 0.0f);
             }
         }
