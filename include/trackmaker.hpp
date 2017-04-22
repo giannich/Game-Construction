@@ -64,7 +64,7 @@ public:
         c[0]=0;
         for(int i=1; i<N; i++)
         {
-            float  dist = rand()%3+1;
+            float  dist = rand()%100+3;
             
             if(dist>60)
             {
