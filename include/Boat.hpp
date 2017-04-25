@@ -27,6 +27,7 @@ class Boat
     //float turningImpulse;
     float turnRate;
     //float firingForce;
+	float segPosition;
 public:
     InputState* inputState;
     b2Body *rigidBody;

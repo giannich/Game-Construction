@@ -6,7 +6,7 @@
 //
 //
 
-#include "Boat.hpp"
+#include "Testbed/include/Boat.hpp"
 
 
 Boat::Boat(b2Vec2 initPos, b2World& m_world)
@@ -31,7 +31,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world)
         b2FixtureDef fd;
         fd.shape = &shape;
         fd.density = 1.0f;
-        fd.restitution = 0.2f;
+        fd.restitution = 0.7f;
         rigidBody->SetLinearDamping(1.0f);
         rigidBody->SetAngularDamping(5.0f);
         rigidBody->CreateFixture(&fd);
@@ -39,9 +39,9 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world)
     
     currentSouls = 0;
     soulCollectionRadius = 5.0f;
-    forwardForce = 100.0f;
+    forwardForce = 500.0f;
     reverseForce = -20.0f;
-    turnRate = 0.0005f;
+    turnRate = 0.0003f;
     //turningImpulse = 1.0f;
     //firingForce = 0.0f;
     
