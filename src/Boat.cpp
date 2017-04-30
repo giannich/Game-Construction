@@ -9,7 +9,7 @@
 #include "Testbed/include/Boat.hpp"
 
 
-Boat::Boat(b2Vec2 initPos, b2World& m_world)
+Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1)
 {
     //Create rigidbody
     {
@@ -45,12 +45,16 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world)
     //turningImpulse = 1.0f;
     //firingForce = 0.0f;
     
+	ai = ai1;
+	segPosition = -0.5;
     //Input Stream
     inputState = new InputState();
 }
 
 void Boat::update(float deltaT)
 {
+	if(ai!=nullptr)
+		*inputState = ai->getCommand(vec2(rigidBody->GetPosition().x, rigidBody->GetPosition().y), vec2(rigidBody->GetLinearVelocity().x, rigidBody->GetLinearVelocity().y), rigidBody->GetAngle(), segPosition);
     switch (inputState->acc)
     {
         case Accelerating:

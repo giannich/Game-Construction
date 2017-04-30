@@ -10,7 +10,9 @@
 #define Boat_hpp
 
 #include <stdio.h>
-#include "InputStream.hpp"
+#include "Testbed\include\InputStream.hpp"
+#include "Testbed\include\SimpleAI.hpp"
+
 #include "Box2d/Box2d.h"
 
 class GameState;
@@ -27,11 +29,12 @@ class Boat
     //float turningImpulse;
     float turnRate;
     //float firingForce;
-	float segPosition;
 public:
+	SimpleAI *ai;
+	float segPosition;
     InputState* inputState;
     b2Body *rigidBody;
-    Boat(b2Vec2 , b2World&);
+    Boat(b2Vec2 , b2World&, SimpleAI *ai1);
     //float getMaxSpeed();
     void update(float deltaT);
 };
