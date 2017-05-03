@@ -16,8 +16,8 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
-#include "../Framework/Test.h"
-
+#include "Test.h"
+/*
 #include "AddPair.h"
 #include "ApplyForce.h"
 #include "BasicSliderCrank.h"
@@ -70,11 +70,13 @@
 #include "VaryingRestitution.h"
 #include "VerticalStack.h"
 #include "Web.h"
+*/
 #include "BoatTrack.h"
 
 TestEntry g_testEntries[] =
 {
     {"Boat Track Test", BoatTest::Create},
+    /*
     {"Character Collision", CharacterCollision::Create},
 	{"Tiles", Tiles::Create},
 	{"Heavy on Light", HeavyOnLight::Create},
@@ -127,5 +129,6 @@ TestEntry g_testEntries[] =
 	{"Sensor Test", SensorTest::Create},
 	{"Varying Friction", VaryingFriction::Create},
 	{"Add Pair Stress Test", AddPair::Create},
+     */
 	{NULL, NULL}
 };
