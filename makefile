@@ -6,8 +6,8 @@ EXECUTABLE = gtest
 
 all: $(EXECUTABLE)
 
-$(EXECUTABLE): src/GraphicsTest.cpp
-	$(CC) src/GraphicsTest.cpp -I $(INC) -L $(LIB_PATH) $(LIB_FLAGS) -o $(EXECUTABLE)
+$(EXECUTABLE): src/*.cpp
+	$(CC) src/*.cpp -I $(INC) -L $(LIB_PATH) $(LIB_FLAGS) -o $(EXECUTABLE)
 
 clean:
 	rm $(EXECUTABLE)

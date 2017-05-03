@@ -7,5 +7,5 @@
 //
 
 #include <stdio.h>
-#include "Testbed/include/InputStream.hpp"
+#include "InputStream.hpp"
 

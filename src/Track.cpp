@@ -1,5 +1,5 @@
-
-#include "Testbed/include/Track.hpp"
+#include<cmath>
+#include "Track.hpp"
 #include<time.h>
 #include<iostream>
 vec2::vec2(float x, float y)
@@ -53,9 +53,9 @@ Track::Track(int N, float step, float width, float smoothness = 15)
 	p = new vec2[N];
 	c = new float[N];
 	srand(time(NULL));
-	l[0] = { 0,0 };
-	r[0] = { width,0 };
-	p[0] = { 0,1 };
+	l[0] = vec2(0,0);
+	r[0] = vec2(width,0);
+	p[0] = vec2(0,1);
 	c[0] = 0;
 	int backStep = 1;
 	for (int i = 1; i<N; i++)

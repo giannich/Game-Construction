@@ -6,7 +6,7 @@
 //
 //
 
-#include "Testbed/include/Boat.hpp"
+#include "Boat.hpp"
 
 
 Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1)
