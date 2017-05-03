@@ -15,9 +15,13 @@
 #include <vector>
 
 class GameState {
-    std::vector<Boat> boats;
+    Track *m_track;
+    std::vector<Boat> *boats;
 public:
-    GameState();
+    GameState(Track&);
+    void addPlayer(Boat&);
+    void update(float);
+    void printDebugInfo();
 };
 
 #endif /* GameState_hpp */
