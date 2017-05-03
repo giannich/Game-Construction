@@ -71,20 +71,22 @@ void Boat::update(float deltaT)
             rigidBody->ApplyForce(f, p, true);
         }
             break;
+	case Idling:
+	    break;
     }
     
     switch (inputState->turn) {
         case Left:
         {
             rigidBody->SetTransform(rigidBody->GetPosition(), rigidBody->GetAngle() + turnRate * deltaT);
-            //rigidBody->ApplyAngularImpulse(turningImpulse * deltaT, true);
         }
             break;
         case Right:
         {
             rigidBody->SetTransform(rigidBody->GetPosition(), rigidBody->GetAngle() - turnRate * deltaT);
-            //rigidBody->ApplyAngularImpulse(-1.0f * turningImpulse * deltaT, true);
         }
             break;
+	case Neutral:
+	    break;
     }
 }
