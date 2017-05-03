@@ -12,6 +12,7 @@ Soul::Soul(b2Vec2 initPos, float radius) {
         b2CircleShape shape(5.0);
         
         b2FixtureDef fd;
+	fd.isSensor = true;
         fd.shape = &shape;
         rigidBody->CreateFixture(&fd);
     }
