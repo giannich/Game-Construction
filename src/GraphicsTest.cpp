@@ -1,6 +1,6 @@
 #include <osgViewer/Viewer>
 #include <osgDB/ReadFile>
-#include "Box2d/Box2D.h"
+#include "Box2D/Box2D.h"
 #include "Boat.hpp"
 #include <boost/signals2/signal.hpp>
 #include "GameState.hpp"
