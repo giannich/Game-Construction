@@ -1,9 +1,10 @@
 #include <osgViewer/Viewer>
 #include <osgDB/ReadFile>
-#include "Box2d/Box2d.h"
+#include "Box2d/Box2D.h"
 #include "Boat.hpp"
 #include <boost/signals2/signal.hpp>
 #include "GameState.hpp"
+#include "ContactListener.hpp"
 
 #include <osg/Node>
 #include <osg/Group>
@@ -73,6 +74,8 @@ int main( int, char**)
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
 	Track *m_track = new Track(1000,25.0f,50.0f,4);
 	GameState *gState = new GameState(*m_track);
+	ContactListener contactListener;
+	m_world->SetContactListener(&contactListener);
 
 	//Initialize Graphics
 	Graphics g;
