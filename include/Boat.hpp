@@ -10,8 +10,8 @@
 #define Boat_hpp
 
 #include <stdio.h>
-#include "Testbed\include\InputStream.hpp"
-#include "Testbed\include\SimpleAI.hpp"
+#include "InputStream.hpp"
+#include "SimpleAI.hpp"
 
 #include "Box2d/Box2d.h"
 

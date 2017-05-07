@@ -2,9 +2,10 @@
 
 #define Simple_AI_hpp
 
-#include "Testbed\include\Track.hpp"
-#include "Testbed\include\InputStream.hpp"
+#include "Track.hpp"
+#include "InputStream.hpp"
 #include <iostream>
+#include <cmath>
 
 class SimpleAI
 {

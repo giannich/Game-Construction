@@ -3,9 +3,9 @@
 #include "Box2d/Box2d.h"
 #include "Boat.hpp"
 #include <boost/signals2/signal.hpp>
-#include "Gamestate.hpp"
+#include "GameState.hpp"
 
-// This stub should be swapped out to whatever our OSG implementation becomes
+// This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
 {
 	//Draw 1 frame of the world here
@@ -16,7 +16,7 @@ struct Graphics
 
 int main( int, char**)
 {
-	//Initializ Phyiscs world
+	//Initialize Phyiscs world
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
 	Track *m_track = new Track(1000,25.0f,50.0f,4);
 	GameState *gState = new GameState(*m_track);
