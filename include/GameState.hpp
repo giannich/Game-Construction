@@ -15,9 +15,9 @@
 #include <vector>
 
 class GameState {
+public:
     Track *m_track;
     std::vector<Boat> *boats;
-public:
     GameState(Track&);
     void addPlayer(Boat&);
     void update(float);
