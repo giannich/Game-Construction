@@ -1,6 +1,6 @@
 CC=clang++
-LIB_PATH=../OSG/lib/
-INCLUDE_PATH=../OSG/include/
+LIB_PATH=../lib/
+INCLUDE_PATH=../include/
 OPTIONS=-losgDB -losgViewer -losg -lOpenThreads -losgUtil -losgGA
 
 graphicsTest: graphicsTest.cpp

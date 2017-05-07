@@ -9,7 +9,6 @@
 
 using namespace osg;
 
-
 // This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
 {
