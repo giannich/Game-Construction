@@ -1,16 +1,22 @@
 #include <osgViewer/Viewer>
 #include <osgDB/ReadFile>
-#include "Box2d/Box2d.h"
+#include "Box2d/Box2D.h"
 #include "Boat.hpp"
 #include <boost/signals2/signal.hpp>
 #include "GameState.hpp"
+#include "ContactListener.hpp"
 
 // This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
 {
 	//Draw 1 frame of the world here
 	void renderWorld(GameState* world) {
-		world->printDebugInfo();
+		for( auto it = world->boats->begin(); it != world->boats->end(); ++it) {
+			b2Vec2 boatPos = it->rigidBody->GetPosition();
+			float boatRot = it->rigidBody->GetAngle();
+			std::cout << "(x,y): " << boatPos.x << ", " << boatPos.y << " | " << boatRot << std::endl;
+		}
+		//world->printDebugInfo();
 	}
 };
 
@@ -20,6 +26,8 @@ int main( int, char**)
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
 	Track *m_track = new Track(1000,25.0f,50.0f,4);
 	GameState *gState = new GameState(*m_track);
+	ContactListener contactListener;
+	m_world->SetContactListener(&contactListener);
 
 	//Initialize Graphics
 	Graphics g;
