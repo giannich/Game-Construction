@@ -20,11 +20,11 @@ PositionAttitudeTransform *transform[1];
 Group *startupScene()
 {
 	osg::ref_ptr<osg::ShapeDrawable> shape2 = new osg::ShapeDrawable;
-    shape2->setShape( new osg::Sphere(osg::Vec3(3.0f, 0.0f, 0.0f), 1.0f) ); 
-    shape2->setColor( osg::Vec4(0.0f, 0.0f, 1.0f, 1.0f) );
+	shape2->setShape( new osg::Sphere(osg::Vec3(3.0f, 0.0f, 0.0f), 1.0f) ); 
+	shape2->setColor( osg::Vec4(0.0f, 0.0f, 1.0f, 1.0f) );
 
-    osg::ref_ptr<osg::Geode> anotherGeode = new osg::Geode;
-    anotherGeode->addDrawable( shape2.get() );
+	osg::ref_ptr<osg::Geode> anotherGeode = new osg::Geode;
+	anotherGeode->addDrawable( shape2.get() );
 
 	Group *root = new Group();
 
@@ -66,8 +66,8 @@ int main() {
 		// Update the state of the GameState to be a random walk
 		// Values change between -0.5f to +0.5f
 		aGameState.x += (float) (rand() % 100 - 50) / 1000;
-  		aGameState.y += (float) (rand() % 100 - 50) / 1000;
-  		aGameState.z += (float) (rand() % 100 - 50) / 1000;
+		aGameState.y += (float) (rand() % 100 - 50) / 1000;
+		aGameState.z += (float) (rand() % 100 - 50) / 1000;
 
 		updateHandler(aGameState);
 	} 
