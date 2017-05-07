@@ -9,6 +9,10 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
+using std::cout;
+
+// TODO: TEST THIS SHIT ON ACTUAL STUFF
+
 // Error Generation
 void error(const char *msg)
 {
@@ -62,9 +66,6 @@ void receiveDatagram(void *buffer, size_t bufferSize, int receivePortNum)
 	socklen_t senderLength;
 	struct sockaddr_in receiverAddress, senderAddress;
 
-	// Reset buffer memory
-	//memset(buffer, 0, bufferSize - 1);
-
 	// Creates socket file descriptor for socket communication
 	int socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
 	if (socketDescriptor < 0)
@@ -88,7 +89,7 @@ void receiveDatagram(void *buffer, size_t bufferSize, int receivePortNum)
 
 	// Receives the actual message
 	msgLength = recvfrom(socketDescriptor, buffer, bufferSize, 0, (struct sockaddr *)&senderAddress, &senderLength);
-	
+
 	if (msgLength < 0)
 		error("ERROR on receiving");
 
