@@ -30,15 +30,6 @@ class OSG_EXPORT Texture2D : public Texture
 
         Texture2D(Image* image);
 
-        template<class T> Texture2D(const osg::ref_ptr<T>& image):
-            _textureWidth(0),
-            _textureHeight(0),
-            _numMipmapLevels(0)
-        {
-            setUseHardwareMipMapGeneration(true);
-            setImage(image.get());
-        }
-
         /** Copy constructor using CopyOp to manage deep vs shallow copy. */
         Texture2D(const Texture2D& text,const CopyOp& copyop=CopyOp::SHALLOW_COPY);
 
@@ -51,8 +42,6 @@ class OSG_EXPORT Texture2D : public Texture
 
         /** Sets the texture image. */
         void setImage(Image* image);
-
-        template<class T> void setImage(const ref_ptr<T>& image) { setImage(image.get()); }
 
         /** Gets the texture image. */
         Image* getImage() { return _image.get(); }
@@ -69,8 +58,6 @@ class OSG_EXPORT Texture2D : public Texture
 
         /** Sets the texture image, ignoring face. */
         virtual void setImage(unsigned int, Image* image) { setImage(image); }
-
-        template<class T> void setImage(unsigned int, const ref_ptr<T>& image) { setImage(image.get()); }
 
         /** Gets the texture image, ignoring face. */
         virtual Image* getImage(unsigned int) { return _image.get(); }
@@ -106,9 +93,9 @@ class OSG_EXPORT Texture2D : public Texture
                     return texture.textureObjectValid(state);
                 }
 
-                virtual osg::ref_ptr<TextureObject> generateTextureObject(const Texture2D& texture, State& state) const
+                virtual TextureObject* generateTextureObject(const Texture2D& texture, State& state) const
                 {
-                    return osg::Texture::generateTextureObject(&texture, state.getContextID(), GL_TEXTURE_2D);
+                    return osg::Texture::generateTextureObject(&texture, state.getContextID(), GL_TEXTURE_2D).release();
                 }
 
                 virtual void load(const Texture2D& texture,State& state) const = 0;

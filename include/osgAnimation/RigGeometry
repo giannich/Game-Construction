@@ -52,7 +52,7 @@ namespace osgAnimation
     public:
 
         RigGeometry();
-
+//        RigGeometry(const osg::Geometry& b);
         RigGeometry(const RigGeometry& b, const osg::CopyOp& copyop = osg::CopyOp::SHALLOW_COPY);
 
         META_Object(osgAnimation, RigGeometry);
@@ -80,7 +80,6 @@ namespace osgAnimation
         // set implementation of rig method
         void setRigTransformImplementation(RigTransform*);
         RigTransform* getRigTransformImplementation();
-        const RigTransform* getRigTransformImplementation() const { return _rigTransformImplementation.get(); }
 
         virtual void drawImplementation(osg::RenderInfo& renderInfo) const;
         void update();
@@ -128,14 +127,11 @@ namespace osgAnimation
     {
         UpdateRigGeometry() {}
 
-        UpdateRigGeometry(const UpdateRigGeometry& org, const osg::CopyOp& copyop):
-            osg::Object(org, copyop),
-            osg::Callback(org, copyop),
-            osg::DrawableUpdateCallback(org, copyop) {}
+        UpdateRigGeometry(const UpdateRigGeometry&, const osg::CopyOp&) {}
 
         META_Object(osgAnimation, UpdateRigGeometry);
 
-        virtual void update(osg::NodeVisitor* nv, osg::Drawable* drw) {
+        virtual void update(osg::NodeVisitor*, osg::Drawable* drw) {
             RigGeometry* geom = dynamic_cast<RigGeometry*>(drw);
             if(!geom)
                 return;
@@ -160,12 +156,6 @@ namespace osgAnimation
 
             if(geom->getNeedToComputeMatrix())
                 geom->computeMatrixFromRootSkeleton();
-
-            if(geom->getSourceGeometry()) {
-                osg::Drawable::UpdateCallback * up = dynamic_cast<osg::Drawable::UpdateCallback*>(geom->getSourceGeometry()->getUpdateCallback());
-                if(up)
-                    up->update(nv, geom->getSourceGeometry());
-            }
 
             geom->update();
         }

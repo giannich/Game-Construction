@@ -19,40 +19,15 @@
 #include <osg/BoundingBox>
 #include <osg/BoundingSphere>
 
-#include <typeinfo>
-
 namespace osg {
 
 // forward declare core OSG math classes
-class Vec2b;
-class Vec3b;
-class Vec4b;
-class Vec2ub;
-class Vec3ub;
-class Vec4ub;
-
-class Vec2s;
-class Vec3s;
-class Vec4s;
-class Vec2us;
-class Vec3us;
-class Vec4us;
-
-class Vec2i;
-class Vec3i;
-class Vec4i;
-class Vec2ui;
-class Vec3ui;
-class Vec4ui;
-
 class Vec2f;
 class Vec3f;
 class Vec4f;
-
 class Vec2d;
 class Vec3d;
 class Vec4d;
-
 class Quat;
 class Plane;
 class Matrixf;
@@ -82,39 +57,12 @@ class ValueObject : public Object
             virtual void apply(float /*value*/) {}
             virtual void apply(double /*value*/) {}
             virtual void apply(const std::string& /*value*/) {}
-
-            virtual void apply(const osg::Vec2b& /*value*/) {}
-            virtual void apply(const osg::Vec3b& /*value*/) {}
-            virtual void apply(const osg::Vec4b& /*value*/) {}
-
-            virtual void apply(const osg::Vec2ub& /*value*/) {}
-            virtual void apply(const osg::Vec3ub& /*value*/) {}
-            virtual void apply(const osg::Vec4ub& /*value*/) {}
-
-            virtual void apply(const osg::Vec2s& /*value*/) {}
-            virtual void apply(const osg::Vec3s& /*value*/) {}
-            virtual void apply(const osg::Vec4s& /*value*/) {}
-
-            virtual void apply(const osg::Vec2us& /*value*/) {}
-            virtual void apply(const osg::Vec3us& /*value*/) {}
-            virtual void apply(const osg::Vec4us& /*value*/) {}
-
-            virtual void apply(const osg::Vec2i& /*value*/) {}
-            virtual void apply(const osg::Vec3i& /*value*/) {}
-            virtual void apply(const osg::Vec4i& /*value*/) {}
-
-            virtual void apply(const osg::Vec2ui& /*value*/) {}
-            virtual void apply(const osg::Vec3ui& /*value*/) {}
-            virtual void apply(const osg::Vec4ui& /*value*/) {}
-
             virtual void apply(const osg::Vec2f& /*value*/) {}
             virtual void apply(const osg::Vec3f& /*value*/) {}
             virtual void apply(const osg::Vec4f& /*value*/) {}
-
             virtual void apply(const osg::Vec2d& /*value*/) {}
             virtual void apply(const osg::Vec3d& /*value*/) {}
             virtual void apply(const osg::Vec4d& /*value*/) {}
-
             virtual void apply(const osg::Quat& /*value*/) {}
             virtual void apply(const osg::Plane& /*value*/) {}
             virtual void apply(const osg::Matrixf& /*value*/) {}
@@ -139,39 +87,12 @@ class ValueObject : public Object
             virtual void apply(float& /*value*/) {}
             virtual void apply(double& /*value*/) {}
             virtual void apply(std::string& /*value*/) {}
-
-            virtual void apply(osg::Vec2b& /*value*/) {}
-            virtual void apply(osg::Vec3b& /*value*/) {}
-            virtual void apply(osg::Vec4b& /*value*/) {}
-
-            virtual void apply(osg::Vec2ub& /*value*/) {}
-            virtual void apply(osg::Vec3ub& /*value*/) {}
-            virtual void apply(osg::Vec4ub& /*value*/) {}
-
-            virtual void apply(osg::Vec2s& /*value*/) {}
-            virtual void apply(osg::Vec3s& /*value*/) {}
-            virtual void apply(osg::Vec4s& /*value*/) {}
-
-            virtual void apply(osg::Vec2us& /*value*/) {}
-            virtual void apply(osg::Vec3us& /*value*/) {}
-            virtual void apply(osg::Vec4us& /*value*/) {}
-
-            virtual void apply(osg::Vec2i& /*value*/) {}
-            virtual void apply(osg::Vec3i& /*value*/) {}
-            virtual void apply(osg::Vec4i& /*value*/) {}
-
-            virtual void apply(osg::Vec2ui& /*value*/) {}
-            virtual void apply(osg::Vec3ui& /*value*/) {}
-            virtual void apply(osg::Vec4ui& /*value*/) {}
-
             virtual void apply(osg::Vec2f& /*value*/) {}
             virtual void apply(osg::Vec3f& /*value*/) {}
             virtual void apply(osg::Vec4f& /*value*/) {}
-
             virtual void apply(osg::Vec2d& /*value*/) {}
             virtual void apply(osg::Vec3d& /*value*/) {}
             virtual void apply(osg::Vec4d& /*value*/) {}
-
             virtual void apply(osg::Quat& /*value*/) {}
             virtual void apply(osg::Plane& /*value*/) {}
             virtual void apply(osg::Matrixf& /*value*/) {}
@@ -204,10 +125,6 @@ class TemplateValueObject : public ValueObject
         TemplateValueObject():
             ValueObject(),
             _value() {}
-
-        TemplateValueObject(const T& value) :
-            ValueObject(),
-            _value(value) {}
 
         TemplateValueObject(const std::string& name, const T& value) :
             ValueObject(name),
@@ -272,15 +189,12 @@ bool osg::Object::getUserValue(const std::string& name, T& value) const
 {
     typedef TemplateValueObject<T> UserValueObject;
 
-    const osg::UserDataContainer* udc = asUserDataContainer();
+    const osg::UserDataContainer* udc = dynamic_cast<const osg::UserDataContainer*>(this);
     if (!udc) udc = _userDataContainer;
 
-    if (!udc) return false;
-
-    const Object* obj = udc->getUserObject(name);
-    if (obj && typeid(*obj)==typeid(UserValueObject))
+    const UserValueObject* uvo = udc ? dynamic_cast<const UserValueObject*>(udc->getUserObject(name)) : 0;
+    if (uvo)
     {
-        const UserValueObject* uvo = static_cast<const UserValueObject*>(obj);
         value = uvo->getValue();
         return true;
     }
@@ -296,7 +210,7 @@ void osg::Object::setUserValue(const std::string& name, const T& value)
 {
     typedef TemplateValueObject<T> UserValueObject;
 
-    osg::UserDataContainer* udc = asUserDataContainer();
+    osg::UserDataContainer* udc = dynamic_cast<osg::UserDataContainer*>(this);
     if (!udc)
     {
         getOrCreateUserDataContainer();
@@ -304,60 +218,9 @@ void osg::Object::setUserValue(const std::string& name, const T& value)
     }
 
     unsigned int i = udc->getUserObjectIndex(name);
-    if (i<udc->getNumUserObjects())
-    {
-        Object* obj = udc->getUserObject(i);
-        if (typeid(*obj)==typeid(UserValueObject))
-        {
-            UserValueObject* uvo = static_cast<UserValueObject*>(obj);
-            uvo->setValue(value);
-        }
-        else
-        {
-            udc->setUserObject(i, new UserValueObject(name, value));
-        }
-    }
-    else
-    {
-        udc->addUserObject(new UserValueObject(name,value));
-    }
+    if (i<udc->getNumUserObjects()) udc->setUserObject(i, new UserValueObject(name,value));
+    else udc->addUserObject(new UserValueObject(name,value));
 }
-
-
-template<class P, class T>
-T* getOrCreateUserObjectOfType(P* parent)
-{
-    T* object=0;
-    const char* name = typeid(T).name();
-    osg::UserDataContainer* udc = parent->getOrCreateUserDataContainer();
-    unsigned int index = udc->getUserObjectIndex(name);
-    if (index<udc->getNumUserObjects())
-    {
-        osg::Object* userObject = udc->getUserObject(index);
-        if (typeid(*userObject)==typeid(T))
-        {
-            object = static_cast<T*>(userObject);
-            // OSG_NOTICE<<"Reusing "<<name<<std::endl;
-        }
-        else
-        {
-            // OSG_NOTICE<<"Replacing "<<name<<", original object "<<userObject->className()<<std::endl;
-
-            object = new T;
-            object->setName(name);
-            udc->setUserObject(index, object);
-        }
-    }
-    else
-    {
-        object = new T;
-        object->setName(name);
-        udc->addUserObject(object);
-        // OSG_NOTICE<<"Creating new "<<name<<std::endl;
-    }
-    return object;
-}
-
 
 
 }

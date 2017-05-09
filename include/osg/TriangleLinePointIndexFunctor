@@ -16,7 +16,6 @@
 #include <osg/PrimitiveSet>
 #include <osg/Array>
 
-namespace osg {
 
 template<class T>
 class TriangleLinePointIndexFunctor : public osg::PrimitiveIndexFunctor, public T
@@ -254,7 +253,5 @@ public:
     std::vector<GLuint>       _indexCache;
     std::vector<unsigned int> _remap;
 };
-
-}
 
 #endif

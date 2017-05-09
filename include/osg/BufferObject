@@ -20,7 +20,6 @@
 #include <osg/Object>
 #include <osg/buffered_value>
 #include <osg/FrameStamp>
-#include <osg/GLObjects>
 
 #include <iosfwd>
 #include <list>
@@ -152,7 +151,7 @@ class BufferObjectProfile
 class GLBufferObjectSet;
 class GLBufferObjectManager;
 
-class OSG_EXPORT GLBufferObject : public GraphicsObject
+class OSG_EXPORT GLBufferObject : public Referenced
 {
     public:
 
@@ -208,9 +207,6 @@ class OSG_EXPORT GLBufferObject : public GraphicsObject
             _extensions->glBindBuffer(_profile._target,0);
         }
 
-        /** release GLBufferObject to the orphan list to be reused or deleted.*/
-        void release();
-
         inline bool isDirty() const { return _dirty; }
 
         void dirty() { _dirty = true; }
@@ -224,6 +220,15 @@ class OSG_EXPORT GLBufferObject : public GraphicsObject
         void assign(BufferObject* bufferObject);
 
         bool isPBOSupported() const { return _extensions->isPBOSupported; }
+
+        static osg::ref_ptr<GLBufferObject> createGLBufferObject(unsigned int contextID, const BufferObject* bufferObject);
+
+        static void deleteAllBufferObjects(unsigned int contextID);
+        static void discardAllBufferObjects(unsigned int contextID);
+        static void flushAllDeletedBufferObjects(unsigned int contextID);
+        static void discardAllDeletedBufferObjects(unsigned int contextID);
+        static void flushDeletedBufferObjects(unsigned int contextID,double currentTime, double& availbleTime);
+        static void releaseGLBufferObject(unsigned int contextID, GLBufferObject* to);
 
         bool hasAllBufferDataBeenRead() const;
 
@@ -322,10 +327,13 @@ class OSG_EXPORT GLBufferObjectSet : public Referenced
         GLBufferObject*         _tail;
 };
 
-class OSG_EXPORT GLBufferObjectManager : public GraphicsObjectManager
+class OSG_EXPORT GLBufferObjectManager : public osg::Referenced
 {
     public:
         GLBufferObjectManager(unsigned int contextID);
+
+        unsigned int getContextID() const { return _contextID; }
+
 
         void setNumberActiveGLBufferObjects(unsigned int size) { _numActiveGLBufferObjects = size; }
         unsigned int& getNumberActiveGLBufferObjects() { return _numActiveGLBufferObjects; }
@@ -349,18 +357,19 @@ class OSG_EXPORT GLBufferObjectManager : public GraphicsObjectManager
 
         void handlePendingOrphandedGLBufferObjects();
 
-        void deleteAllGLObjects();
-        void discardAllGLObjects();
-        void flushAllDeletedGLObjects();
-        void discardAllDeletedGLObjects();
-        void flushDeletedGLObjects(double currentTime, double& availableTime);
+        void deleteAllGLBufferObjects();
+        void discardAllGLBufferObjects();
+        void flushAllDeletedGLBufferObjects();
+        void discardAllDeletedGLBufferObjects();
+        void flushDeletedGLBufferObjects(double currentTime, double& availableTime);
+        void releaseGLBufferObject(GLBufferObject* to);
 
         GLBufferObjectSet* getGLBufferObjectSet(const BufferObjectProfile& profile);
 
         void newFrame(osg::FrameStamp* fs);
         void resetStats();
         void reportStats(std::ostream& out);
-        void recomputeStats(std::ostream& out) const;
+        void recomputeStats(std::ostream& out);
 
         unsigned int& getFrameNumber() { return _frameNumber; }
         unsigned int& getNumberFrames() { return _numFrames; }
@@ -374,12 +383,12 @@ class OSG_EXPORT GLBufferObjectManager : public GraphicsObjectManager
         unsigned int& getNumberApplied() { return _numApplied; }
         double& getApplyTime() { return _applyTime; }
 
+        static osg::ref_ptr<GLBufferObjectManager>& getGLBufferObjectManager(unsigned int contextID);
+
     protected:
 
-        virtual ~GLBufferObjectManager();
-
         typedef std::map< BufferObjectProfile, osg::ref_ptr<GLBufferObjectSet> > GLBufferObjectSetMap;
-
+        unsigned int            _contextID;
         unsigned int            _numActiveGLBufferObjects;
         unsigned int            _numOrphanedGLBufferObjects;
         unsigned int            _currGLBufferObjectPoolSize;
@@ -462,7 +471,11 @@ class OSG_EXPORT BufferObject : public Object
 
         GLBufferObject* getGLBufferObject(unsigned int contextID) const { return _glBufferObjects[contextID].get(); }
 
-        GLBufferObject* getOrCreateGLBufferObject(unsigned int contextID) const;
+        GLBufferObject* getOrCreateGLBufferObject(unsigned int contextID) const
+        {
+            if (!_glBufferObjects[contextID]) _glBufferObjects[contextID] = GLBufferObject::createGLBufferObject(contextID, this);
+            return _glBufferObjects[contextID].get();
+        }
 
         unsigned int computeRequiredBufferSize() const;
 
@@ -533,8 +546,7 @@ class OSG_EXPORT BufferData : public Object
         {
             ModifiedCallback() {}
 
-            ModifiedCallback(const ModifiedCallback& org, const CopyOp& copyop) :
-                Object(org, copyop) {}
+            ModifiedCallback(const ModifiedCallback&,const CopyOp&) {}
 
             META_Object(osg,ModifiedCallback);
 

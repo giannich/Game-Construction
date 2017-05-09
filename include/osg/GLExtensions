@@ -20,13 +20,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <vector>
-#include <map>
 
 
 namespace osg {
 
-/** Return floating-point OpenGL/GLES version number.
+/** Return floating-point OpenGL version number.
   * Note: Must only be called within a valid OpenGL context,
   * undefined behavior may occur otherwise.
 */
@@ -36,25 +34,19 @@ extern OSG_EXPORT float getGLVersionNumber();
 */
 extern OSG_EXPORT bool isExtensionInExtensionString(const char *extension, const char *extensionString);
 
-/** Return true if OpenGL/GLES "extension" is supported.
+/** Return true if OpenGL "extension" is supported.
   * Note: Must only be called within a valid OpenGL context,
   * undefined behavior may occur otherwise.
 */
 extern OSG_EXPORT bool isGLExtensionSupported(unsigned int contextID, const char *extension);
 
-/** Return true if either OpenGL/GLES "extension1" or "extension2" is supported.
-  * Note: Must only be called within a valid OpenGL context,
-  * undefined behavior may occur otherwise.
-*/
-extern OSG_EXPORT bool isGLExtensionSupported(unsigned int contextID, const char *extension1, const char *extension2);
-
-/** Return true if OpenGL/GLES "extension" or minimum OpenGL version number is supported.
+/** Return true if OpenGL "extension" or minimum OpenGL version number is supported.
   * Note: Must only be called within a valid OpenGL context,
   * undefined behavior may occur otherwise.
 */
 extern OSG_EXPORT bool isGLExtensionOrVersionSupported(unsigned int contextID, const char *extension, float requiredGlVersion);
 
-/** Return the address of the specified OpenGL/GLES function.
+/** Return the address of the specified OpenGL function.
   * Return NULL if function not supported by OpenGL library.
   * Note, glGLExtensionFuncPtr is declared inline so that the code
   * is compiled locally to the calling code.  This should get by Windows'
@@ -114,52 +106,28 @@ T convertPointerType(R src)
 }
 
 template<typename T>
-bool setGLExtensionFuncPtr(T& t, const char* str1, bool validContext=true)
+bool setGLExtensionFuncPtr(T& t, const char* str1)
 {
-    return convertPointer(t, validContext ? osg::getGLExtensionFuncPtr(str1) : 0);
+    return convertPointer(t, osg::getGLExtensionFuncPtr(str1));
 }
 
 template<typename T>
-bool setGLExtensionFuncPtr(T& t, const char* str1, const char* str2, bool validContext=true)
+bool setGLExtensionFuncPtr(T& t, const char* str1, const char* str2)
 {
-    return convertPointer(t, validContext ? osg::getGLExtensionFuncPtr(str1, str2) : 0);
+    return convertPointer(t, osg::getGLExtensionFuncPtr(str1, str2));
 }
 
 template<typename T>
-bool setGLExtensionFuncPtr(T& t, const char* str1, const char* str2, const char* str3, bool validContext=true)
+bool setGLExtensionFuncPtr(T& t, const char* str1, const char* str2, const char* str3)
 {
-    return convertPointer(t, validContext ? osg::getGLExtensionFuncPtr(str1, str2, str3) : 0);
+    return convertPointer(t, osg::getGLExtensionFuncPtr(str1, str2, str3));
 }
-
-class VertexAttribAlias
-{
-    public:
-        VertexAttribAlias():
-            _location(0) {}
-
-        VertexAttribAlias(const VertexAttribAlias& rhs):
-            _location(rhs._location),
-            _glName(rhs._glName),
-            _osgName(rhs._osgName),
-            _declaration(rhs._declaration) {}
-
-        VertexAttribAlias(GLuint location, const std::string glName, const std::string osgName, const std::string& declaration):
-            _location(location),
-            _glName(glName),
-            _osgName(osgName),
-            _declaration(declaration) {}
-
-        GLuint      _location;
-        std::string _glName;
-        std::string _osgName;
-        std::string _declaration;
-};
 
 /** Main GLExtensions class for managing OpenGL extensions per graphics context.*/
 class OSG_EXPORT GLExtensions : public osg::Referenced
 {
     public:
-        GLExtensions(unsigned int in_contextID);
+        GLExtensions(unsigned int contextID);
 
         /** Function to call to get the extension of a specified context.
           * If the Exentsion object for that context has not yet been created then
@@ -167,12 +135,12 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
           * If 'createIfNotInitalized' is true then the Extensions object is
           * automatically created.  However, in this case the extension object
           * only be created with the graphics context associated with ContextID..*/
-        static GLExtensions* Get(unsigned int in_contextID,bool createIfNotInitalized);
+        static GLExtensions* Get(unsigned int contextID,bool createIfNotInitalized);
 
         /** allows users to override the extensions across graphics contexts.
           * typically used when you have different extensions supported across graphics pipes
           * but need to ensure that they all use the same low common denominator extensions.*/
-        static void Set(unsigned int in_contextID, GLExtensions* extensions);
+        static void Set(unsigned int contextID, GLExtensions* extensions);
 
         // C++-friendly convenience wrapper methods
         GLuint getCurrentProgram() const;
@@ -181,7 +149,7 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         bool getAttribLocation( const char* attribName, GLuint& slot ) const;
         bool getFragDataLocation( const char* fragDataName, GLuint& slot) const;
 
-        unsigned int contextID;
+
         float glVersion;
         float glslLanguageVersion;
 
@@ -292,11 +260,8 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         void (GL_APIENTRY * glVertexAttrib4ubv)(GLuint index, const GLubyte *v);
         void (GL_APIENTRY * glVertexAttrib4uiv)(GLuint index, const GLuint *v);
         void (GL_APIENTRY * glVertexAttrib4usv)(GLuint index, const GLushort *v);
-        void (GL_APIENTRY * glVertexAttribPointer) (unsigned int, GLint, GLenum, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
-        void (GL_APIENTRY * glVertexAttribIPointer) (unsigned int, GLint, GLenum, GLsizei stride, const GLvoid *pointer);
-        void (GL_APIENTRY * glVertexAttribLPointer) (unsigned int, GLint, GLenum, GLsizei stride, const GLvoid *pointer);
+        void (GL_APIENTRY * glVertexAttribPointer)(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer);
         void (GL_APIENTRY * glVertexAttribDivisor)(GLuint index, GLuint divisor);
-
         void (GL_APIENTRY * glUniformMatrix2x3fv)( GLint location, GLsizei count, GLboolean transpose, const GLfloat* value );
         void (GL_APIENTRY * glUniformMatrix3x2fv)( GLint location, GLsizei count, GLboolean transpose, const GLfloat* value );
         void (GL_APIENTRY * glUniformMatrix2x4fv)( GLint location, GLsizei count, GLboolean transpose, const GLfloat* value );
@@ -309,9 +274,7 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         void (GL_APIENTRY * glPatchParameterfv)( GLenum pname, const GLfloat* values );
         void (GL_APIENTRY * glGetUniformuiv)( GLuint program, GLint location, GLuint* params );
         void (GL_APIENTRY * glBindFragDataLocation)( GLuint program, GLuint color, const GLchar* name );
-        void (GL_APIENTRY * glBindFragDataLocationIndexed) (GLuint program, GLuint colorNumber, GLuint index, const GLchar * name);
-        GLint (GL_APIENTRY * glGetFragDataIndex) (GLuint program,  const GLchar * name);
-        GLint (GL_APIENTRY * glGetFragDataLocation)( GLuint program, const GLchar* name);
+        GLint (GL_APIENTRY * glGetFragDataLocation)( GLuint program, const GLchar* name );
         void (GL_APIENTRY * glUniform1ui)( GLint location, GLuint v0 );
         void (GL_APIENTRY * glUniform2ui)( GLint location, GLuint v0, GLuint v1 );
         void (GL_APIENTRY * glUniform3ui)( GLint location, GLuint v0, GLuint v1, GLuint v2 );
@@ -320,22 +283,6 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         void (GL_APIENTRY * glUniform2uiv)( GLint location, GLsizei count, const GLuint *value );
         void (GL_APIENTRY * glUniform3uiv)( GLint location, GLsizei count, const GLuint *value );
         void (GL_APIENTRY * glUniform4uiv)( GLint location, GLsizei count, const GLuint *value );
-        void (GL_APIENTRY * glUniform1i64  )(GLint location, GLint64 x) ;
-        void (GL_APIENTRY * glUniform1i64v )(GLint location, GLsizei count, const GLint64* value) ;
-        void (GL_APIENTRY * glUniform1ui64 )(GLint location, GLuint64 x) ;
-        void (GL_APIENTRY * glUniform1ui64v)(GLint location, GLsizei count, const GLuint64* value) ;
-        void (GL_APIENTRY * glUniform2i64  )(GLint location, GLint64 x, GLint64 y) ;
-        void (GL_APIENTRY * glUniform2i64v )(GLint location, GLsizei count, const GLint64* value) ;
-        void (GL_APIENTRY * glUniform2ui64 )(GLint location, GLuint64 x, GLuint64 y) ;
-        void (GL_APIENTRY * glUniform2ui64v)(GLint location, GLsizei count, const GLuint64* value) ;
-        void (GL_APIENTRY * glUniform3i64  )(GLint location, GLint64 x, GLint64 y, GLint64 z) ;
-        void (GL_APIENTRY * glUniform3i64v )(GLint location, GLsizei count, const GLint64* value) ;
-        void (GL_APIENTRY * glUniform3ui64 )(GLint location, GLuint64 x, GLuint64 y, GLuint64 z) ;
-        void (GL_APIENTRY * glUniform3ui64v)(GLint location, GLsizei count, const GLuint64* value) ;
-        void (GL_APIENTRY * glUniform4i64  )(GLint location, GLint64 x, GLint64 y, GLint64 z, GLint64 w) ;
-        void (GL_APIENTRY * glUniform4i64v )(GLint location, GLsizei count, const GLint64* value) ;
-        void (GL_APIENTRY * glUniform4ui64 )(GLint location, GLuint64 x, GLuint64 y, GLuint64 z, GLuint64 w) ;
-        void (GL_APIENTRY * glUniform4ui64v)(GLint location, GLsizei count, const GLuint64* value) ;
         GLuint (GL_APIENTRY * glGetHandleARB) (GLenum pname);
         void (GL_APIENTRY * glGetUniformIndices)(GLuint program, GLsizei uniformCount, const GLchar* *uniformNames, GLuint *uniformIndices);
         void (GL_APIENTRY * glGetActiveUniformsiv)(GLuint program, GLsizei uniformCount, const GLuint *uniformIndices, GLenum pname, GLint *params);
@@ -365,15 +312,9 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         void (GL_APIENTRY * glUniformMatrix4x3dv)( GLint location, GLsizei count, GLboolean transpose, const GLdouble* value );
         void (GL_APIENTRY * glGetActiveAtomicCounterBufferiv)( GLuint program, GLuint bufferIndex, GLenum pname, GLint* params );
         void (GL_APIENTRY * glDispatchCompute)( GLuint numGroupsX, GLuint numGroupsY, GLuint numGroupsZ );
-        GLuint64 (GL_APIENTRY* glGetTextureHandle)(GLint texture);
-        void        (GL_APIENTRY* glMakeTextureHandleResident)(GLuint64 handle);
-        void        (GL_APIENTRY* glMakeTextureHandleNonResident)(GLuint64 handle);
-        void        (GL_APIENTRY* glUniformHandleui64)(GLint location, GLuint64 handle);
-        GLboolean   (GL_APIENTRY* glIsTextureHandleResident)(GLuint64 handle);
 
         // Buffer Object extensions
         bool isBufferObjectSupported;
-        bool isVBOSupported;
         bool isPBOSupported;
         bool isTBOSupported;
         bool isVAOSupported;
@@ -414,19 +355,12 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         bool isTimerQuerySupported;
         bool isARBTimerQuerySupported;
 
-
-
-        void (GL_APIENTRY * glDrawArraysInstanced)( GLenum mode, GLint first, GLsizei count, GLsizei primcount );
-        void (GL_APIENTRY * glDrawElementsInstanced)( GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, GLsizei primcount );
-
         void (GL_APIENTRY * glSecondaryColor3ubv) (const GLubyte* coord);
         void (GL_APIENTRY * glSecondaryColor3fv) (const GLfloat* coord);
 
         void (GL_APIENTRY * glFogCoordfv) (const GLfloat* coord);
 
         void (GL_APIENTRY * glMultiTexCoord1f) (GLenum target,GLfloat coord);
-        void (GL_APIENTRY * glMultiTexCoord4f) (GLenum target, GLfloat x, GLfloat y, GLfloat z, GLfloat w);
-
         void (GL_APIENTRY * glMultiTexCoord1fv) (GLenum target,const GLfloat* coord);
         void (GL_APIENTRY * glMultiTexCoord2fv) (GLenum target,const GLfloat* coord);
         void (GL_APIENTRY * glMultiTexCoord3fv) (GLenum target,const GLfloat* coord);
@@ -451,8 +385,6 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         void (GL_APIENTRY * glGenQueries) (GLsizei n, GLuint *ids);
         void (GL_APIENTRY * glBeginQuery) (GLenum target, GLuint id);
         void (GL_APIENTRY * glEndQuery) (GLenum target);
-        void (GL_APIENTRY * glBeginQueryIndexed) (GLenum target, GLuint index, GLuint id);
-        void (GL_APIENTRY * glEndQueryIndexed) (GLenum target, GLuint index);
         void (GL_APIENTRY * glQueryCounter) (GLuint id, GLenum target);
         GLboolean (GL_APIENTRY * glIsQuery) (GLuint id);
         void (GL_APIENTRY * glDeleteQueries) (GLsizei n, const GLuint *ids);
@@ -502,6 +434,7 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         bool isShadowAmbientSupported;
         bool isTextureMaxLevelSupported;
         GLint maxTextureSize;
+        bool _isTextureStorageEnabled;
         bool isClientStorageSupported;
         bool isTextureIntegerEXTSupported;
         bool isTextureStorageEnabled;
@@ -528,7 +461,6 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         void (GL_APIENTRY * glTexParameterIuiv) (GLenum target, GLenum pname, const GLuint* data);
         void (GL_APIENTRY * glBindImageTexture) (GLuint unit, GLuint texture, GLint level, GLboolean layered, GLint layer, GLenum access, GLenum format);
 
-
         // Texture3D extensions
         bool isTexture3DSupported;
         bool isTexture3DFast;
@@ -541,8 +473,6 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         void (GL_APIENTRY * glCopyTexSubImage3D) ( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height );
         void (GL_APIENTRY * glCompressedTexImage3D) (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const GLvoid *data);
         void (GL_APIENTRY * glCompressedTexSubImage3D) ( GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLsizei imageSize, const GLvoid *data );
-        void (GL_APIENTRY *glTexImage3DMultisample) (GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLboolean fixedsamplelocations);
-        void (GL_APIENTRY *glGetMultisamplefv) (GLenum pname, GLuint index, GLfloat *val);
 
         // Texture2DArray extensions
         bool isTexture2DArraySupported;
@@ -641,15 +571,6 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         void (GL_APIENTRY * glBlitFramebuffer) (GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLbitfield, GLenum);
         void (GL_APIENTRY * glGetRenderbufferParameteriv) (GLenum, GLenum, GLint*);
 
-        //subroutine
-        GLint(GL_APIENTRY* glGetSubroutineUniformLocation) (GLuint program, GLenum shadertype, const GLchar *name);
-        void (GL_APIENTRY * glGetActiveSubroutineUniformName) (GLuint program, GLenum shadertype, GLuint index, GLsizei bufsize, GLsizei *length, GLchar *name);
-        void (GL_APIENTRY * glGetActiveSubroutineUniformiv) (GLuint program, GLenum shadertype, GLuint index, GLenum pname, GLint *values);
-        GLuint (GL_APIENTRY *  glGetSubroutineIndex) (GLuint program, GLenum shadertype, const GLchar *name);
-        void (GL_APIENTRY * glGetActiveSubroutineName) (GLuint program, GLenum shadertype, GLuint index, GLsizei bufsize, GLsizei *length, GLchar *name);
-        void (GL_APIENTRY * glGetProgramStageiv) (GLuint program, GLenum shadertype, GLenum pname, GLint *values);
-        void (GL_APIENTRY *glUniformSubroutinesuiv) (GLenum shadertype, GLsizei count,const GLuint * indices);
-        void (GL_APIENTRY * glGetUniformSubroutineuiv) (GLenum shadertype, GLint location, GLuint *params);
 
         // Sync
         GLsync (GL_APIENTRY * glFenceSync) (GLenum condition, GLbitfield flags);
@@ -658,12 +579,6 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         GLenum (GL_APIENTRY * glClientWaitSync) (GLsync sync, GLbitfield flags, GLuint64 timeout);
         void (GL_APIENTRY * glWaitSync) (GLsync sync, GLbitfield flags, GLuint64 timeout);
         void (GL_APIENTRY * glGetSynciv) (GLsync sync, GLenum pname, GLsizei bufSize, GLsizei *length, GLint *values);
-
-        // Indirect Rendering
-        void (GL_APIENTRY * glDrawArraysIndirect) (GLenum  mode,  const void * indirect);
-        void (GL_APIENTRY * glMultiDrawArraysIndirect) (GLenum mode, const void *indirect, GLsizei drawcount, GLsizei stride);
-        void (GL_APIENTRY * glDrawElementsIndirect) (GLenum mode,  GLenum type,  const void *indirect);
-        void (GL_APIENTRY * glMultiDrawElementsIndirect)(     GLenum mode,      GLenum type,      const void *indirect,      GLsizei drawcount,      GLsizei stride);
 
 
         // Transform feedback
@@ -694,61 +609,6 @@ class OSG_EXPORT GLExtensions : public osg::Referenced
         GLboolean (GL_APIENTRY * glIsVertexArray) (GLuint handle);
         void (GL_APIENTRY * glBindVertexArray) (GLuint handle);
 
-        // MultiDrawArrays
-        void (GL_APIENTRY * glMultiDrawArrays) (GLenum mode, const GLint * first, const GLsizei * count, GLsizei primcount);
-        void (GL_APIENTRY * glMultiDrawElements) (GLenum mode, const GLsizei *count, GLenum type, const void *const*indices, GLsizei drawcount);
-        void (GL_APIENTRY * glMultiDrawElementsBaseVertex) (GLenum mode, const GLsizei *count, GLenum type, const void *const*indices, GLsizei drawcount, const GLint *basevertex);
-
-
-        void (GL_APIENTRY * glDrawRangeElements) ( GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const GLvoid *indices );
-        void (GL_APIENTRY * glDrawElementsBaseVertex) (GLenum mode, GLsizei count, GLenum type, const void *indices, GLint basevertex);
-        void (GL_APIENTRY * glDrawElementsInstancedBaseVertex) (GLenum mode, GLsizei count, GLenum type, const void *indices,GLsizei primcount, GLint basevertex);
-
-        void (GL_APIENTRY * glDrawRangeElementsBaseVertex) (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const void *indices, GLint basevertex);
-        void (GL_APIENTRY * glProvokingVertex) (GLenum mode);
-
-        void (GL_APIENTRY * glBeginConditionalRender) (GLuint id, GLenum mode);
-        void (GL_APIENTRY * glEndConditionalRender) (void);
-
-
-        void (GL_APIENTRY *glDrawArraysInstancedBaseInstance) (GLenum mode, GLint first, GLsizei count, GLsizei instancecount, GLuint baseinstance);
-        void (GL_APIENTRY * glDrawElementsInstancedBaseInstance) (GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei instancecount, GLuint baseinstance);
-        void (GL_APIENTRY *glDrawElementsInstancedBaseVertexBaseInstance) (GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei instancecount, GLint basevertex, GLuint baseinstance);
-
-
-        // ViewportArray
-        bool isViewportArraySupported;
-
-        void (GL_APIENTRY * glViewportArrayv) (GLuint first, GLsizei count, const GLfloat * v);
-        void (GL_APIENTRY * glViewportIndexedf) (GLuint index, GLfloat x, GLfloat y, GLfloat w, GLfloat h);
-        void (GL_APIENTRY * glViewportIndexedfv) (GLuint index, const GLfloat * v);
-        void (GL_APIENTRY * glScissorArrayv) (GLuint first, GLsizei count, const GLint * v);
-        void (GL_APIENTRY * glScissorIndexed) (GLuint index, GLint left, GLint bottom, GLsizei width, GLsizei height);
-        void (GL_APIENTRY * glScissorIndexedv) (GLuint index, const GLint * v);
-        void (GL_APIENTRY * glDepthRangeArrayv) (GLuint first, GLsizei count, const GLclampd * v);
-        void (GL_APIENTRY * glDepthRangeIndexed) (GLuint index, GLclampd n, GLclampd f);
-        void (GL_APIENTRY * glGetFloati_v) (GLenum target, GLuint index, GLfloat *data);
-        void (GL_APIENTRY * glGetDoublei_v) (GLenum target, GLuint index, GLdouble *data);
-
-        //introduced by other OpenGL extensions such as EXT_draw_buffers2
-        void (GL_APIENTRY * glGetIntegerIndexedvEXT) (GLenum target, GLuint index, int * v);
-        void (GL_APIENTRY * glEnableIndexedEXT) (GLenum target, GLuint index);
-        void (GL_APIENTRY * glDisableIndexedEXT) (GLenum target, GLuint index);
-        GLboolean (GL_APIENTRY * glIsEnabledIndexedEXT) (GLenum target, GLuint index);
-
-        void (GL_APIENTRY * glClientActiveTexture) (GLenum texture);
-        void (GL_APIENTRY * glActiveTexture) (GLenum texture);
-        void (GL_APIENTRY * glFogCoordPointer) (GLenum type, GLsizei stride, const GLvoid *pointer);
-        void (GL_APIENTRY * glSecondaryColorPointer) (GLint size, GLenum type, GLsizei stride, const GLvoid *pointer);
-
-        GLint  glMaxTextureCoords;
-        GLint  glMaxTextureUnits;
-
-        // debug extensions
-        void (GL_APIENTRY * glObjectLabel) (GLenum identifier, GLuint name, GLsizei length, const GLchar* label);
-
-        /** convinience wrapper around glObjectLabel that calls glObjectLabel if it's supported and using std::string as a label parameter.*/
-        void debugObjectLabel(GLenum identifier, GLuint name, const std::string& label) const { if (glObjectLabel && !label.empty()) glObjectLabel(identifier, name, label.size(), label.c_str()); }
 };
 
 

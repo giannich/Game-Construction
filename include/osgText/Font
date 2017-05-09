@@ -28,7 +28,6 @@ namespace osgText {
 // forward declare Font
 class Font;
 
-#ifdef OSG_PROVIDE_READFILE
 /** Read a font from specified file. The filename may contain a path.
   * It will search for the font file in the following places in this order:
   * - In the current directory
@@ -52,7 +51,6 @@ extern OSGTEXT_EXPORT Font* readFontFile(const std::string& filename, const osgD
 
 /** read a font from specified stream.*/
 extern OSGTEXT_EXPORT Font* readFontStream(std::istream& stream, const osgDB::Options* userOptions = 0);
-#endif
 
 extern OSGTEXT_EXPORT osg::ref_ptr<Font> readRefFontFile(const std::string& filename, const osgDB::Options* userOptions = 0);
 
@@ -93,15 +91,15 @@ public:
     const osg::StateSet* getStateSet() const { return _stateset.get(); }
 
 
-    /** Get a kerning (adjustment of spacing of two adjacent character) for specified charcodes and a font resolution.*/
-    virtual osg::Vec2 getKerning(const FontResolution& fontRes, unsigned int leftcharcode, unsigned int rightcharcode, KerningType kerningType);
+    /** Get a kerning (adjustment of spacing of two adjacent character) for specified charcodes, w.r.t the current font size hint.*/
+    virtual osg::Vec2 getKerning(unsigned int leftcharcode,unsigned int rightcharcode, KerningType kerningType);
 
     /** Get a Glyph for specified charcode, and the font size nearest to the current font size hint.*/
     virtual Glyph* getGlyph(const FontResolution& fontSize, unsigned int charcode);
 
 
-    /** Get a Glyph3D for specified charcode and a font size.*/
-    virtual Glyph3D* getGlyph3D(const FontResolution& fontSize, unsigned int charcode);
+    /** Get a Glyph3D for specified charcode.*/
+    virtual Glyph3D* getGlyph3D(unsigned int charcode);
 
     /** Return true if this font provides vertical alignments and spacing or glyphs.*/
     virtual bool hasVertical() const;
@@ -181,7 +179,6 @@ protected:
     typedef std::map< unsigned int, osg::ref_ptr<Glyph3D> >  Glyph3DMap;
 
     typedef std::map< FontResolution, GlyphMap >            FontSizeGlyphMap;
-    typedef std::map< FontResolution, Glyph3DMap >          FontSizeGlyph3DMap;
 
     mutable OpenThreads::Mutex      _glyphMapMutex;
 
@@ -191,7 +188,7 @@ protected:
     GlyphTextureList                _glyphTextureList;
 
 
-    FontSizeGlyph3DMap              _sizeGlyph3DMap;
+    Glyph3DMap                      _glyph3DMap;
 
     // current active size of font
     FontResolution                  _fontSize;
@@ -229,10 +226,10 @@ public:
         virtual Glyph* getGlyph(const FontResolution& fontRes, unsigned int charcode) = 0;
 
         /** Get a Glyph3D for specified charcode.*/
-        virtual Glyph3D* getGlyph3D(const FontResolution& fontRes, unsigned int charcode) = 0;
+        virtual Glyph3D* getGlyph3D(unsigned int charcode) = 0;
 
         /** Get a kerning (adjustment of spacing of two adjacent character) for specified charcodes, w.r.t the current font size hint.*/
-        virtual osg::Vec2 getKerning(const FontResolution& fontRes, unsigned int leftcharcode, unsigned int rightcharcode, KerningType kerningType) = 0;
+        virtual osg::Vec2 getKerning(unsigned int leftcharcode,unsigned int rightcharcode, KerningType kerningType) = 0;
 
         /** Return true if this font provides vertical alignments and spacing or glyphs.*/
         virtual bool hasVertical() const = 0;

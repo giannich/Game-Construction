@@ -1,4 +1,4 @@
- /*  -*-c++-*-
+/*  -*-c++-*-
  *  Copyright (C) 2009 Cedric Pinson <cedric.pinson@plopbyte.net>
  *
  * This library is open source and may be redistributed and/or modified under
@@ -15,26 +15,19 @@
 #ifndef OSGANIMATION_RIGTRANSFORM
 #define OSGANIMATION_RIGTRANSFORM 1
 
-#include <osg/Object>
+#include <osg/Referenced>
 
 namespace osgAnimation
 {
 
     class RigGeometry;
 
-    class RigTransform : public osg::Object
+    class RigTransform : public osg::Referenced
     {
     public:
         RigTransform() {}
-        RigTransform(const RigTransform& org, const osg::CopyOp& copyop):
-            osg::Object(org, copyop) {}
-
-        META_Object(osgAnimation,RigTransform)
-
-        virtual void operator()(RigGeometry&) {}
-
-    protected:
         virtual ~RigTransform() {}
+        virtual void operator()(RigGeometry&) {}
 
     };
 

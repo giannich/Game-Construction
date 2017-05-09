@@ -55,8 +55,6 @@
 #endif
 
 
-// #define INLINE_DRAWABLE_DRAW
-
 namespace osg {
 
 
@@ -67,6 +65,14 @@ class Vec4ub;
 class Geometry;
 class NodeVisitor;
 class ArrayDispatchers;
+
+// this is defined to alter the way display lists are compiled inside the
+// the draw method, it has been found that the NVidia drivers fail completely
+// to optimize COMPILE_AND_EXECUTE in fact make it go slower than for no display
+// lists, but optimize a separate COMPILE very well?!  Define it as default
+// the use of a separate COMPILE, then glCallList rather than use COMPILE_AND_EXECUTE.
+
+#define USE_SEPARATE_COMPILE_AND_EXECUTE
 
 /** Pure virtual base class for drawable geometry. In OSG, everything that can
  *  be rendered is implemented as a class derived from \c Drawable. The
@@ -89,6 +95,10 @@ class OSG_EXPORT Drawable : public Node
 {
     public:
 
+        static unsigned int s_numberDrawablesReusedLastInLastFrame;
+        static unsigned int s_numberNewDrawablesInLastFrame;
+        static unsigned int s_numberDeletedDrawablesInLastFrame;
+
         Drawable();
 
         /** Copy constructor using CopyOp to manage deep vs shallow copy.*/
@@ -96,12 +106,7 @@ class OSG_EXPORT Drawable : public Node
 
         META_Node(osg, Drawable);
 
-        /** Convert 'this' into a Drawable pointer if Object is a Drawable, otherwise return 0.
-          * Equivalent to dynamic_cast<Drawable*>(this).*/
         virtual Drawable* asDrawable() { return this; }
-
-        /** convert 'const this' into a const Drawable pointer if Object is a Drawable, otherwise return 0.
-          * Equivalent to dynamic_cast<const Drawable*>(this).*/
         virtual const Drawable* asDrawable() const { return this; }
 
         /** Compute the DataVariance based on an assessment of callback etc.*/
@@ -162,8 +167,7 @@ class OSG_EXPORT Drawable : public Node
         {
             ComputeBoundingBoxCallback() {}
 
-            ComputeBoundingBoxCallback(const ComputeBoundingBoxCallback& org,const CopyOp& copyop):
-                Object(org, copyop) {}
+            ComputeBoundingBoxCallback(const ComputeBoundingBoxCallback&,const CopyOp&) {}
 
             META_Object(osg,ComputeBoundingBoxCallback);
 
@@ -185,9 +189,7 @@ class OSG_EXPORT Drawable : public Node
          *  geometry generation.
          * @see osg::Shape.
         */
-        virtual void setShape(Shape* shape) { _shape = shape; }
-
-        template<class T> void setShape(const ref_ptr<T>& shape) { setShape(shape.get()); }
+        inline void setShape(Shape* shape) { _shape = shape; }
 
         /** Get the Shape of the Drawable.*/
         inline Shape* getShape() { return _shape.get(); }
@@ -229,18 +231,8 @@ class OSG_EXPORT Drawable : public Node
         inline bool getUseVertexBufferObjects() const { return _useVertexBufferObjects; }
 
 
-        /** Set whether to use a local VertexArrayObject for this Drawable.*/
-        void setUseVertexArrayObject(bool flag);
-
-        /** Return whether to use a local VertexArrayObject for this Drawable.*/
-        bool getUseVertexArrayObject() const { return _useVertexArrayObject; }
-
-
-        /** Deprecated, use dirtyGLObjects() instead. */
+        /** Force a recompile on next draw() of any OpenGL display list associated with this geoset.*/
         virtual void dirtyDisplayList();
-
-        /** Force a recompile on next draw() of any OpenGL objects associated with this geoset.*/
-        virtual void dirtyGLObjects();
 
 
         /** Return the estimated size of GLObjects (display lists/vertex buffer objects) that are associated with this drawable.
@@ -258,28 +250,12 @@ class OSG_EXPORT Drawable : public Node
           *       \c virtual). Subclasses should override
           *       \c drawImplementation() instead.
           */
-#ifdef INLINE_DRAWABLE_DRAW
         inline void draw(RenderInfo& renderInfo) const;
-#else
-        void draw(RenderInfo& renderInfo) const;
-#endif
-
-        inline void drawInner(RenderInfo& renderInfo) const
-        {
-            if (_drawCallback.valid())
-                _drawCallback->drawImplementation(renderInfo,this);
-            else
-                drawImplementation(renderInfo);
-        }
-
 
         /** Immediately compile this \c Drawable into an OpenGL Display List/VertexBufferObjects.
           * @note Operation is ignored if \c _useDisplayList is \c false or VertexBufferObjects are not used.
         */
         virtual void compileGLObjects(RenderInfo& renderInfo) const;
-
-        virtual VertexArrayState* createVertexArrayState(RenderInfo& renderInfo) const;
-
 
         /** Set whether to use a mutex to ensure ref() and unref() are thread safe.*/
         virtual void setThreadSafeRefUnref(bool threadSafe);
@@ -292,10 +268,55 @@ class OSG_EXPORT Drawable : public Node
           * for all graphics contexts. */
         virtual void releaseGLObjects(State* state=0) const;
 
-        // for backwards compatibility as local implementations are now found in osg namespace within the include/osg/Callback header
-        typedef DrawableUpdateCallback UpdateCallback;
-        typedef DrawableEventCallback EventCallback;
-        typedef DrawableCullCallback CullCallback;
+        struct OSG_EXPORT UpdateCallback : public virtual Callback
+        {
+            UpdateCallback() {}
+
+            UpdateCallback(const UpdateCallback&,const CopyOp&) {}
+
+            META_Object(osg,UpdateCallback);
+
+            /** override Callback::run() entry point to adapt to StateAttributeCallback::run(..) method.*/
+            virtual bool run(osg::Object* object, osg::Object* data);
+
+            /** do customized update code.*/
+            virtual void update(osg::NodeVisitor*, osg::Drawable*) {}
+        };
+
+
+        struct OSG_EXPORT EventCallback : public virtual Callback
+        {
+            EventCallback() {}
+
+            EventCallback(const EventCallback&,const CopyOp&) {}
+
+            META_Object(osg,EventCallback);
+
+            /** override Callback::run() entry point to adapt to StateAttributeCallback::run(..) method.*/
+            virtual bool run(osg::Object* object, osg::Object* data);
+
+            /** do customized Event code. */
+            virtual void event(osg::NodeVisitor*, osg::Drawable*) {}
+        };
+
+        struct CullCallback : public virtual Callback
+        {
+            CullCallback() {}
+
+            CullCallback(const CullCallback&,const CopyOp&) {}
+
+            META_Object(osg,CullCallback);
+
+            // just use the standard run implementation to passes run onto any nested callbacks.
+            using Callback::run;
+
+            /** deprecated.*/
+            virtual bool cull(osg::NodeVisitor*, osg::Drawable*, osg::State*) const { return false; }
+
+            /** do customized cull code, return true if drawable should be culled.*/
+            virtual bool cull(osg::NodeVisitor* nv, osg::Drawable* drawable, osg::RenderInfo* renderInfo) const { return cull(nv, drawable, renderInfo? renderInfo->getState():0); }
+        };
+
 
         /** Callback attached to an Drawable which allows the users to customize the drawing of an exist Drawable object.
           * The draw callback is implement as a replacement to the Drawable's own drawImplementation() method, if the
@@ -306,8 +327,7 @@ class OSG_EXPORT Drawable : public Node
         {
             DrawCallback() {}
 
-            DrawCallback(const DrawCallback& org,const CopyOp& copyop):
-                Object(org, copyop) {}
+            DrawCallback(const DrawCallback&,const CopyOp&) {}
 
             META_Object(osg,DrawCallback);
 
@@ -328,18 +348,12 @@ class OSG_EXPORT Drawable : public Node
           * must be implemented in concrete subclasses of the Drawable base class, examples include osg::Geometry and osg::ShapeDrawable.
           * drawImplementation(RenderInfo&) is called from the draw(RenderInfo&) method, with the draw method handling management of OpenGL display lists,
           * and drawImplementation(RenderInfo&) handling the actual drawing itself.
-          * renderInfo : The osg::RenderInfo object that encapsulates the current rendering information including the osg::State OpenGL state for the current graphics context. */
+          * @param renderInfo The osg::RenderInfo object that encapsulates the current rendering information including the osg::State OpenGL state for the current graphics context. */
         virtual void drawImplementation(RenderInfo& /*renderInfo*/) const {}
 
 
         /** Return a OpenGL display list handle a newly generated or reused from display list cache. */
         static GLuint generateDisplayList(unsigned int contextID, unsigned int sizeHint = 0);
-
-        /** Use deleteDisplayList instead of glDeleteList to allow
-          * OpenGL display list to be cached until they can be deleted
-          * by the OpenGL context in which they were created, specified
-          * by contextID.*/
-        static void deleteDisplayList(unsigned int contextID,GLuint globj, unsigned int sizeHint = 0);
 
         /** Set the minimum number of display lists to retain in the deleted display list cache. */
         static void setMinimumNumberOfDisplayListsToRetainInCache(unsigned int minimum);
@@ -347,7 +361,25 @@ class OSG_EXPORT Drawable : public Node
         /** Get the minimum number of display lists to retain in the deleted display list cache. */
         static unsigned int getMinimumNumberOfDisplayListsToRetainInCache();
 
+        /** Use deleteDisplayList instead of glDeleteList to allow
+          * OpenGL display list to be cached until they can be deleted
+          * by the OpenGL context in which they were created, specified
+          * by contextID.*/
+        static void deleteDisplayList(unsigned int contextID,GLuint globj, unsigned int sizeHint = 0);
 
+        /** Flush all the cached display list which need to be deleted
+          * in the OpenGL context related to contextID.*/
+        static void flushAllDeletedDisplayLists(unsigned int contextID);
+
+        /** Flush all the cached display list which need to be deleted
+          * in the OpenGL context related to contextID.
+          * Note, unlike flush no OpenGL calls are made, instead the handles are all removed.
+          * this call is useful for when an OpenGL context has been destroyed. */
+        static void discardAllDeletedDisplayLists(unsigned int contextID);
+
+        /** Flush the cached display list which need to be deleted
+          * in the OpenGL context related to contextID.*/
+        static void flushDeletedDisplayLists(unsigned int contextID,double& availableTime);
 
         typedef unsigned int AttributeType;
 
@@ -479,6 +511,7 @@ class OSG_EXPORT Drawable : public Node
         BoundingBox                         _initialBound;
         ref_ptr<ComputeBoundingBoxCallback> _computeBoundCallback;
         mutable BoundingBox                 _boundingBox;
+        mutable bool                        _boundingBoxComputed;
 
         ref_ptr<Shape>          _shape;
 
@@ -486,53 +519,21 @@ class OSG_EXPORT Drawable : public Node
         bool                    _useDisplayList;
         bool                    _supportsVertexBufferObjects;
         bool                    _useVertexBufferObjects;
-        bool                    _useVertexArrayObject;
 
         typedef osg::buffered_value<GLuint> GLObjectList;
         mutable GLObjectList    _globjList;
 
-        typedef buffered_object< osg::ref_ptr<VertexArrayState> > VertexArrayStateList;
-        mutable VertexArrayStateList    _vertexArrayStateList;
+        ref_ptr<UpdateCallback> _drawableUpdateCallback;
+        ref_ptr<EventCallback>  _drawableEventCallback;
 
+        ref_ptr<CullCallback>   _drawableCullCallback;
         ref_ptr<DrawCallback>   _drawCallback;
 };
 
-#ifdef INLINE_DRAWABLE_DRAW
 inline void Drawable::draw(RenderInfo& renderInfo) const
 {
-    State& state = *renderInfo.getState();
-    bool useVertexArrayObject = state.useVertexArrayObject(_useVertexArrayObject);
-    if (useVertexArrayObject)
-    {
-        unsigned int contextID = renderInfo.getContextID();
-
-        VertexArrayState* vas = _vertexArrayStateList[contextID].get();
-        if (!vas)
-        {
-            _vertexArrayStateList[contextID] = vas = createVertexArrayState(renderInfo);
-        }
-        else
-        {
-            // vas->setRequiresSetArrays(getDataVariance()==osg::Object::DYNAMIC);
-        }
-
-        State::SetCurrentVertexArrayStateProxy setVASProxy(state, vas);
-
-        vas->bindVertexArrayObject();
-
-        drawInner(renderInfo);
-
-        vas->setRequiresSetArrays(getDataVariance()==osg::Object::DYNAMIC);
-
-        return;
-    }
-
-    // TODO, add check against whether VAO is active and supported
-    if (state.getCurrentVertexArrayState()) state.getCurrentVertexArrayState()->bindVertexArrayObject();
-
-
 #ifdef OSG_GL_DISPLAYLISTS_AVAILABLE
-    if (!state.useVertexBufferObject(_supportsVertexBufferObjects && _useVertexBufferObjects) && _useDisplayList)
+    if (_useDisplayList && !(_supportsVertexBufferObjects && _useVertexBufferObjects && renderInfo.getState()->isVertexBufferObjectSupported()))
     {
         // get the contextID (user defined ID of 0 upwards) for the
         // current OpenGL context.
@@ -541,31 +542,45 @@ inline void Drawable::draw(RenderInfo& renderInfo) const
         // get the globj for the current contextID.
         GLuint& globj = _globjList[contextID];
 
-        if( globj == 0 )
+        // call the globj if already set otherwise compile and execute.
+        if( globj != 0 )
         {
-            // compile the display list
+            glCallList( globj );
+        }
+        else if (_useDisplayList)
+        {
+#ifdef USE_SEPARATE_COMPILE_AND_EXECUTE
             globj = generateDisplayList(contextID, getGLObjectSizeHint());
             glNewList( globj, GL_COMPILE );
-
-            drawInner(renderInfo);
-
+            if (_drawCallback.valid())
+                _drawCallback->drawImplementation(renderInfo,this);
+            else
+                drawImplementation(renderInfo);
             glEndList();
+
+            glCallList( globj);
+#else
+            globj = generateDisplayList(contextID, getGLObjectSizeHint());
+            glNewList( globj, GL_COMPILE_AND_EXECUTE );
+            if (_drawCallback.valid())
+                _drawCallback->drawImplementation(renderInfo,this);
+            else
+                drawImplementation(renderInfo);
+            glEndList();
+#endif
         }
 
-        // call the display list
-        glCallList( globj);
+        return;
+
     }
+#endif
+
+    // draw object as nature intended..
+    if (_drawCallback.valid())
+        _drawCallback->drawImplementation(renderInfo,this);
     else
-#endif
-    {
-        // if state.previousVertexArrayState() is different than currentVertexArrayState bind current
-
-        // OSG_NOTICE<<"Fallback drawInner()........................"<<std::endl;
-
-        drawInner(renderInfo);
-    }
+        drawImplementation(renderInfo);
 }
-#endif
 
 class AttributeFunctorArrayVisitor : public ArrayVisitor
 {

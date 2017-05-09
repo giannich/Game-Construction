@@ -26,7 +26,7 @@
 #include <OpenThreads/Mutex>
 
 
-#if defined(OSG_GLES1_AVAILABLE) || defined(OSG_GLES2_AVAILABLE) || defined(OSG_GLES3_AVAILABLE) && !defined(OSG_GL3_AVAILABLE)
+#if defined(OSG_GLES1_AVAILABLE) || defined(OSG_GLES2_AVAILABLE) && !defined(OSG_GL3_AVAILABLE)
     #define GL_FRONT_LEFT       0x0400
     #define GL_FRONT_RIGHT      0x0401
     #define GL_BACK_LEFT        0x0402
@@ -495,17 +495,12 @@ class OSG_EXPORT Camera : public Transform, public CullSettings
             _implicitBufferAttachmentResolveMask = implicitBufferAttachmentResolveMask;
         }
 
-        ImplicitBufferAttachmentMask getImplicitBufferAttachmentRenderMask() const
-        {
-            return _implicitBufferAttachmentRenderMask;
-        }
-
         /**
         Get mask selecting implicit buffer attachments for Camera primary FBO
         if effectiveMask parameter is set, method follows USE_DISPLAY_SETTINGS_MASK dependence and returns effective mask
         if effectiveMask parameter is reset, method returns nominal mask set by the Camera
         */
-        ImplicitBufferAttachmentMask getImplicitBufferAttachmentRenderMask(bool effectiveMask) const
+        ImplicitBufferAttachmentMask getImplicitBufferAttachmentRenderMask(bool effectiveMask = false) const
         {
             if( effectiveMask && _implicitBufferAttachmentRenderMask == USE_DISPLAY_SETTINGS_MASK )
             {
@@ -518,17 +513,12 @@ class OSG_EXPORT Camera : public Transform, public CullSettings
             }
         }
 
-        ImplicitBufferAttachmentMask getImplicitBufferAttachmentResolveMask() const
-        {
-            return _implicitBufferAttachmentResolveMask;
-        }
-
         /**
         Get mask selecting implicit buffer attachments for Camera secondary MULTISAMPLE FBO
         if effectiveMask parameter is set, method follows USE_DISPLAY_SETTINGS_MASK dependence and returns effective mask
         if effectiveMask parameter is reset, method returns nominal mask set by the Camera
         */
-        ImplicitBufferAttachmentMask getImplicitBufferAttachmentResolveMask(bool effectiveMask) const
+        ImplicitBufferAttachmentMask getImplicitBufferAttachmentResolveMask(bool effectiveMask = false) const
         {
             if( effectiveMask && _implicitBufferAttachmentResolveMask == USE_DISPLAY_SETTINGS_MASK )
             {
@@ -540,11 +530,6 @@ class OSG_EXPORT Camera : public Transform, public CullSettings
                 return _implicitBufferAttachmentResolveMask;
             }
         }
-
-        /** Set the process affinity hint for any Camera Threads that are/will be assigned to this Camera.*/
-        void setProcessorAffinity(const OpenThreads::Affinity& affinity);
-        OpenThreads::Affinity& getProcessorAffinity() { return _affinity; }
-        const OpenThreads::Affinity& getProcessorAffinity() const { return _affinity; }
 
         /** Create a operation thread for this camera.*/
         void createCameraThread();
@@ -595,8 +580,7 @@ class OSG_EXPORT Camera : public Transform, public CullSettings
         {
             DrawCallback() {}
 
-            DrawCallback(const DrawCallback& org,const CopyOp& copyop):
-                Object(org, copyop) {}
+            DrawCallback(const DrawCallback&,const CopyOp&) {}
 
             META_Object(osg, DrawCallback);
 
@@ -712,7 +696,6 @@ class OSG_EXPORT Camera : public Transform, public CullSettings
 
         unsigned int                        _attachmentMapModifiedCount;
 
-        OpenThreads::Affinity               _affinity;
         ref_ptr<OperationThread>            _cameraThread;
 
         ref_ptr<GraphicsContext>            _graphicsContext;
