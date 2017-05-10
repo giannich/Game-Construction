@@ -17,10 +17,9 @@
 #ifndef OSGSHADOW_VIEWDEPENDENTSHADOWTECHINIQUE
 #define OSGSHADOW_VIEWDEPENDENTSHADOWTECHINIQUE 1
 
-#include <osg/Identifier>
 #include <osgShadow/ShadowTechnique>
-#include <osgShadow/Export>
 #include <map>
+#include <osgShadow/Export>
 
 namespace osgShadow {
 /**
@@ -140,16 +139,7 @@ class OSGSHADOW_EXPORT ViewDependentShadowTechnique
         /** Traverse shadow scene graph.*/
         virtual void traverse(osg::NodeVisitor& nv);
 
-
-        /** Resize any per context GLObject buffers to specified size. */
-        virtual void resizeGLObjectBuffers(unsigned int maxSize);
-
-        /** If State is non-zero, this function releases any associated OpenGL objects for
-           * the specified graphics context. Otherwise, releases OpenGL objects
-           * for all graphics contexts. */
-        virtual void releaseGLObjects(osg::State* = 0) const;
-
-protected:
+    protected:
         /** Classic protected OSG destructor */
         ~ViewDependentShadowTechnique( void );
 
@@ -206,12 +196,6 @@ protected:
             */
             osg::observer_ptr< ViewDependentShadowTechnique > _st;
 
-            virtual void resizeGLObjectBuffers(unsigned int /*maxSize*/) {}
-
-            /** If State is non-zero, this function releases any associated OpenGL objects for
-            * the specified graphics context. Otherwise, releases OpenGL objects
-            * for all graphics contexts. */
-            virtual void releaseGLObjects(osg::State* = 0) const {}
         };
 
         /**
@@ -219,7 +203,7 @@ protected:
         ViewDependentShadowTechnique uses this map to find VieData for each cull vitior
         */
 
-        typedef std::map< osg::ref_ptr< osg::Identifier >,
+        typedef std::map< osg::ref_ptr< osgUtil::CullVisitor >,
                           osg::ref_ptr< ViewData > > ViewDataMap;
 
         ViewDataMap                                       _viewDataMap;

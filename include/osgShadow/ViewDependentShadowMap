@@ -171,6 +171,7 @@ class OSGSHADOW_EXPORT ViewDependentShadowMap : public ShadowTechnique
 
         virtual osg::StateSet* selectStateSetForRenderingShadow(ViewDependentData& vdd) const;
 
+
 protected:
         virtual ~ViewDependentShadowMap();
 

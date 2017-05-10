@@ -58,18 +58,6 @@ public:
         _stringToValue[str] = value;
     }
 
-    void add2(const char* str, const char* newStr, Value value) {
-        if (_valueToString.find(value) != _valueToString.end())
-        {
-            osg::notify(osg::INFO) << "Duplicate enum value " << value
-                << " with old string: " << _valueToString[value]
-                << " and new strings: " << str  << " and " << newStr << std::endl;
-        }
-        _valueToString[value] = newStr;
-        _stringToValue[newStr] = value;
-        _stringToValue[str] = value;
-    }
-
     Value getValue( const char* str )
     {
         StringToValue::iterator itr = _stringToValue.find(str);
@@ -563,8 +551,8 @@ public:
         ParentType::setUsage( _getter!=0, _setter!=0);
     }
 
-    virtual bool set(osg::Object& obj, void* value) { C& object = OBJECT_CAST<C&>(obj); (object.*_setter)( dynamic_cast<P*>(*(reinterpret_cast<osg::Object**>(value))) ); return true; }
-    virtual bool get(const osg::Object& obj, void* value) { const C& object = OBJECT_CAST<const C&>(obj);*(reinterpret_cast<const osg::Object**>(value )) = dynamic_cast<const osg::Object*>((object.*_getter)()); return true; }
+    virtual bool set(osg::Object& obj, void* value) { C& object = OBJECT_CAST<C&>(obj); (object.*_setter)( *(reinterpret_cast<P**>(value)) ); return true; }
+    virtual bool get(const osg::Object& obj, void* value) { const C& object = OBJECT_CAST<const C&>(obj);*(reinterpret_cast<const P**>(value )) = (object.*_getter)(); return true; }
 
     virtual bool read( InputStream& is, osg::Object& obj )
     {
@@ -575,8 +563,8 @@ public:
             is >> hasObject;
             if ( hasObject )
             {
-                osg::ref_ptr<P> value = is.readObjectOfType<P>();
-                (object.*_setter)( value.get() );
+                P* value = dynamic_cast<P*>( is.readObject() );
+                (object.*_setter)( value );
             }
         }
         else if ( is.matchString(ParentType::_name) )
@@ -585,8 +573,8 @@ public:
             if ( hasObject )
             {
                 is >> is.BEGIN_BRACKET;
-                osg::ref_ptr<P> value = is.readObjectOfType<P>();
-                (object.*_setter)( value.get() );
+                P* value = dynamic_cast<P*>( is.readObject() );
+                (object.*_setter)( value );
                 is >> is.END_BRACKET;
             }
         }
@@ -651,8 +639,7 @@ public:
             is >> hasObject;
             if ( hasObject )
             {
-                osg::ref_ptr<osg::Image> image = is.readImage();
-                P* value = dynamic_cast<P*>( image.get() );
+                P* value = dynamic_cast<P*>( is.readImage() );
                 (object.*_setter)( value );
             }
         }
@@ -662,8 +649,7 @@ public:
             if ( hasObject )
             {
                 is >> is.BEGIN_BRACKET;
-                osg::ref_ptr<osg::Image> image = is.readImage();
-                P* value = dynamic_cast<P*>( image.get() );
+                P* value = dynamic_cast<P*>( is.readImage() );
                 (object.*_setter)( value );
                 is >> is.END_BRACKET;
             }
@@ -961,7 +947,6 @@ public:
         if ( is.isBinary() )
         {
             is >> size;
-            list.reserve(size);
             for ( unsigned int i=0; i<size; ++i )
             {
                 ValueType value;
@@ -973,7 +958,6 @@ public:
         else if ( is.matchString(_name) )
         {
             is >> size;
-            list.reserve(size);
             if ( size>0 ) is >> is.BEGIN_BRACKET;
             for ( unsigned int i=0; i<size; ++i )
             {
@@ -1118,7 +1102,6 @@ public:
         if ( is.isBinary() )
         {
             is >> size;
-            list.reserve(size);
             for ( unsigned int i=0; i<size; ++i )
             {
                 ValueType value;
@@ -1129,7 +1112,6 @@ public:
         else if ( is.matchString(_name) )
         {
             is >> size;
-            list.reserve(size);
             if ( size>0 ) is >> is.BEGIN_BRACKET;
             for ( unsigned int i=0; i<size; ++i )
             {
@@ -1475,7 +1457,7 @@ public:
                 bool ok = false; is >> ok; //code from user serialized ensuring backwards-compatibility
                 if ( !ok ) return true;
             }
-
+            
             P mask;
             is >> mask;
             (object.*_setter)( mask );
@@ -1862,7 +1844,7 @@ protected:
 
 #define END_ENUM_SERIALIZER() \
     wrapper->addSerializer(serializer.get(), osgDB::BaseSerializer::RW_ENUM); }
-
+    
 /** defaults to uint bitfield type.*/
 #define BEGIN_BITFLAGS_SERIALIZER(PROP, DEF) \
     { typedef osgDB::BitFlagsSerializer<MyClass> MySerializer; \
@@ -1891,12 +1873,6 @@ protected:
 
 #define UPDATE_TO_VERSION_SCOPED(VER) \
     osgDB::UpdateWrapperVersionProxy uwvp(wrapper, (VER));
-
-#define ADDED_ASSOCIATE(STR) \
-    wrapper->markAssociateAsAdded( STR );
-
-#define REMOVED_ASSOCIATE(STR) \
-    wrapper->markAssociateAsRemoved( STR );
 
 #define REMOVE_SERIALIZER(PROP) \
     wrapper->markSerializerAsRemoved( #PROP );

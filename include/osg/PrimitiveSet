@@ -29,8 +29,6 @@
 
 #include <vector>
 
-#define OSG_HAS_MULTIDRAWARRAYS
-
 namespace osg {
 
 typedef MixinVector<GLsizei> VectorGLsizei;
@@ -176,8 +174,7 @@ class OSG_EXPORT PrimitiveSet : public BufferData
             DrawArrayLengthsPrimitiveType,
             DrawElementsUBytePrimitiveType,
             DrawElementsUShortPrimitiveType,
-            DrawElementsUIntPrimitiveType,
-            MultiDrawArraysPrimitiveType
+            DrawElementsUIntPrimitiveType
         };
 
         enum Mode
@@ -418,17 +415,13 @@ class OSG_EXPORT DrawElementsUByte : public DrawElements, public VectorGLubyte
             vector_type(array) {}
 
         /**
-         * \param mode One of osg::PrimitiveSet::Mode. Determines the type of primitives used.
          * \param no Number of intended elements. This will be the size of the underlying vector.
-         * \param ptr Pointer to a GLubyte to copy index data from.
-         * \param numInstances When non zero passed as the number of draw instances to use re.
          */
         DrawElementsUByte(GLenum mode, unsigned int no, const GLubyte* ptr, int numInstances=0) :
             DrawElements(DrawElementsUBytePrimitiveType,mode,numInstances),
             vector_type(ptr,ptr+no) {}
 
         /**
-         * \param mode One of osg::PrimitiveSet::Mode. Determines the type of primitives used.
          * \param no Number of intended elements. This will be the size of the underlying vector.
          */
         DrawElementsUByte(GLenum mode, unsigned int no) :
@@ -481,17 +474,13 @@ class OSG_EXPORT DrawElementsUShort : public DrawElements, public VectorGLushort
             vector_type(array) {}
 
         /**
-         * \param mode One of osg::PrimitiveSet::Mode. Determines the type of primitives used.
          * \param no Number of intended elements. This will be the size of the underlying vector.
-         * \param ptr Pointer to a GLushort to copy index data from.
-         * \param numInstances When non zero passed as the number of draw instances to use re.
          */
         DrawElementsUShort(GLenum mode, unsigned int no, const GLushort* ptr, int numInstances=0) :
             DrawElements(DrawElementsUShortPrimitiveType,mode,numInstances),
             vector_type(ptr,ptr+no) {}
 
         /**
-         * \param mode One of osg::PrimitiveSet::Mode. Determines the type of primitives used.
          * \param no Number of intended elements. This will be the size of the underlying vector.
          */
         DrawElementsUShort(GLenum mode, unsigned int no) :
@@ -550,15 +539,12 @@ class OSG_EXPORT DrawElementsUInt : public DrawElements, public VectorGLuint
         /**
          * \param mode One of osg::PrimitiveSet::Mode. Determines the type of primitives used.
          * \param no Number of intended elements. This will be the size of the underlying vector.
-         * \param ptr Pointer to a GLuint to copy index data from.
-         * \param numInstances When non zero passed as the number of draw instances to use re.
          */
         DrawElementsUInt(GLenum mode, unsigned int no, const GLuint* ptr, int numInstances=0) :
             DrawElements(DrawElementsUIntPrimitiveType,mode,numInstances),
             vector_type(ptr,ptr+no) {}
 
         /**
-         * \param mode One of osg::PrimitiveSet::Mode. Determines the type of primitives used.
          * \param no Number of intended elements. This will be the size of the underlying vector.
          */
         DrawElementsUInt(GLenum mode, unsigned int no) :
@@ -600,57 +586,6 @@ class OSG_EXPORT DrawElementsUInt : public DrawElements, public VectorGLuint
 
         virtual ~DrawElementsUInt();
 };
-
-#ifdef OSG_HAS_MULTIDRAWARRAYS
-class OSG_EXPORT MultiDrawArrays : public osg::PrimitiveSet
-{
-public:
-
-    MultiDrawArrays(GLenum mode=0):
-        osg::PrimitiveSet(Type(MultiDrawArraysPrimitiveType), mode) {}
-
-    MultiDrawArrays(const MultiDrawArrays& dal,const CopyOp& copyop=CopyOp::SHALLOW_COPY):
-        osg::PrimitiveSet(dal,copyop),
-        _firsts(dal._firsts),
-        _counts(dal._counts) {}
-
-    virtual osg::Object* cloneType() const { return new MultiDrawArrays(); }
-    virtual osg::Object* clone(const osg::CopyOp& copyop) const { return new MultiDrawArrays(*this,copyop); }
-    virtual bool isSameKindAs(const osg::Object* obj) const { return dynamic_cast<const MultiDrawArrays*>(obj)!=NULL; }
-    virtual const char* libraryName() const { return "osg"; }
-    virtual const char* className() const { return "MultiDrawArrays"; }
-
-
-    virtual void draw(osg::State& state, bool useVertexBufferObjects) const;
-
-    virtual void accept(PrimitiveFunctor& functor) const;
-    virtual void accept(PrimitiveIndexFunctor& functor) const;
-
-    virtual unsigned int getNumIndices() const;
-    virtual unsigned int index(unsigned int pos) const;
-    virtual void offsetIndices(int offset);
-
-    virtual unsigned int getNumPrimitives() const;
-
-    typedef std::vector<GLint> Firsts;
-    void setFirsts(const Firsts& firsts) { _firsts = firsts; }
-    Firsts& getFirsts() { return _firsts; }
-    const Firsts& getFirsts() const { return _firsts; }
-
-    typedef std::vector<GLsizei> Counts;
-    void setCounts(const Counts& firsts) { _counts = firsts; }
-    Counts& getCounts() { return _counts; }
-    const Counts& getCounts() const { return _counts; }
-
-    void add(GLint first, GLsizei count);
-
-protected:
-
-    Firsts _firsts;
-    Counts _counts;
-};
-#endif
-
 
 }
 
