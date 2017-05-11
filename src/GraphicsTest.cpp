@@ -5,6 +5,7 @@
 #include <boost/signals2/signal.hpp>
 #include "GameState.hpp"
 #include "ContactListener.hpp"
+<<<<<<< HEAD
 
 #include <osg/Node>
 #include <osg/Group>
@@ -16,6 +17,8 @@
 
 // Just testing with 1 boat for now
 osg::PositionAttitudeTransform *transform[1];
+=======
+>>>>>>> 22c723d09048489dff57439d8e75c5c6993486b5
 
 // This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
