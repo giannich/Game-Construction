@@ -29,7 +29,8 @@ void GameState::update(float deltaTime) {
 void GameState::printDebugInfo() {
 	boost::format fmt = boost::format(" %3.2f | ");
 	for(auto it = boats->begin(); it != boats->end(); ++it) {
-		std::cout << fmt % it->segPosition;
+		std::cout << fmt % it->rigidBody->GetPosition().x << it->rigidBody->GetPosition().y;
+		//std::cout << fmt % it->segPosition;
 	}
 	std::cout << std::endl;
 }
