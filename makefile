@@ -2,7 +2,7 @@ CC = g++
 INC = include
 LIB_PATH = lib
 LIB_FLAGS = -std=c++11 -losgDB -losgViewer -losg -lOpenThreads -losgUtil -losgGA $(LIB_PATH)/libBox2d.a
-CC_FLAGS = #-g
+CC_FLAGS = -rpath .
 EXECUTABLE = gtest
 
 all: $(EXECUTABLE)
