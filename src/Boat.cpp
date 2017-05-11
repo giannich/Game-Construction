@@ -8,9 +8,16 @@
 
 #include "Boat.hpp"
 
-
 Boat::Boat(b2Vec2 initPos, b2World& m_world)
 {
+    currentSouls = 0;
+    soulCollectionRadius = 5.0f;
+    forwardForce = 500.0f;
+    reverseForce = -20.0f;
+    turnRate = 0.0003f;
+    //turningImpulse = 1.0f;
+    //firingForce = 0.0f;
+    
     //Create rigidbody
     {
         b2BodyDef bd;
@@ -38,16 +45,18 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world)
         rigidBody->SetUserInfo(this);
     }
     
-    currentSouls = 0;
-    soulCollectionRadius = 5.0f;
-    forwardForce = 500.0f;
-    reverseForce = -20.0f;
-    turnRate = 0.0003f;
-    //turningImpulse = 1.0f;
-    //firingForce = 0.0f;
-    
     //Input Stream
     inputState = new InputState();
+}
+
+float Boat::dampingCoefficient() {
+    int soulCount = min(currentSouls,6);
+    return 1.0f - 0.1f*soulCount;
+}
+
+void Boat::addSoul() {
+    currentSouls += 1;
+    rigidBody->SetLinearDamping(dampingCoefficient());
 }
 
 void Boat::update(float deltaT)

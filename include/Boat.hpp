@@ -27,12 +27,14 @@ class Boat
     //float turningImpulse;
     float turnRate;
     //float firingForce;
+    float dampingCoefficient(int soulCount);
 public:
     InputState* inputState;
     b2Body *rigidBody;
     Boat(b2Vec2 , b2World&);
     //float getMaxSpeed();
     void update(float deltaT);
+    void addSoul();
 };
 
 #endif /* Boat_hpp */
