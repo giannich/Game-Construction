@@ -39,7 +39,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world)
         fd.shape = &shape;
         fd.density = 1.0f;
         fd.restitution = 0.7f;
-        rigidBody->SetLinearDamping(1.0f);
+        rigidBody->SetLinearDamping(dampingCoefficient());
         rigidBody->SetAngularDamping(5.0f);
         rigidBody->CreateFixture(&fd);
         rigidBody->SetUserInfo(this);
