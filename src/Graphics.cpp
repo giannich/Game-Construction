@@ -18,7 +18,6 @@
 #include <osgViewer/ViewerEventHandlers>
 
 #include "Track.hpp"
-#include "Track.cpp"
 
 using namespace osg;
 
@@ -193,12 +192,9 @@ int main() {
 		update(0.005, scale, m_track->l, &x, &y, &angle, &vec); //5 ms
 		const osg::BoundingSphere& bs = n->getBound();
 		
-		osg::ref_ptr<osg::Camera> cam = new osg::Camera;
-			osg::Matrixf trackMatrix = cam->getViewMatrix();
-		viewer.getCamera()->setViewMatrixAsLookAt(bs.center() + eye,
-												  bs.center() + center,
-												  up);
-
+		//osg::ref_ptr<osg::Camera> cam = new osg::Camera;
+		//	osg::Matrixf trackMatrix = cam->getViewMatrix();
+		viewer.getCamera()->setViewMatrixAsLookAt(bs.center() + eye,bs.center() + center,up);
 		viewer.frame();
 		
 	}
