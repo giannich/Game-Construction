@@ -27,8 +27,49 @@ float rot = 0;
 float capLen = 10;
 float capWid = 5;
 
+float up = 0;
+float right = 0;
+
+osg::Matrixd md;
+osg::ref_ptr<osg::Camera> camera;
+
 const int CHILDREN = 1;
 PositionAttitudeTransform *transform[1];
+
+class PickHandler : public osgGA::GUIEventHandler {
+	public: 
+		PickHandler() {}
+		~PickHandler() {}
+		bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa);
+	protected:
+};
+
+bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, 
+						 osgGA::GUIActionAdapter& aa)
+{
+	switch(ea.getEventType())
+	{
+		case(osgGA::GUIEventAdapter::KEYDOWN):
+		{
+			if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Up){
+				std::cout<<"Forward"<<std::endl;
+				up += 10 * cos(DegreesToRadians(rot));
+				right += 10 * sin(DegreesToRadians(rot));
+			} else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Left) {
+				std::cout<<"Left"<<std::endl;
+				rot -= 10;
+			} else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Right) {
+				std::cout<<"Right"<<std::endl;
+				rot += 10;
+			}
+			return false;
+		}
+		default:
+			return false;
+	}
+}
+		
+
 
 int createVertices(double **input, osg::Vec3Array* vertices, int size) 
 {
@@ -105,13 +146,16 @@ void update(float dt, float scale, vec2* left, float* x, float* y,
 	//rot++;
 	int pos = myTimer * scale;
 
-	(*x) = left[pos].x;
-	(*y) = left[pos].y;
+	//(*x) = left[pos].x;
+	//(*y) = left[pos].y;
+
+	(*x) = -right;
+	(*y) = up;
 
 	transform[0]->setPosition(Vec3((*x), 0, (*y)));
 	//Test camera rotation tracking
-	//transform[0]->setAttitude(Quat(rot/1000, Vec3f(1,0,0)));
-	//transform[0]->getAttitude().getRotate((*angle), (*vec));
+	transform[0]->setAttitude(Quat(DegreesToRadians(rot), Vec3f(0,-1,0)));
+	transform[0]->getAttitude().getRotate((*angle), (*vec));
 }
 
 Group * startupScene(Group *root)
@@ -167,20 +211,25 @@ int main() {
 	scene->addChild(polyGeom);
 
 	//customize viewer
+	osg::ref_ptr<osgViewer::WindowSizeHandler> handler = new osgViewer::WindowSizeHandler();
+
 	osgViewer::Viewer viewer;
+	viewer.setUpViewInWindow(500, 50, 800, 800);
+	viewer.addEventHandler(handler);
+
+	viewer.addEventHandler(new PickHandler());
 	viewer.setSceneData(scene);
 	viewer.getCamera()->setClearColor(osg::Vec4(0.8f,0.8f,0.8f,0.8f));
 
 	Vec3d eye(0.0, capWid + 200, -capLen - 400);
-	Vec3d up(0.0, 1.0, 0.0);
+	Vec3d upp(0.0, 1.0, 0.0);
 	Vec3d center(0.0, 0.0, 100);
 
 	const osg::BoundingSphere& b = n->getBound();
 	viewer.getCamera()->setViewMatrixAsLookAt(eye + b.center(), 
 											  center + b.center(), 
-											  up);
-
-	viewer.setSceneData(scene);
+											  upp);
+	scene->addChild(camera);
 	viewer.realize();
 
 	//Loop through, update scene
@@ -192,15 +241,29 @@ int main() {
 	while(!viewer.done()) {
 		update(0.005, scale, m_track->l, &x, &y, &angle, &vec); //5 ms
 		const osg::BoundingSphere& bs = n->getBound();
-		
-		osg::ref_ptr<osg::Camera> cam = new osg::Camera;
-			osg::Matrixf trackMatrix = cam->getViewMatrix();
-		viewer.getCamera()->setViewMatrixAsLookAt(bs.center() + eye,
-												  bs.center() + center,
-												  up);
+		Vec3f newEye, newCent, newUp;
+		Vec3f oldEye = bs.center() + eye;
+		Vec3f oldCent = bs.center() + center;
+		Vec3f oldUp = upp;
 
-		viewer.frame();
+		md.makeLookAt(bs.center() + eye,
+					  bs.center() + center,
+					  upp);
+		printf("rot is %f\n", rot);
+		md.rotate(DegreesToRadians(rot), Vec3f(-1, 0, 0));
+		md.getLookAt(newEye, newCent, newUp);
+		printf("newEye: (%f, %f, %f) \noldEye: (%f, %f, %f)\n",
+			   newEye.x(), newEye.y(), newEye.z(),
+			   oldEye.x(), oldEye.y(), oldEye.z());
+		printf("newCent: (%f, %f, %f) \noldCent: (%f, %f, %f)\n",
+			   newCent.x(), newCent.y(), newCent.z(),
+			   oldCent.x(), oldCent.y(), oldCent.z());
+		printf("newUp: (%f, %f, %f) \noldUp: (%f, %f, %f)\n",
+			   newUp.x(), newUp.y(), newUp.z(),
+			   oldUp.x(), oldUp.y(), oldUp.z());
+	viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, newUp);		
 		
+		viewer.frame();
 	}
 	
 	return 0;
