@@ -253,8 +253,8 @@ int main() {
 		//const osg::BoundingSphere& bs = n->getBound();
 		Vec3f newEye, newCent, newUp;
 
-		newEye = {x - 100*cos(angle), 400, y - 100*sin(angle)};
-		newCent = {x,0,y};
+		newEye = {x - 200*cos(angle), 50, y - 200*sin(angle)};
+		newCent = {x+ 50*cos(angle),0,y + 50*sin(angle)};
 		newUp = {0,1,0};
 
 		viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, newUp);		
