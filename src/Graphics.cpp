@@ -138,10 +138,8 @@ double** createInput(vec2* left, vec2* right, int size){
 }
 
 
-void update(float dt, float scale, vec2* left, float* x, float* y, 
-							       double* angle, Vec3f* vec) 
+void update(float dt, float scale, vec2* left, float* x, float* y) 
 {
-	float coord[2];
 	myTimer += dt;
 	//rot++;
 	int pos = myTimer * scale;
@@ -155,7 +153,7 @@ void update(float dt, float scale, vec2* left, float* x, float* y,
 	transform[0]->setPosition(Vec3((*x), 0, (*y)));
 	//Test camera rotation tracking
 	transform[0]->setAttitude(Quat(DegreesToRadians(rot), Vec3f(0,-1,0)));
-	transform[0]->getAttitude().getRotate((*angle), (*vec));
+	//transform[0]->getAttitude().getRotate((*angle), (*vec));
 }
 
 Group * startupScene(Group *root)
@@ -235,34 +233,13 @@ int main() {
 	//Loop through, update scene
 	float scale = 200 / 10;
 	float x, y;
-	double angle; 
-	Vec3f vec; 
 	
 	while(!viewer.done()) {
-		update(0.005, scale, m_track->l, &x, &y, &angle, &vec); //5 ms
+		update(0.005, scale, m_track->l, &x, &y); //5 ms
 		const osg::BoundingSphere& bs = n->getBound();
-		Vec3f newEye, newCent, newUp;
-		Vec3f oldEye = bs.center() + eye;
-		Vec3f oldCent = bs.center() + center;
-		Vec3f oldUp = upp;
-
-		md.makeLookAt(bs.center() + eye,
-					  bs.center() + center,
-					  upp);
-		printf("rot is %f\n", rot);
-		md.rotate(DegreesToRadians(rot), Vec3f(-1, 0, 0));
-		md.getLookAt(newEye, newCent, newUp);
-		printf("newEye: (%f, %f, %f) \noldEye: (%f, %f, %f)\n",
-			   newEye.x(), newEye.y(), newEye.z(),
-			   oldEye.x(), oldEye.y(), oldEye.z());
-		printf("newCent: (%f, %f, %f) \noldCent: (%f, %f, %f)\n",
-			   newCent.x(), newCent.y(), newCent.z(),
-			   oldCent.x(), oldCent.y(), oldCent.z());
-		printf("newUp: (%f, %f, %f) \noldUp: (%f, %f, %f)\n",
-			   newUp.x(), newUp.y(), newUp.z(),
-			   oldUp.x(), oldUp.y(), oldUp.z());
-	viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, newUp);		
-		
+		viewer.getCamera()->setViewMatrixAsLookAt(eye + bs.center(),
+												  center + bs.center(),
+												  upp);
 		viewer.frame();
 	}
 	
