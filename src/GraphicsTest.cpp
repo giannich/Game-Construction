@@ -4,6 +4,8 @@
 #include "Boat.hpp"
 #include <boost/signals2/signal.hpp>
 #include "GameState.hpp"
+#include "Networking.hpp"
+#include "InputStream.hpp"
 
 #include <osg/Node>
 #include <osg/Group>
@@ -13,8 +15,11 @@
 #include <osgGA/TrackballManipulator>
 #include <osg/ShapeDrawable>
 
+#define MAX_FRAMES 50
+
 // Just testing with 1 boat for now
 osg::PositionAttitudeTransform *transform[1];
+InputStream *inputStream = new InputStream();
 
 // This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
@@ -57,17 +62,47 @@ struct Graphics
 		for( auto it = world->boats->begin(); it != world->boats->end(); ++it) 
 		{
 			b2Vec2 boatPos = it->rigidBody->GetPosition();
-			float boatRot = it->rigidBody->GetAngle();
+			float boatRot = it->rigidBody->GetAngle();			
 			std::cout << "(x,y): " << boatPos.x << ", " << boatPos.y << " | " << boatRot << std::endl;
 			// Actual position change
 
 			//Gianni: The changes are super fucking small, so we multiply them by some big factors
-			transform[0]->setPosition(osg::Vec3(boatPos.x*10, 0.0f, boatPos.y*100));
+			//transform[0]->setPosition(osg::Vec3(boatPos.x*10, 0.0f, boatPos.y*100));
 		}
 	}
 };
 
-int main( int, char**)
+struct Networking
+{
+	char *outputList;
+
+	Networking()
+	{
+		outputList = (char *) malloc((MAX_FRAMES + 4) * sizeof(char));
+		
+	}
+
+	void sendPlayerInfo(GameState* world)
+	{
+		for( auto it = world->boats->begin(); it != world->boats->end(); ++it) 
+		{
+			inputStream->writeSingleState(*(it->inputState));
+			inputStream->readAllInputStates(outputList);
+			std::cout << it->inputState->toString() << "\n";
+			sendDatagram(outputList, MAX_FRAMES + 4, "localhost", 12345);
+		}
+	}
+	void receivePlayerInfo(GameState* world)
+	{
+		receiveDatagram(outputList, MAX_FRAMES + 4, 12345);
+		inputStream->writeAllInputStates(outputList);
+
+		for( auto it = world->boats->begin(); it != world->boats->end(); ++it) 
+			inputStream->readSingleState(inputStream->getCurrentFrameNumber() - 1, *(it->inputState));
+	}
+};
+
+int main(int argc, char**argv)
 {
 	//Initialize Phyiscs world
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
@@ -76,8 +111,19 @@ int main( int, char**)
 
 	//Initialize Graphics
 	Graphics g;
+	Networking n;
 	boost::signals2::signal<void (GameState*)> sig;
-	sig.connect(boost::bind(&Graphics::renderWorld, g, _1));
+
+	if (strncmp(argv[1], "server", 6) == 0)
+	{
+		sig.connect(boost::bind(&Networking::receivePlayerInfo, n, _1));
+		sig.connect(boost::bind(&Graphics::renderWorld, g, _1));
+	}
+	else
+	{
+		sig.connect(boost::bind(&Networking::sendPlayerInfo, n, _1));
+		sig.connect(boost::bind(&Graphics::renderWorld, g, _1));
+	}
 
 	//Initialize AIs and Players
 	SimpleAI *ai = new SimpleAI(m_track,3,.7,.5,.99);
@@ -91,7 +137,9 @@ int main( int, char**)
 	//gState->addPlayer(*p2_boat);
 
 	//Gianni: Init the scene and shit
-	osgViewer::Viewer viewer = g.startupScene();
+	//osgViewer::Viewer viewer = g.startupScene();
+	// Init the network and shit
+	//n.setup();
 
 	//Main game loop
 	float timestep = 1/60.0f;
@@ -99,7 +147,6 @@ int main( int, char**)
 	{
 		//Step the physics engine forward 1 frame
 		m_world->Step(timestep,10,10);
-
 		//Broadcast update to all game entities
 		gState->update(timestep);
 
@@ -109,6 +156,6 @@ int main( int, char**)
 		//Networking code should register to sig?
 
 		//Gianni: Render the frame
-		viewer.frame();
+		//viewer.frame();
 	}
 }
