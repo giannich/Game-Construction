@@ -17,7 +17,7 @@
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
 
-#include "Track.hpp"
+#include "Track.cpp"
 
 using namespace osg;
 
@@ -253,8 +253,10 @@ int main() {
 		//const osg::BoundingSphere& bs = n->getBound();
 		Vec3f newEye, newCent, newUp;
 
-		newEye = {x - 200*cos(angle), 50, y - 200*sin(angle)};
-		newCent = {x+ 50*cos(angle),0,y + 50*sin(angle)};
+		newEye = {(float)(x - 200*cos(angle)), 50, 
+				  (float)(y - 200*sin(angle))};
+		newCent = {(float)(x+ 50*cos(angle)),0,
+				   (float)(y + 50*sin(angle))};
 		newUp = {0,1,0};
 
 		viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, newUp);		
