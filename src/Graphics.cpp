@@ -17,7 +17,10 @@
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
 
-#include "Track.hpp"
+#include "../include/Box2d/Box2d.h"
+#include "Track.cpp"
+#include "Boat.cpp"
+#include "GameState.cpp"
 
 using namespace osg;
 
@@ -29,11 +32,13 @@ float capWid = 5;
 float x = 0;
 float z = 0;
 
+int numBoats = 10;
+int myNum = 0;
+
 osg::Matrixd md;
 osg::ref_ptr<osg::Camera> camera;
 
-const int CHILDREN = 1;
-PositionAttitudeTransform *transform[1];
+PositionAttitudeTransform *transform[numBoats];
 
 class PickHandler : public osgGA::GUIEventHandler {
 	public: 
@@ -95,41 +100,6 @@ int createVertices(double **input, osg::Vec3Array* vertices, int size)
 	return numCoords;
 }
 
-float findScale(vec2* left, vec2* right, int size) 
-{
-	//find min and max values
-	float max = 0;
-	float min = 0;
-	for (int i = 0; i<size; i++) {
-		if(left[i].x < min) {
-			min = left[i].x;
-		}
-		if(left[i].x > max) {
-			max = left[i].x;
-		}
-		if(right[i].x < min) {
-			min = right[i].x;
-		}
-		if(right[i].x > max) {
-			max = right[i].x;
-		}
-		if(left[i].y < min) {
-			min = left[i].y;
-		}
-		if(left[i].y > max) {
-			max = left[i].y;
-		}
-		if(right[i].y < min) {
-			min = right[i].y;
-		}
-		if(right[i].y > max) {
-			max = right[i].y;
-		}
-	}
-	float totalsize = max - min;
-	float scale = 4 / totalsize;
-	return scale;
-}
 
 double** createInput(vec2* left, vec2* right, int size){
 	double** i = 0;
@@ -153,19 +123,30 @@ double** createInput(vec2* left, vec2* right, int size){
 }
 
 
-void update(float* x1, float* z1, double* angle, Vec3f* vec) 
+void update(float* x1, float* z1, double* angle, Vec3f* vec, GameState g) 
 {
 
 	(*x1) = x;
 	(*z1) = z;
 
+	//Player controlled boat, set outside for loop for now for input testing
+	//But once full integration is done, will be put in the for loop and be 
+	//Rendered same way as other boats
 	transform[0]->setPosition(Vec3(x, 5, z));
-	//Test camera rotation tracking
 	transform[0]->setAttitude(Quat(rot, Vec3f(0,-1,0)));
-	//(*angle) = rot;
-	transform[0]->getAttitude().getRotate((*angle), (*vec));
-	printf("%f, %f\n", rot, *angle);
+
+	Boat boats = g.boats;
+
+	for(int i = 1; i < numBoats; i++) {
+		float x = boats[i].getX();
+		float y = boats[i].getY();
+		float tempRot = boats[i].getRot();
+
+		transform[i]->setPosition(Vec3(x, 5, y));
+		transform[i]->setAttitude(Quad(tempRot, Vec3f(0, -1, 0)));
+	}
 }
+
 Group * startupScene(Group *root)
 {
 	
@@ -183,16 +164,27 @@ Group * startupScene(Group *root)
 		transform[i]->setPosition(Vec3(0,0,0));
 		transform[i]->addChild(anotherGeode);
 
-		root->addChild(transform[0]);
+		root->addChild(transform[i]);
 	}
 	return transform[0];
 }
-int main() {
-	
-	//Create Track
-	Track *m_track = new Track(1000,25.0f,100.0f,4);
 
+GameState createGameState(Track *m_track, float initX, float initY)
+{
+	GameState g = new GameState(m_track);
+	for (int i = 0; i < numBoats; i++) {
+	   g.addPlayer(new Boat(new b2Vec2(initX, initY), new b2World(0), null));
+	};
+}
+
+
+GameState createTrack(osg::Geometry* polyGeom)
+{
+	Track *m_track = new Track(1000,25.0f,100.0f,4);
+	
 	double **input = createInput(m_track->l, m_track->r, 1000);
+	float initX = input[0][0];
+	float initY = input[0][1];
 
 	osg::ref_ptr<osg::Vec4Array> shared_colors = new osg::Vec4Array;
 	shared_colors->push_back(osg::Vec4(0.0f,0.0f,0.0f,1.0f));
@@ -201,6 +193,7 @@ int main() {
 	shared_normals->push_back(osg::Vec3(0.0f,-1.0f,0.0f));
 
 	osg::Vec3Array* vertices = new osg::Vec3Array;
+
 	int numCoords = createVertices(input, vertices, 1000 * 2);
 
 	osg::Geometry* polyGeom = new osg::Geometry();
@@ -211,6 +204,15 @@ int main() {
 
 	polyGeom->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUAD_STRIP,0,numCoords));
 	
+	GameState g = createGameState(m_track, initX, initY);
+	return g;
+}
+
+int main() 
+{
+	//Create track and gamestate
+	osg::Geometry* polyGeom = new osg::Geomtry();
+	GameState g = createTrackAndGameState(polyGeom);
 	
 	//create startup scene with boats loaded
 	Group *scene = new Group();
@@ -253,8 +255,10 @@ int main() {
 		//const osg::BoundingSphere& bs = n->getBound();
 		Vec3f newEye, newCent, newUp;
 
-		newEye = {x - 200*cos(angle), 50, y - 200*sin(angle)};
-		newCent = {x+ 50*cos(angle),0,y + 50*sin(angle)};
+		newEye = {(float)(x - 200*cos(angle)), 50, 
+				  (float)(y - 200*sin(angle))};
+		newCent = {(float)(x+ 50*cos(angle)),0,
+				   (float)(y + 50*sin(angle))};
 		newUp = {0,1,0};
 
 		viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, newUp);		
