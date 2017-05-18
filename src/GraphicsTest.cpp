@@ -13,6 +13,9 @@
 #include <osgGA/TrackballManipulator>
 #include <osg/ShapeDrawable>
 
+#include <chrono>
+#include <thread>
+
 // Just testing with 1 boat for now
 osg::PositionAttitudeTransform *transform[1];
 
@@ -58,11 +61,11 @@ struct Graphics
 		{
 			b2Vec2 boatPos = it->rigidBody->GetPosition();
 			float boatRot = it->rigidBody->GetAngle();
-			std::cout << "(x,y): " << boatPos.x << ", " << boatPos.y << " | " << boatRot << std::endl;
+			std::cout << "(x,y): " << boatPos.x << ", " << boatPos.y << " | " << it->segPosition << std::endl;
 			// Actual position change
 
 			//Gianni: The changes are super fucking small, so we multiply them by some big factors
-			transform[0]->setPosition(osg::Vec3(boatPos.x*10, 0.0f, boatPos.y*100));
+			//transform[0]->setPosition(osg::Vec3(boatPos.x*10, 0.0f, boatPos.y*100));
 		}
 	}
 };
@@ -72,6 +75,7 @@ int main( int, char**)
 	//Initialize Phyiscs world
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
 	Track *m_track = new Track(1000,25.0f,50.0f,4);
+	m_track->addTrackToWorld(*m_world);
 	GameState *gState = new GameState(*m_track);
 
 	//Initialize Graphics
@@ -81,7 +85,7 @@ int main( int, char**)
 
 	//Initialize AIs and Players
 	SimpleAI *ai = new SimpleAI(m_track,3,.7,.5,.99);
-	Boat *m_boat = new Boat(b2Vec2(0.0f, 0.0f), *m_world, ai);
+	Boat *m_boat = new Boat(b2Vec2(12.5f, 0.0f), *m_world, ai);
 
 	//SimpleAI *ai2 = new SimpleAI(m_track,1,.7,.5,.99);
 	//Boat *p2_boat = new Boat(b2Vec2(0.0f, -25.0f), *m_world, ai2);
@@ -95,6 +99,8 @@ int main( int, char**)
 
 	//Main game loop
 	float timestep = 1/60.0f;
+	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+	int i = 0;
 	while(true) 
 	{
 		//Step the physics engine forward 1 frame
@@ -109,6 +115,7 @@ int main( int, char**)
 		//Networking code should register to sig?
 
 		//Gianni: Render the frame
-		viewer.frame();
+		//viewer.frame();
+		std::this_thread::sleep_until(now + ++i * std::chrono::duration<double>(timestep));
 	}
 }
