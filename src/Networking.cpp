@@ -11,6 +11,25 @@
 
 #include "Networking.hpp"
 
+void Networking::sendPlayerInfo(GameState* world)
+{
+	for( auto it = world->boats->begin(); it != world->boats->end(); ++it) 
+	{
+		inputStream->writeSingleState(*(it->inputState));
+		inputStream->readAllInputStates(outputList);
+		std::cout << it->inputState->toString() << "\n";
+		sendDatagram(outputList, MAX_FRAMES + 4, "localhost", 12345);
+	}
+}
+void Networking::receivePlayerInfo(GameState* world)
+{
+	receiveDatagram(outputList, MAX_FRAMES + 4, 12345);
+	inputStream->writeAllInputStates(outputList);
+
+	for( auto it = world->boats->begin(); it != world->boats->end(); ++it) 
+		inputStream->readSingleState(inputStream->getCurrentFrameNumber() - 1, *(it->inputState));
+}
+
 // Error Generation
 void error(const char *msg)
 {

@@ -19,7 +19,6 @@
 
 // Just testing with 1 boat for now
 osg::PositionAttitudeTransform *transform[1];
-InputStream *inputStream = new InputStream();
 
 // This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
@@ -69,36 +68,6 @@ struct Graphics
 			//Gianni: The changes are super fucking small, so we multiply them by some big factors
 			//transform[0]->setPosition(osg::Vec3(boatPos.x*10, 0.0f, boatPos.y*100));
 		}
-	}
-};
-
-struct Networking
-{
-	char *outputList;
-
-	Networking()
-	{
-		outputList = (char *) malloc((MAX_FRAMES + 4) * sizeof(char));
-		
-	}
-
-	void sendPlayerInfo(GameState* world)
-	{
-		for( auto it = world->boats->begin(); it != world->boats->end(); ++it) 
-		{
-			inputStream->writeSingleState(*(it->inputState));
-			inputStream->readAllInputStates(outputList);
-			std::cout << it->inputState->toString() << "\n";
-			sendDatagram(outputList, MAX_FRAMES + 4, "localhost", 12345);
-		}
-	}
-	void receivePlayerInfo(GameState* world)
-	{
-		receiveDatagram(outputList, MAX_FRAMES + 4, 12345);
-		inputStream->writeAllInputStates(outputList);
-
-		for( auto it = world->boats->begin(); it != world->boats->end(); ++it) 
-			inputStream->readSingleState(inputStream->getCurrentFrameNumber() - 1, *(it->inputState));
 	}
 };
 
