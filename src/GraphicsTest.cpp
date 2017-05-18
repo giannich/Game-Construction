@@ -31,13 +31,13 @@ using namespace osg;
 float x = 0;
 float z = 0;
 
-float capLen = 5;
-float capWid =2;
+float capLen = 10;
+float capWid =5;
 
 const int maxNumBoats = 8;
 
 Vec3f up = {0,1,0};
-unsigned int myBoat = 0;
+unsigned int myBoat = 1;
 
 PositionAttitudeTransform *transform[maxNumBoats];
 /*
@@ -134,7 +134,6 @@ struct Graphics
 				   (float)(y + 50*sin(angle))};
 
 		viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, up);
-		viewer.getCamera()->resize(100, 100);	
 
 		///Add everything to viewer
 		viewer.setSceneData(scene);
@@ -143,22 +142,33 @@ struct Graphics
 
 	Group* loadBoats(Group *root, GameState *world)
 	{
-		osg::ref_ptr<osg::ShapeDrawable> shape = new osg::ShapeDrawable;
+		osg::ref_ptr<osg::ShapeDrawable> myShape = new osg::ShapeDrawable;
+		osg::ref_ptr<osg::ShapeDrawable> otherShape = new osg::ShapeDrawable;
+
 		osg::Capsule *cap = new osg::Capsule(osg::Vec3(0.0f, 0.0f, 0.0f), 
 											 capLen, capWid);
-		shape->setShape(cap);
-		shape->setColor(osg::Vec4(1.0f, 0.0f, 0.0f, 0.0f));
+		myShape->setShape(cap);
+		otherShape->setShape(cap);
+
+		myShape->setColor(osg::Vec4(0.388f, 0.890f, 0.623f, 0.0f));
+		otherShape->setColor(osg::Vec4(0.8f, 0.0f, 0.0f, 0.0f));
+		
+		osg::ref_ptr<osg::Geode> myGeode = new osg::Geode;
+		myGeode->addDrawable(myShape.get());
 
 		osg::ref_ptr<osg::Geode> anotherGeode = new osg::Geode;
-		anotherGeode->addDrawable(shape.get());
+		anotherGeode->addDrawable(otherShape.get());
 
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it){
 			int i = it - world->boats->begin();
 			transform[i] = new PositionAttitudeTransform;
 			transform[i]->setPosition(Vec3(it->getX(), 5, it->getY()));
 			transform[i]->setAttitude(Quat(it->getRot(), Vec3f(0, -1, 0)));
-			transform[i]->addChild(anotherGeode);
-
+			if (i != myBoat) {
+				transform[i]->addChild(anotherGeode);
+			} else {
+				transform[i]->addChild(myGeode);
+			}
 			root->addChild(transform[i]);
 		}
 		return transform[myBoat];
@@ -237,7 +247,7 @@ int main( int, char**)
 {
 	//Initialize Phyiscs world
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
-	Track *m_track = new Track(1000,25.0f,50.0f,4);
+	Track *m_track = new Track(1000,25.0f,110.0f,4);
 	GameState *gState = new GameState(*m_track);
 
 	
@@ -290,7 +300,7 @@ int main( int, char**)
 
 		Vec3f newEye = {(float)(x - 200*cos(angle)), 100, 
 				  (float)(y - 200*sin(angle))};
-		Vec3f newCent = {(float)(x+ 50*cos(angle)),45,
+		Vec3f newCent = {(float)(x+ 50*cos(angle)),50,
 				   (float)(y + 50*sin(angle))};
 		
 		oldAngle = angle;
