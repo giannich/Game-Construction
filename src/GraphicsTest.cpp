@@ -18,21 +18,25 @@
 #include <osgViewer/ViewerEventHandlers>
 
 #include <boost/signals2/signal.hpp>
+#include <chrono>
+#include <thread>
 
 #include "Box2D/Box2D.h"
 #include "Boat.hpp"
 #include "GameState.hpp"
+
 
 using namespace osg;
 
 float x = 0;
 float z = 0;
 
-float capLen = 10;
-float capWid = 5;
+float capLen = 5;
+float capWid =2;
 
 const int maxNumBoats = 8;
 
+Vec3f up = {0,1,0};
 unsigned int myBoat = 0;
 
 PositionAttitudeTransform *transform[maxNumBoats];
@@ -116,15 +120,22 @@ struct Graphics
 
 		//Set up camera
 		viewer.getCamera()->setClearColor(osg::Vec4(0.8f,0.8f,0.8f,0.8f));
+	
+		Boat boat = (*(world->boats))[myBoat];
+		float x = boat.getX();
+		float y = -boat.getY();
+		double angle = boat.getRot() + M_PI/2;
+		//double angle = boat.getRot();
+		Vec3f newEye, newCent;
 
-		Vec3d eye(0.0, capWid + 200, -capLen - 400);
-		Vec3d upp(0.0, 1.0, 0.0);
-		Vec3d center(0.0, 0.0, 100);
+		newEye = {(float)(x - 200*cos(angle)), 50, 
+				  (float)(y - 200*sin(angle))};
+		newCent = {(float)(x+ 50*cos(angle)),0,
+				   (float)(y + 50*sin(angle))};
 
-		const osg::BoundingSphere& b = n->getBound();
-		viewer.getCamera()->setViewMatrixAsLookAt(eye + b.center(), 
-												  center + b.center(), 
-												  upp);
+		viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, up);
+		viewer.getCamera()->resize(100, 100);	
+
 		///Add everything to viewer
 		viewer.setSceneData(scene);
 		return viewer;
@@ -135,7 +146,6 @@ struct Graphics
 		osg::ref_ptr<osg::ShapeDrawable> shape = new osg::ShapeDrawable;
 		osg::Capsule *cap = new osg::Capsule(osg::Vec3(0.0f, 0.0f, 0.0f), 
 											 capLen, capWid);
-		cap->setRotation(Quat(1.57, Vec3f(0,-1,0)));
 		shape->setShape(cap);
 		shape->setColor(osg::Vec4(1.0f, 0.0f, 0.0f, 0.0f));
 
@@ -146,6 +156,7 @@ struct Graphics
 			int i = it - world->boats->begin();
 			transform[i] = new PositionAttitudeTransform;
 			transform[i]->setPosition(Vec3(it->getX(), 5, it->getY()));
+			transform[i]->setAttitude(Quat(it->getRot(), Vec3f(0, -1, 0)));
 			transform[i]->addChild(anotherGeode);
 
 			root->addChild(transform[i]);
@@ -206,18 +217,17 @@ struct Graphics
 
 	void update(GameState* world) 
 	{
-		printf("in update\n");
+		//printf("in update\n");
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it) 
 		{
 			float x = it->getX();
 			float y = it->getY();
-			float rot = it->getRot();
+			float rot = M_PI/2 + it->getRot();
 
 			int i = it - world->boats->begin();
-			printf("modify boat %d\n", i);
-			printf("seg position: %f\n", it->segPosition);
-			printf("set (%f, %f)\n", 10000*x, 10000*y);
-			transform[i]->setPosition(Vec3(10000*x, 5, 10000*y));
+		//	printf("modify boat %d\n", i);
+		//	printf("set (%f, %f)\n", x, y);
+			transform[i]->setPosition(Vec3(x, 5, y));
 			transform[i]->setAttitude(Quat(rot, Vec3f(0, -1, 0)));
 		}
 	}
@@ -252,6 +262,9 @@ int main( int, char**)
 
 	//Main game loop
 	float timestep = 1/60.0f;
+	int i = 0;
+	float oldAngle = 0; 
+	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 	while(true) 
 	{
 		//Step the physics engine forward 1 frame
@@ -265,22 +278,26 @@ int main( int, char**)
 		sig(gState);
 
 		//Networking code should register to sig?
-
+		
 		//Update graphics camera
+		
 		Boat boat = (*(gState->boats))[myBoat];
 		float x = boat.getX();
 		float y = boat.getY();
-		double angle = boat.getRot();
+		//double angle = boat.getRot();
+		double angle =  (boat.getRot() * .25) + (oldAngle * .75);
+		printf("rot is %f\n", angle);
 
-		Vec3f newEye, newCent, newUp;
-
-		newEye = {(float)(x - 200*cos(angle)), 50, 
+		Vec3f newEye = {(float)(x - 200*cos(angle)), 100, 
 				  (float)(y - 200*sin(angle))};
-		newCent = {(float)(x+ 50*cos(angle)),0,
+		Vec3f newCent = {(float)(x+ 50*cos(angle)),45,
 				   (float)(y + 50*sin(angle))};
-		newUp = {0,1,0};
-
-		viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, newUp);	
+		
+		oldAngle = angle;
+		viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, up);
+	
 		viewer.frame();
+		std::this_thread::sleep_until(now + ++i * std::chrono::duration<double>(timestep));
+		
 	}
 }

@@ -30,7 +30,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1)
         
         b2FixtureDef fd;
         fd.shape = &shape;
-        fd.density = 1.0f;
+        fd.density = 0.1f;
         fd.restitution = 0.7f;
         rigidBody->SetLinearDamping(1.0f);
         rigidBody->SetAngularDamping(5.0f);
@@ -39,9 +39,9 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1)
     
     currentSouls = 0;
     soulCollectionRadius = 5.0f;
-    forwardForce = 500.0f;
-    reverseForce = -20.0f;
-    turnRate = 0.0003f;
+    forwardForce = 500000.0f;
+    reverseForce = -2000.0f;
+    turnRate = 3.0f;
     //turningImpulse = 1.0f;
     //firingForce = 0.0f;
     
