@@ -90,3 +90,15 @@ void Boat::update(float deltaT)
 	    break;
     }
 }
+
+float Boat::getX() {
+        return rigidBody->GetPosition().x;
+}
+
+float Boat::getY() {
+        return rigidBody->GetPosition().y;
+}
+
+float Boat::getRot() {
+	return rigidBody->GetAngle();
+}

@@ -13,7 +13,7 @@
 #include "InputStream.hpp"
 #include "SimpleAI.hpp"
 
-#include "Box2d/Box2d.h"
+#include "Box2D/Box2D.h"
 
 class GameState;
 
@@ -37,6 +37,9 @@ public:
     Boat(b2Vec2 , b2World&, SimpleAI *ai1);
     //float getMaxSpeed();
     void update(float deltaT);
+	float getX();
+    float getY();
+	float getRot();
 };
 
 #endif /* Boat_hpp */

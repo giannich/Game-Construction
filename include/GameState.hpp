@@ -10,7 +10,7 @@
 #define GameState_hpp
 
 #include <stdio.h>
-#include "Box2d/Box2d.h"
+#include "Box2D/Box2D.h"
 #include "Boat.hpp"
 #include <vector>
 
