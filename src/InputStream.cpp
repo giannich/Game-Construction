@@ -29,11 +29,12 @@ void LocalPlayerInputStream::update(float deltaT, GameState &gs) {
 						break;
 					case SDLK_a:
 						std::cout << "a";
-						iState.turn = Left;
+						//Our Up vector in graphics is negative, so invert the left-right turn axis.
+						iState.turn = Right;
 						break;
 					case SDLK_d:
 						std::cout << "d";
-						iState.turn = Right;
+						iState.turn = Left;
 						break;
 					case SDLK_SPACE:
 						std::cout << "_";
