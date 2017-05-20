@@ -279,7 +279,7 @@ int main( int, char**)
 	int i = 0;
 	float oldAngle = 0; 
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-	while(true) 
+	while(!viewer.done()) 
 	{
 		//Step the physics engine forward 1 frame
 		m_world->Step(timestep,10,10);
