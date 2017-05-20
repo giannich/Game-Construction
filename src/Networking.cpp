@@ -13,30 +13,47 @@
 #include <boost/property_tree/json_parser.hpp>
 
 #include "Networking.hpp"
-#include "Box2d/Box2d.h"
+#include "Box2D/Box2D.h"
+#include "Boat.hpp"
 
 #define MAX_JSON_CHARS 4096
 
-/**************
-* InputStates *
-**************/
+/***************
+* InputStreams *
+***************/
 
-// Send the InputState information from client to host
-void Networking::sendPlayerInfo(GameState* world)
+// Encodes the InputState and broadcasts it to everyone in the broadcast list
+// This will be called by the LocalPlayerInputStream, AIInputStream, and NetworkPlayerInputStream
+void Networking::broadcastInputStream()
 {
-	for( auto it = world->boats->begin(); it != world->boats->end(); ++it) 
-	{
-		inputStream->writeSingleState(*(it->inputState));
-		inputStream->readAllInputStates(outputList);
-		sendDatagram(outputList, MAX_FRAMES + 4, "localhost", 12345);
-	}
+	inputStream->encodeInputStates(outputList);
+	for (int i = 0; i < broadcastSize; i++)
+		sendDatagram(outputList, MAX_FRAMES + 8, destIPAddressList.at(i), destPortNumList.at(i));
 }
 
-// Receive the InputState information from client to host
-void Networking::receivePlayerInfo(GameState* world)
+// Receives a datagram and decodes it to the correct InputStream
+// This will be called at the beginning of the game
+void receiveInputStream(GameState *world, int receivePortNum)
 {
-	receiveDatagram(outputList, MAX_FRAMES + 4, 12345);
-	inputStream->getNetworkInputStates(outputList);
+	// Mallocs the encodedInputStream 
+	char *encodedInputStream = (char *) malloc((MAX_FRAMES + 8) * sizeof(char));
+	unsigned int playerNumber;
+
+	// Loops and receives all datagrams
+	while(1)
+	{
+		// Receives a datagram
+		receiveDatagram(encodedInputStream, MAX_FRAMES + 8, receivePortNum);
+
+		// Decode the Player Number
+	    playerNumber = ((unsigned int) (encodedInputStream[MAX_FRAMES + 4]) & 255) +
+	                   ((unsigned int) (encodedInputStream[MAX_FRAMES + 5] << 8) & 65280) +
+	                   ((unsigned int) (encodedInputStream[MAX_FRAMES + 6] << 16) & 16711680) +
+	                   ((unsigned int) (encodedInputStream[MAX_FRAMES + 7] << 24) & 4278190080);
+
+	    // Decode the InputStream in the right boat
+		world->boats->at(playerNumber).inputStream->decodeInputStates(encodedInputStream);
+	}
 }
 
 /*************

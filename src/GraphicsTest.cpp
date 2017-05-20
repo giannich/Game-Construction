@@ -203,20 +203,7 @@ int main(int argc, char**argv)
 	//Initialize Graphics
 	Graphics g;
 	boost::signals2::signal<void (GameState*)> sig;
-	Networking n;
-
-	if (strncmp(argv[1], "server", 6) == 0)
-	{
-		sig.connect(boost::bind(&Networking::receivePlayerInfo, n, _1));
-		sig.connect(boost::bind(&Graphics::renderWorld, g, _1));
-		sig.connect(boost::bind(&Networking::sendGameStateInfo, n, _1));
-	}
-	else
-	{
-		sig.connect(boost::bind(&Graphics::renderWorld, g, _1));
-		sig.connect(boost::bind(&Networking::sendPlayerInfo, n, _1));
-		sig.connect(boost::bind(&Networking::receiveGameStateInfo, n, _1));	
-	}
+	sig.connect(boost::bind(&Graphics::update, g, _1));
 
 	//Initialize SDL for input handling
 	SDL_Event e;

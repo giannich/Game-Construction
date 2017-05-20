@@ -123,7 +123,7 @@ void InputStream::writeSingleState(InputState newInputState)
 }
 
 // Reads a bunch of InputStates
-void InputStream::readAllInputStates(char *outputList)
+void InputStream::encodeInputStates(char *outputList)
 {
 	// Filles the outputList with all the elements from the buffer in order
 	for (int i = 0; i < circular_buffer.size(); i++)
@@ -132,24 +132,30 @@ void InputStream::readAllInputStates(char *outputList)
 	// Debug info
 	std::cout << "currentFrameNumber: " << std::to_string(currentFrameNumber) << "\n";
 
-	// Encode
+	// Encode Frmae Number
 	outputList[MAX_FRAMES + 0] = (char) (currentFrameNumber);
 	outputList[MAX_FRAMES + 1] = (char) (currentFrameNumber >> 8);
 	outputList[MAX_FRAMES + 2] = (char) (currentFrameNumber >> 16);
 	outputList[MAX_FRAMES + 3] = (char) (currentFrameNumber >> 24);
+
+    // Encode Player Number
+    outputList[MAX_FRAMES + 4] = (char) (playerNum);
+    outputList[MAX_FRAMES + 5] = (char) (playerNum >> 8);
+    outputList[MAX_FRAMES + 6] = (char) (playerNum >> 16);
+    outputList[MAX_FRAMES + 7] = (char) (playerNum >> 24);
 }
 
 // Reads a bunch of InputStates
-void InputStream::getNetworkInputStates(char *outputList)
+void InputStream::decodeInputStates(char *outputList)
 {
-	// Decode
+	// Decode Frame Number
 	unsigned int latestFrameNumber;
 
 	latestFrameNumber = ((unsigned int) (outputList[MAX_FRAMES + 0]) & 255) +
 						((unsigned int) (outputList[MAX_FRAMES + 1] << 8) & 65280) +
 						((unsigned int) (outputList[MAX_FRAMES + 2] << 16) & 16711680) +
 						((unsigned int) (outputList[MAX_FRAMES + 3] << 24) & 4278190080);
-
+                        
 	int framesDifference = latestFrameNumber - currentFrameNumber;
 
 	// Try catch block

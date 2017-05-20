@@ -61,7 +61,7 @@ public:
 class InputStream {
 public:
     InputState lastInputState;
-	int playerNum;
+	unsigned int playerNum;
 	
     // Constructor
     InputStream();
@@ -75,7 +75,7 @@ public:
 	// Reads all the InputStates from InputStram,
 	// Converts them from InputState into chars,
 	// And writes them into outputList
-	void readAllInputStates(char *outputList);
+	void encodeInputStates(char *outputList);
 
 	// Reads all the chars from outputList,
 	// Converts them from chars into InputStates,
@@ -83,7 +83,7 @@ public:
 	// Only writes whichever frames we are missing
 	// e.g. If current frame is 45, and outputList has frames up to 50
 	// will only write the latest 5 frames
-	void getNetworkInputStates(char *outputList);
+	void decodeInputStates(char *outputList);
 
 	// Gets the current frame number
 	// Used for debugging
