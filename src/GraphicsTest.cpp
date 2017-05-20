@@ -31,8 +31,8 @@ using namespace osg;
 float x = 0;
 float z = 0;
 
-float capLen = 10;
-float capWid =5;
+float capLen = 1;
+float capWid =0.5f;
 
 const int maxNumBoats = 8;
 
@@ -162,7 +162,7 @@ struct Graphics
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it){
 			int i = it - world->boats->begin();
 			transform[i] = new PositionAttitudeTransform;
-			transform[i]->setPosition(Vec3(it->getX(), 5, it->getY()));
+			transform[i]->setPosition(Vec3(it->getX(), 0.5f, it->getY()));
 			transform[i]->setAttitude(Quat(it->getRot(), Vec3f(0, -1, 0)));
 			if (i != myBoat) {
 				transform[i]->addChild(anotherGeode);
@@ -237,7 +237,7 @@ struct Graphics
 			int i = it - world->boats->begin();
 		//	printf("modify boat %d\n", i);
 		//	printf("set (%f, %f)\n", x, y);
-			transform[i]->setPosition(Vec3(x, 5, y));
+			transform[i]->setPosition(Vec3(x, 0.5f, y));
 			transform[i]->setAttitude(Quat(rot, Vec3f(0, -1, 0)));
 		}
 	}
@@ -247,7 +247,7 @@ int main( int, char**)
 {
 	//Initialize Phyiscs world
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
-	Track *m_track = new Track(1000,25.0f,110.0f,4);
+	Track *m_track = new Track(1000,2.5f,11.0f,4);
 	m_track->addTrackToWorld(*m_world);
 	GameState *gState = new GameState(*m_track);
 
@@ -257,10 +257,10 @@ int main( int, char**)
 	
 	//Initialize AIs and Players
 	//SimpleAI *ai = new SimpleAI(m_track,3,.7,.5,.99);
-	Boat *m_boat = new Boat(b2Vec2(12.5f, 0.0f), *m_world, nullptr,0);
+	Boat *m_boat = new Boat(b2Vec2(1.25f, 0.0f), *m_world, nullptr,0);
 
 	SimpleAI *ai2 = new SimpleAI(m_track,1,.7,.5,.99);
-	Boat *p2_boat = new Boat(b2Vec2(12.5f, -25.0f), *m_world, ai2,1);
+	Boat *p2_boat = new Boat(b2Vec2(1.25f, -2.5f), *m_world, ai2,1);
 
 	//Add players to world
 	gState->addPlayer(*m_boat);
@@ -283,6 +283,7 @@ int main( int, char**)
 	{
 		//Step the physics engine forward 1 frame
 		m_world->Step(timestep,10,10);
+		std::cout << "Speed: " << m_boat->rigidBody->GetLinearVelocity().Length() << std::endl;
 
 		//Broadcast update to all game entities
 		gState->update(timestep);
@@ -301,10 +302,10 @@ int main( int, char**)
 		//double angle = boat.getRot();
 		double angle =  (boat.getRot() * .25) + (oldAngle * .75);
 
-		Vec3f newEye = {(float)(x - 200*cos(angle)), 100, 
-				  (float)(y - 200*sin(angle))};
-		Vec3f newCent = {(float)(x+ 50*cos(angle)),50,
-				   (float)(y + 50*sin(angle))};
+		Vec3f newEye = {(float)(x - 20*cos(angle)), 10, 
+				  (float)(y - 20*sin(angle))};
+		Vec3f newCent = {(float)(x+ 5*cos(angle)),5,
+				   (float)(y + 5*sin(angle))};
 		
 		oldAngle = angle;
 		viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, up);
