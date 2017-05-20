@@ -15,6 +15,7 @@
 #include <osgGA/TrackballManipulator>
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
+
 #include <boost/signals2/signal.hpp>
 #include <chrono>
 #include <thread>
@@ -39,11 +40,61 @@ Vec3f up = {0,1,0};
 unsigned int myBoat = 0;
 
 PositionAttitudeTransform *transform[maxNumBoats];
+/*
+class PickHandler : public osgGA::GUIEventHandler {
+	public: 
+		PickHandler() {}
+		~PickHandler() {}
+		bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa);
+	protected:
+};
+
+bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, 
+						 osgGA::GUIActionAdapter& aa)
+{
+	switch(ea.getEventType())
+	{
+		case(osgGA::GUIEventAdapter::KEYDOWN):
+		{
+			if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Up)
+			{
+				std::cout<<"Forward"<<std::endl;
+				x += 10 * cos(rot);
+				z += 10 * sin(rot);
+			}
+			else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Down)
+			{
+				std::cout<<"Backward"<<std::endl;
+				x -= 10 * cos(rot);
+				z -= 10 * sin(rot);
+			}
+			else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Left) {
+				std::cout<<"Left"<<std::endl;
+				rot -= .1;
+				if(rot < 0)
+					rot+=6.28;
+			}
+			else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Right)
+			{
+				std::cout<<"Right"<<std::endl;
+				rot += .1;
+				if(rot > 6.29)
+					rot-=6.28;
+
+
+			}
+			return false;
+		}
+		default:
+			return false;
+	}
+}
+*/
 
 // This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
 {
-    
+
 	// Init the viewer and other shit
 	osgViewer::Viewer startupScene(GameState *world)
 	{
@@ -192,31 +243,13 @@ struct Graphics
 	}
 };
 
-int main(int argc, char**argv)
+int main( int, char**)
 {
 	//Initialize Phyiscs world
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
 	Track *m_track = new Track(1000,25.0f,110.0f,4);
 	m_track->addTrackToWorld(*m_world);
 	GameState *gState = new GameState(*m_track);
-
-	//Initialize Graphics
-	Graphics g;
-	boost::signals2::signal<void (GameState*)> sig;
-	Networking n;
-
-	if (strncmp(argv[1], "server", 6) == 0)
-	{
-		sig.connect(boost::bind(&Networking::receivePlayerInfo, n, _1));
-		sig.connect(boost::bind(&Graphics::renderWorld, g, _1));
-		sig.connect(boost::bind(&Networking::sendGameStateInfo, n, _1));
-	}
-	else
-	{
-		sig.connect(boost::bind(&Graphics::renderWorld, g, _1));
-		sig.connect(boost::bind(&Networking::sendPlayerInfo, n, _1));
-		sig.connect(boost::bind(&Networking::receiveGameStateInfo, n, _1));	
-	}
 
 	//Initialize SDL for input handling
 	SDL_Event e;
@@ -233,6 +266,12 @@ int main(int argc, char**argv)
 	gState->addPlayer(*m_boat);
 	gState->addPlayer(*p2_boat);
 
+	//Initialize Graphics
+	Graphics g;
+	boost::signals2::signal<void (GameState*)> sig;
+	sig.connect(boost::bind(&Graphics::update, g, _1));
+
+	//Gianni: Init the scene and shit
 	osgViewer::Viewer viewer = g.startupScene(gState);
 
 	//Main game loop
@@ -244,6 +283,7 @@ int main(int argc, char**argv)
 	{
 		//Step the physics engine forward 1 frame
 		m_world->Step(timestep,10,10);
+
 		//Broadcast update to all game entities
 		gState->update(timestep);
 

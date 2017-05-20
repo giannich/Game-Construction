@@ -21,7 +21,8 @@ class InputStream;
 
 class Boat
 {
-    
+    int currentSouls;
+    int playerNum;
     float soulCollectionRadius;
     
     float forwardForce;
@@ -30,8 +31,6 @@ class Boat
     float turnRate;
     //float firingForce;
 public:
-    int currentSouls;
-    int playerNum;
 	float segPosition;
     InputStream* inputStream;
     b2Body *rigidBody;
