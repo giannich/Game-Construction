@@ -87,11 +87,13 @@ int main(int argc, char**argv)
 	{
 		sig.connect(boost::bind(&Networking::receivePlayerInfo, n, _1));
 		sig.connect(boost::bind(&Graphics::renderWorld, g, _1));
+		sig.connect(boost::bind(&Networking::sendGameStateInfo, n, _1));
 	}
 	else
 	{
-		sig.connect(boost::bind(&Networking::sendPlayerInfo, n, _1));
 		sig.connect(boost::bind(&Graphics::renderWorld, g, _1));
+		sig.connect(boost::bind(&Networking::sendPlayerInfo, n, _1));
+		sig.connect(boost::bind(&Networking::receiveGameStateInfo, n, _1));	
 	}
 
 	//Initialize AIs and Players

@@ -57,19 +57,27 @@ public:
     // Constructor
     InputStream();
 
-    // Reads a single InputState
-	void readSingleState(int targetFrameNumber, InputState &inputAddr);
+    // Returns a single InputState from InputStream
+	InputState readSingleState(int targetFrameNumber);
 
-	// Writes a single InputState
+	// Pushes a single InputState into the InputStream as the latest state
 	void writeSingleState(InputState newInputState);
 
-	// Reads a bunch of InputStates
+	// Reads all the InputStates from InputStram,
+	// Converts them from InputState into chars,
+	// And writes them into outputList
 	void readAllInputStates(char *outputList);
 
-	// Writes a bunch of InputStates
-	void writeAllInputStates(char *outputList);
+	// Reads all the chars from outputList,
+	// Converts them from chars into InputStates,
+	// And finally calls writeSingleState for each new InputState
+	// Only writes whichever frames we are missing
+	// e.g. If current frame is 45, and outputList has frames up to 50
+	// will only write the latest 5 frames
+	void getNetworkInputStates(char *outputList);
 
 	// Gets the current frame number
+	// Used for debugging
 	int getCurrentFrameNumber();
 
 private:

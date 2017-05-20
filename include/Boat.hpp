@@ -21,7 +21,7 @@ class GameState;
 
 class Boat
 {
-    int currentSouls;
+    
     float soulCollectionRadius;
     
     float forwardForce;
@@ -30,6 +30,7 @@ class Boat
     float turnRate;
     //float firingForce;
 public:
+    int currentSouls;
 	SimpleAI *ai;
 	float segPosition;
     InputState* inputState;

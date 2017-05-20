@@ -54,6 +54,8 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1)
 void Boat::update(float deltaT)
 {
 	if(ai!=nullptr)
+        // Will call this once the InputState is changed into an InputStream
+        //inputStream->readSingleState(inputStream->getCurrentFrameNumber() - 1, *(it->inputState));
 		*inputState = ai->getCommand(vec2(rigidBody->GetPosition().x, rigidBody->GetPosition().y), vec2(rigidBody->GetLinearVelocity().x, rigidBody->GetLinearVelocity().y), rigidBody->GetAngle(), segPosition);
     switch (inputState->acc)
     {

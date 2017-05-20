@@ -81,10 +81,11 @@ InputStream::InputStream()
 }
 
 // Reads a single InputState
-void InputStream::readSingleState(int targetFrameNumber, InputState &inputAddr)
+InputState InputStream::readSingleState(int targetFrameNumber)
 {
     //std::cout << "In readSingleState looking for frame number: " << std::to_string(targetFrameNumber) << "\n";
-	// Try catch block
+	
+    // Try catch block
 	try
   	{
     	// This is when the physics engine is asking for a frame that is too old
@@ -106,12 +107,13 @@ void InputStream::readSingleState(int targetFrameNumber, InputState &inputAddr)
   	}
 
   	// This is when the physics engine is asking for a frame that is present in the InputStream
-  	inputAddr = circular_buffer.at(circular_buffer.size() - (currentFrameNumber - targetFrameNumber));
+  	return circular_buffer.at(circular_buffer.size() - (currentFrameNumber - targetFrameNumber));
 }
 
 // Writes a single InputState
 void InputStream::writeSingleState(InputState newInputState)
 {
+    std::cout << newInputState.toString() << "\n";
     circular_buffer.push_back(newInputState);
     currentFrameNumber++;
 }
@@ -134,7 +136,7 @@ void InputStream::readAllInputStates(char *outputList)
 }
 
 // Reads a bunch of InputStates
-void InputStream::writeAllInputStates(char *outputList)
+void InputStream::getNetworkInputStates(char *outputList)
 {
 	// Decode
 	unsigned int latestFrameNumber;
@@ -161,7 +163,7 @@ void InputStream::writeAllInputStates(char *outputList)
     		std::cout << "This error should not exist!\n";
 	}
 
-    //std::cout << "Latest frame number: " << std::to_string(latestFrameNumber) << "\n";
+    std::cout << "Latest frame number: " << std::to_string(latestFrameNumber) << "\n";
 
 	// Get the start and fill it up
 	int startFromIndex;
