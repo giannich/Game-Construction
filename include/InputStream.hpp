@@ -10,9 +10,29 @@
 #include<queue>
 #include "GameState.hpp"
 
-typedef enum TurnAxis {Left, Neutral, Right} TurnAxisState;
-typedef enum AccelerationAxis {Accelerating, Idling, Reversing} AccelerationAxisState;
-typedef enum Firing {NotFiring, Firing} FiringState;
+// Gianni's includes
+#include <boost/circular_buffer.hpp>
+#define MAX_FRAMES 50
+
+typedef enum TurnAxis 
+{
+	Left = 1 << 0, 
+	Neutral = 1 << 1, 
+	Right = 1 << 2
+} TurnAxisState;
+
+typedef enum AccelerationAxis 
+{
+	Accelerating = 1 << 3, 
+	Idling = 1 << 4,
+	Reversing = 1 << 5
+} AccelerationAxisState;
+
+typedef enum Firing 
+{
+	NotFiring = 1 << 6, 
+	Firing = 1 << 7
+} FiringState;
 
 class GameState;
 class SimpleAI;
@@ -23,24 +43,58 @@ public:
 	AccelerationAxisState acc;
 	FiringState fire;
     InputState() {turn = Neutral; acc = Idling; fire = NotFiring;}
+
+    InputState(char inputChar) 
+    {
+		turn = static_cast<TurnAxisState>(inputChar & 0b00000111);
+		acc = static_cast<AccelerationAxisState>(inputChar & 0b00111000);
+		fire = static_cast<FiringState>(inputChar & 0b11000000);
+	}
+
 	InputState(TurnAxisState t, AccelerationAxisState a, FiringState f) : turn(t), acc(a), fire(f) { }
 
 	std::string toString();
     InputState fromString(std::string str);
+    char toChar();
 };
 
 class InputStream {
-	int frameNumber;
-    //std::queue<InputState> inputStream;
-	
-	//std::string toString();
-	//InputStream fromString(std::string str);
 public:
-	InputState lastInputState;
+    InputState lastInputState;
 	int playerNum;
-	// Need deltaTime to make sure that all machines are inputting at the same rate.
+	
+    // Constructor
+    InputStream();
+
+    // Returns a single InputState from InputStream
+	InputState readSingleState(int targetFrameNumber);
+
+	// Pushes a single InputState into the InputStream as the latest state
+	void writeSingleState(InputState newInputState);
+
+	// Reads all the InputStates from InputStram,
+	// Converts them from InputState into chars,
+	// And writes them into outputList
+	void readAllInputStates(char *outputList);
+
+	// Reads all the chars from outputList,
+	// Converts them from chars into InputStates,
+	// And finally calls writeSingleState for each new InputState
+	// Only writes whichever frames we are missing
+	// e.g. If current frame is 45, and outputList has frames up to 50
+	// will only write the latest 5 frames
+	void getNetworkInputStates(char *outputList);
+
+	// Gets the current frame number
+	// Used for debugging
+	int getCurrentFrameNumber();
+
+    // Need deltaTime to make sure that all machines are inputting at the same rate.
 	// If one machine is running slower, then it will fill its input by duplicating the most recent command to keep a constant framerate.
 	virtual void update(float deltaTime, GameState &gs) = 0;
+private:
+    unsigned int currentFrameNumber;
+    boost::circular_buffer<InputState> circular_buffer{MAX_FRAMES};
 };
 
 class LocalPlayerInputStream: public InputStream {
