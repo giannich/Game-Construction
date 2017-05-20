@@ -179,4 +179,24 @@ float Track::getNewSegPosition(float currentSegPosition, vec2 pos)
 	return N - 1 + dot(pos, p[N - 1]) + c[N - 1];
 }
 
+void Track::addTrackToWorld(b2World &b2WorldRef) {
+	b2BodyDef bd;
+	b2Body *ground = b2WorldRef.CreateBody(&bd);
+
+	b2Vec2 *left = new b2Vec2[N];
+	b2Vec2 *right = new b2Vec2[N];
+	for(int i = 0; i < N; i++)
+	{
+	    left[i].Set(l[i].x, l[i].y);
+	    right[i].Set(r[i].x, r[i].y);
+	}
+	
+	b2ChainShape innerShape;
+	innerShape.CreateChain(left, N);
+	ground->CreateFixture(&innerShape, 0.0f);
+	
+	b2ChainShape outerShape;
+	outerShape.CreateChain(right, N);
+	ground->CreateFixture(&outerShape, 0.0f);
+}
 

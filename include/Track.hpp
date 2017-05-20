@@ -1,3 +1,5 @@
+#include "Box2D/Box2D.h"
+
 #ifndef Track_h
 #define Track_h
 
@@ -25,8 +27,7 @@ public:
 	float *c;
 	Track(int N, float step, float width, float smoothness);
 	float getNewSegPosition(float currentSegPosition, vec2 pos);
+	void addTrackToWorld(b2World&);
 };
-
-
 
 #endif /* Track_h */

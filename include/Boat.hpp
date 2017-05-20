@@ -10,12 +10,12 @@
 #define Boat_hpp
 
 #include <stdio.h>
-#include "InputStream.hpp"
 #include "SimpleAI.hpp"
 
-#include "Box2d/Box2d.h"
+#include "Box2D/Box2D.h"
 
 class GameState;
+class InputStream;
 
 #define BOAT_MAX_SOULS 5
 
@@ -31,13 +31,16 @@ class Boat
     //float firingForce;
 public:
     int currentSouls;
-	SimpleAI *ai;
+    int playerNum;
 	float segPosition;
-    InputState* inputState;
+    InputStream* inputStream;
     b2Body *rigidBody;
-    Boat(b2Vec2 , b2World&, SimpleAI *ai1);
+    Boat(b2Vec2 , b2World&, SimpleAI *ai1, int pNum);
     //float getMaxSpeed();
-    void update(float deltaT);
+    void update(float deltaT, GameState &gs);
+	float getX();
+    float getY();
+	float getRot();
 };
 
 #endif /* Boat_hpp */

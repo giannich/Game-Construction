@@ -4,10 +4,11 @@
 #ifndef InputStream_hpp
 #define InputStream_hpp
 
-//#include<SDL>
+#include<SDL.h>
 //#include<AI>
 //#include<NetworkPlayer>
 #include<queue>
+#include "GameState.hpp"
 
 // Gianni's includes
 #include <boost/circular_buffer.hpp>
@@ -33,18 +34,24 @@ typedef enum Firing
 	Firing = 1 << 7
 } FiringState;
 
+class GameState;
+class SimpleAI;
+
 class InputState {
 public:
 	TurnAxisState turn;
 	AccelerationAxisState acc;
 	FiringState fire;
     InputState() {turn = Neutral; acc = Idling; fire = NotFiring;}
+
     InputState(char inputChar) 
     {
 		turn = static_cast<TurnAxisState>(inputChar & 0b00000111);
 		acc = static_cast<AccelerationAxisState>(inputChar & 0b00111000);
 		fire = static_cast<FiringState>(inputChar & 0b11000000);
 	}
+
+	InputState(TurnAxisState t, AccelerationAxisState a, FiringState f) : turn(t), acc(a), fire(f) { }
 
 	std::string toString();
     InputState fromString(std::string str);
@@ -53,7 +60,9 @@ public:
 
 class InputStream {
 public:
-
+    InputState lastInputState;
+	int playerNum;
+	
     // Constructor
     InputStream();
 
@@ -80,16 +89,12 @@ public:
 	// Used for debugging
 	int getCurrentFrameNumber();
 
+    // Need deltaTime to make sure that all machines are inputting at the same rate.
+	// If one machine is running slower, then it will fill its input by duplicating the most recent command to keep a constant framerate.
+	virtual void update(float deltaTime, GameState &gs) = 0;
 private:
-
     unsigned int currentFrameNumber;
     boost::circular_buffer<InputState> circular_buffer{MAX_FRAMES};
-
-    // Jordan's Comments Below
-
-	// Need deltaTime to make sure that all machines are inputting at the same rate.
-	// If one machine is running slower, then it will fill its input by duplicating the most recent command to keep a constant framerate.
-	//virtual InputState updateInputState(float deltaTime, GameState &gs) = 0;
 };
 
 class LocalPlayerInputStream: public InputStream {
@@ -98,15 +103,20 @@ public:
 	// Need some SDL Data?
 	// Send commands to remote host if necessary
 	//InputState updateInputState(float deltaTime, GameState &gs);
-};
-/*
-class AIInputStream: public InputStream {
-public:
-	// This will have access to the input state from the last frame, and the gamestate for this frame.
-	// After this function is called, the currentState for the AIInputStream should be updated to what we want for next frame.
-	InputState updateInputState(float deltaTime, GameState &gs);
+	LocalPlayerInputStream(int pNum) { playerNum = pNum; }
+	void update(float deltaTime, GameState &gs);
 };
 
+class AIInputStream: public InputStream {
+public:
+	SimpleAI *ai;
+	AIInputStream(int pNum, SimpleAI *ai1) : ai(ai1) { playerNum = pNum;}
+	// This will have access to the input state from the last frame, and the gamestate for this frame.
+	// After this function is called, the currentState for the AIInputStream should be updated to what we want for next frame.
+	void update(float deltaTime, GameState &gs);
+};
+
+/*
 class NetworkPlayerInputStream: public InputStream {
 	NetworkPlayer *socketInfo;
 public:
