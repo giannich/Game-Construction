@@ -9,6 +9,7 @@
 #include "GameState.hpp"
 #include <iostream>
 #include <boost/format.hpp>
+#include "Boat.hpp"
 
 GameState::GameState(Track& track) {
 	m_track = &track;
@@ -21,7 +22,7 @@ void GameState::addPlayer(Boat& boat) {
 
 void GameState::update(float deltaTime) {
 	for(auto it = boats->begin(); it != boats->end(); ++it) {
-		it->update(deltaTime);
+		it->update(deltaTime, *this);
 		it->segPosition = m_track->getNewSegPosition(it->segPosition, vec2(it->rigidBody->GetPosition().x, it->rigidBody->GetPosition().y));
 	}
 }
