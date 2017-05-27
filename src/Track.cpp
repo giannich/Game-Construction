@@ -1,5 +1,5 @@
 
-#include "Testbed/include/Track.hpp"
+#include "Track.hpp"
 #include<time.h>
 #include<iostream>
 vec2::vec2(float x, float y)
@@ -233,3 +233,25 @@ float* Track::getInitialSegPositions(int numBoats, float width_offset, float leg
 	}
 	return seg;
 }
+
+void Track::addTrackToWorld(b2World &b2WorldRef) {
+	b2BodyDef bd;
+	b2Body *ground = b2WorldRef.CreateBody(&bd);
+
+	b2Vec2 *left = new b2Vec2[N];
+	b2Vec2 *right = new b2Vec2[N];
+	for(int i = 0; i < N; i++)
+	{
+	    left[i].Set(l[i].x, l[i].y);
+	    right[i].Set(r[i].x, r[i].y);
+	}
+	
+	b2ChainShape innerShape;
+	innerShape.CreateChain(left, N);
+	ground->CreateFixture(&innerShape, 0.0f);
+	
+	b2ChainShape outerShape;
+	outerShape.CreateChain(right, N);
+	ground->CreateFixture(&outerShape, 0.0f);
+}
+

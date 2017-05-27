@@ -161,6 +161,8 @@ struct Graphics
 		osg::ref_ptr<osg::Geode> anotherGeode = new osg::Geode;
 		anotherGeode->addDrawable(otherShape.get());
 
+		osg::Node *cessnaNode = osgDB::readNodeFile("cessna.osg");
+
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it){
 			int i = it - world->boats->begin();
 			transform[i] = new PositionAttitudeTransform;
@@ -254,7 +256,13 @@ int main( int, char**)
 	GameState *gState = new GameState(*m_track);
 
 	//Add souls to track
-	Soul s(b2Vec2(1.25f,10.0f),5.0f,*m_world);
+	std::vector<Soul*> *souls = new std::vector<Soul*>();
+	vec2* soulPos = m_track->getInitialSoulPositions(5);
+	for(int i = 0; i < 5; ++i) {
+		Soul *s = new Soul(b2Vec2(soulPos[i].x, soulPos[i].y), 5.0f, *m_world);
+		std::cout << "(x,y): " << soulPos[i].x << ", " << soulPos[i].y << std::endl;
+		souls->push_back(s);
+	}
 
 	//Initialize Contact Listener for physics
 	ContactListener contactListener;

@@ -27,6 +27,9 @@ public:
 	float *c;
 	Track(int N, float step, float width, float smoothness);
 	float getNewSegPosition(float currentSegPosition, vec2 pos);
+	vec2* getInitialSoulPositions(int);
+	vec2* getInitialBoatPositions(int, float, float);
+	float* getInitialSegPositions(int, float, float);
 	void addTrackToWorld(b2World&);
 };
 
