@@ -23,11 +23,11 @@ class Boat
 {
 	int currentSouls;
 	float soulCollectionRadius;
-    
 	float forwardForce;
 	float reverseForce;
 	float turnRate;
 	BoatCollisionHandler *collisionHandler;
+	float dampingCoefficient(int soulCount);
 public:
 	int playerNum;
 	float segPosition;
@@ -38,6 +38,7 @@ public:
 	float getX();
 	float getY();
 	float getRot();
+	void addSoul();
 };
 
 #endif /* Boat_hpp */

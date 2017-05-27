@@ -54,7 +54,17 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, int pNum)
 		inputStream = new LocalPlayerInputStream(playerNum);
 }
 
-void Boat::update(float deltaT, GameState &gs)
+float Boat::dampingCoefficient() {
+    int soulCount = min(currentSouls,6);
+    return 1.0f - 0.1f*soulCount;
+}
+
+void Boat::addSoul() {
+    currentSouls += 1;
+    rigidBody->SetLinearDamping(dampingCoefficient());
+}
+
+void Boat::update(float deltaT)
 {
 	inputStream->update(deltaT, gs);
 	InputState inputState = inputStream->lastInputState;
