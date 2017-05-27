@@ -7,7 +7,7 @@
 //
 
 #include "Boat.hpp"
-
+#include <algorithm>
 
 Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, int pNum)
 {
@@ -55,7 +55,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, int pNum)
 }
 
 float Boat::dampingCoefficient() {
-    int soulCount = min(currentSouls,6);
+    int soulCount = std::min(currentSouls,6);
     return 1.0f - 0.1f*soulCount;
 }
 
@@ -64,7 +64,7 @@ void Boat::addSoul() {
     rigidBody->SetLinearDamping(dampingCoefficient());
 }
 
-void Boat::update(float deltaT)
+void Boat::update(float deltaT, GameState &gs)
 {
 	inputStream->update(deltaT, gs);
 	InputState inputState = inputStream->lastInputState;

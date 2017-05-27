@@ -27,7 +27,7 @@ class Boat
 	float reverseForce;
 	float turnRate;
 	BoatCollisionHandler *collisionHandler;
-	float dampingCoefficient(int soulCount);
+	float dampingCoefficient();
 public:
 	int playerNum;
 	float segPosition;

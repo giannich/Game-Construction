@@ -24,6 +24,7 @@
 #include "Box2D/Box2D.h"
 #include "Boat.hpp"
 #include "GameState.hpp"
+#include "Soul.hpp"
 
 #include <SDL.h>
 
@@ -251,6 +252,11 @@ int main( int, char**)
 	Track *m_track = new Track(1000,2.5f,11.0f,4);
 	m_track->addTrackToWorld(*m_world);
 	GameState *gState = new GameState(*m_track);
+
+	//Add souls to track
+	Soul s(b2Vec2(1.25f,10.0f),5.0f,*m_world);
+
+	//Initialize Contact Listener for physics
 	ContactListener contactListener;
 	m_world->SetContactListener(&contactListener);
 
@@ -286,7 +292,7 @@ int main( int, char**)
 	{
 		//Step the physics engine forward 1 frame
 		m_world->Step(timestep,10,10);
-		//std::cout << "Speed: " << m_boat->rigidBody->GetLinearVelocity().Length() << std::endl;
+		//std::cout << "Position: " << m_boat->rigidBody->GetPosition().x << m_boat->rigidBody->GetPosition().y << std::endl;
 
 		//Broadcast update to all game entities
 		gState->update(timestep);

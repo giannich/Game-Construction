@@ -1,10 +1,16 @@
 
-#include "Box2d/Box.h"
+#ifndef Soul_hpp
+#define Soul_hpp
+#include "CollisionHandler.hpp"
+#include "Box2D/Box2D.h"
 
 class Soul {
-	b2body *rigidBody
+	b2Body *rigidBody;
 	float collectionRadius;
+	SoulCollisionHandler *collisionHandler;
 public:
-	Soul(b2Vec2, float);
-}
+	Soul(b2Vec2, float, b2World&);
+	~Soul();
+};
 
+#endif /* Soul_hpp */
