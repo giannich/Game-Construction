@@ -20,24 +20,19 @@ void LocalPlayerInputStream::update(float deltaT, GameState &gs) {
 			case SDL_KEYDOWN: 
 				switch (e.key.keysym.sym) {
 					case SDLK_w:
-						std::cout << "w";
 						iState.acc = Accelerating;
 						break;
 					case SDLK_s:
-						std::cout << "s";
 						iState.acc = Reversing;
 						break;
 					case SDLK_a:
-						std::cout << "a";
 						//Our Up vector in graphics is negative, so invert the left-right turn axis.
 						iState.turn = Right;
 						break;
 					case SDLK_d:
-						std::cout << "d";
 						iState.turn = Left;
 						break;
 					case SDLK_SPACE:
-						std::cout << "_";
 						iState.fire = Firing;
 						break;
 					default:
@@ -48,23 +43,18 @@ void LocalPlayerInputStream::update(float deltaT, GameState &gs) {
 			case SDL_KEYUP:
 				switch (e.key.keysym.sym) {
 					case SDLK_w:
-						std::cout << "w";
 						iState.acc = Idling;
 						break;
 					case SDLK_s:
-						std::cout << "s";
 						iState.acc = Idling;
 						break;
 					case SDLK_a:
-						std::cout << "a";
 						iState.turn = Neutral;
 						break;
 					case SDLK_d:
-						std::cout << "d";
 						iState.turn = Neutral;
 						break;
 					case SDLK_SPACE:
-						std::cout << "_";
 						iState.fire = NotFiring;
 						break;
 					default:

@@ -286,7 +286,7 @@ int main( int, char**)
 	{
 		//Step the physics engine forward 1 frame
 		m_world->Step(timestep,10,10);
-		std::cout << "Speed: " << m_boat->rigidBody->GetLinearVelocity().Length() << std::endl;
+		//std::cout << "Speed: " << m_boat->rigidBody->GetLinearVelocity().Length() << std::endl;
 
 		//Broadcast update to all game entities
 		gState->update(timestep);

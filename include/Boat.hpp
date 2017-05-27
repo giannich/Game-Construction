@@ -11,7 +11,7 @@
 
 #include <stdio.h>
 #include "SimpleAI.hpp"
-
+#include "CollisionHandler.hpp"
 #include "Box2D/Box2D.h"
 
 class GameState;
@@ -21,24 +21,22 @@ class InputStream;
 
 class Boat
 {
-    int currentSouls;
-    int playerNum;
-    float soulCollectionRadius;
+	int currentSouls;
+	float soulCollectionRadius;
     
-    float forwardForce;
-    float reverseForce;
-    //float turningImpulse;
-    float turnRate;
-    //float firingForce;
+	float forwardForce;
+	float reverseForce;
+	float turnRate;
+	BoatCollisionHandler *collisionHandler;
 public:
+	int playerNum;
 	float segPosition;
-    InputStream* inputStream;
-    b2Body *rigidBody;
-    Boat(b2Vec2 , b2World&, SimpleAI *ai1, int pNum);
-    //float getMaxSpeed();
-    void update(float deltaT, GameState &gs);
+	InputStream* inputStream;
+	b2Body *rigidBody;
+	Boat(b2Vec2 , b2World&, SimpleAI *ai1, int pNum);
+	void update(float deltaT, GameState &gs);
 	float getX();
-    float getY();
+	float getY();
 	float getRot();
 };
 

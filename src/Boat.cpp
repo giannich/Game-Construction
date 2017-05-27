@@ -11,6 +11,7 @@
 
 Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, int pNum)
 {
+	collisionHandler = new BoatCollisionHandler(this);
     //Create rigidbody
     {
         b2BodyDef bd;
@@ -35,6 +36,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, int pNum)
         rigidBody->SetLinearDamping(0.5f);
         rigidBody->SetAngularDamping(5.0f);
         rigidBody->CreateFixture(&fd);
+	rigidBody->SetUserData(collisionHandler);
     }
     
 	playerNum = pNum;
@@ -43,8 +45,6 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, int pNum)
     forwardForce = 6.5f;
     reverseForce = -2.0f;
     turnRate = 0.9f;
-    //turningImpulse = 1.0f;
-    //firingForce = 0.0f;
     
 	segPosition = -0.5;
     //Input Stream
