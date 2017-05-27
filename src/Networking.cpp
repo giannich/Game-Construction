@@ -24,11 +24,17 @@
 
 // Encodes the InputState and broadcasts it to everyone in the broadcast list
 // This will be called by the LocalPlayerInputStream, AIInputStream, and NetworkPlayerInputStream
+// TODO: FIGURE OUT WHERE TO CALL THIS!!!
 void Networking::broadcastInputStream()
 {
+	std::cout << "Sending a new InputStream packet to " << std::to_string(broadcastSize) << " other receivers\n";
+
+	// Encodes the inutStream into outputList
 	inputStream->encodeInputStates(outputList);
-	for (int i = 0; i < broadcastSize; i++)
-		sendDatagram(outputList, MAX_FRAMES + 8, destIPAddressList.at(i), destPortNumList.at(i));
+
+	// Broadcasts the outputlist to all the destination addresses
+	for (unsigned int i = 0; i < broadcastSize; i++)
+		sendDatagram(outputList, MAX_FRAMES + 8, broadcastTargets->at(i).first, broadcastTargets->at(i).second);
 }
 
 // Receives a datagram and decodes it to the correct InputStream
@@ -42,16 +48,19 @@ void receiveInputStream(GameState *world, int receivePortNum)
 	// Loops and receives all datagrams
 	while(1)
 	{
+		std::cout << "Waiting on new packets\n";
 		// Receives a datagram
 		receiveDatagram(encodedInputStream, MAX_FRAMES + 8, receivePortNum);
 
 		// Decode the Player Number
-	    playerNumber = ((unsigned int) (encodedInputStream[MAX_FRAMES + 4]) & 255) +
-	                   ((unsigned int) (encodedInputStream[MAX_FRAMES + 5] << 8) & 65280) +
-	                   ((unsigned int) (encodedInputStream[MAX_FRAMES + 6] << 16) & 16711680) +
-	                   ((unsigned int) (encodedInputStream[MAX_FRAMES + 7] << 24) & 4278190080);
+		playerNumber = ((unsigned int) (encodedInputStream[MAX_FRAMES + 4]) & 255) +
+					   ((unsigned int) (encodedInputStream[MAX_FRAMES + 5] << 8) & 65280) +
+					   ((unsigned int) (encodedInputStream[MAX_FRAMES + 6] << 16) & 16711680) +
+					   ((unsigned int) (encodedInputStream[MAX_FRAMES + 7] << 24) & 4278190080);
 
-	    // Decode the InputStream in the right boat
+		std::cout << "Received packet from player number " << std::to_string(playerNumber) << "\n";
+
+		// Decode the InputStream in the right boat
 		world->boats->at(playerNumber).inputStream->decodeInputStates(encodedInputStream);
 	}
 }
@@ -222,7 +231,7 @@ void sendDatagram(void *msgObject, size_t objLen, std::string destIPAddress, int
 	if (msgLen < 0)
 		error("Error failed sendto");
 
-	std::cout << "Sent message of length " << std::to_string(msgLen) << "\n";
+	//std::cout << "Sent message of length " << std::to_string(msgLen) << "\n";
 
 	// Finally the close descriptor
 	close(socketDescriptor);
@@ -264,7 +273,7 @@ int receiveDatagram(void *buffer, size_t bufferSize, int receivePortNum)
 	if (msgLen < 0)
 		error("ERROR on receiving");
 
-	std::cout << "Received message of length " << std::to_string(msgLen) << "\n";
+	//std::cout << "Received message of length " << std::to_string(msgLen) << "\n";
 
 	// Close descriptor and return the message
 	close(socketDescriptor);

@@ -12,6 +12,9 @@
 
 // Gianni's includes
 #include <boost/circular_buffer.hpp>
+#include <stdio.h>
+#include <string>
+#include "Networking.hpp"
 #define MAX_FRAMES 50
 
 typedef enum TurnAxis 
@@ -42,10 +45,10 @@ public:
 	TurnAxisState turn;
 	AccelerationAxisState acc;
 	FiringState fire;
-    InputState() {turn = Neutral; acc = Idling; fire = NotFiring;}
+	InputState() {turn = Neutral; acc = Idling; fire = NotFiring;}
 
-    InputState(char inputChar) 
-    {
+	InputState(char inputChar) 
+	{
 		turn = static_cast<TurnAxisState>(inputChar & 0b00000111);
 		acc = static_cast<AccelerationAxisState>(inputChar & 0b00111000);
 		fire = static_cast<FiringState>(inputChar & 0b11000000);
@@ -54,19 +57,38 @@ public:
 	InputState(TurnAxisState t, AccelerationAxisState a, FiringState f) : turn(t), acc(a), fire(f) { }
 
 	std::string toString();
-    InputState fromString(std::string str);
-    char toChar();
+	InputState fromString(std::string str);
+	char toChar();
 };
 
 class InputStream {
 public:
-    InputState lastInputState;
+	InputState lastInputState;
+	Networking *networkingHandler;
 	unsigned int playerNum;
-	
-    // Constructor
-    InputStream();
+	std::vector <std::pair<std::string, int>> *broadcastPointer;
 
-    // Returns a single InputState from InputStream
+	// TODO: Take off later
+	std::vector <std::pair<std::string, int>> broadcastList;
+	
+	// Constructor
+	// TODO: Needs to change so that it can accept an external broadcastlist pointer
+	InputStream()
+	{
+		// Networking settings here
+		std::string targetAddress = "localhost";
+		int targetPort = 12346;
+
+		// Networking setup code here
+		std::pair <std::string, int> broadcastTarget = std::make_pair(targetAddress, targetPort);
+		broadcastList.push_back(broadcastTarget);
+
+
+		networkingHandler = new Networking(&broadcastList, this);
+		currentFrameNumber = 0;
+	}
+
+	// Returns a single InputState from InputStream
 	InputState readSingleState(int targetFrameNumber);
 
 	// Pushes a single InputState into the InputStream as the latest state
@@ -89,14 +111,15 @@ public:
 	// Used for debugging
 	int getCurrentFrameNumber();
 
-    // Need deltaTime to make sure that all machines are inputting at the same rate.
+	// Need deltaTime to make sure that all machines are inputting at the same rate.
 	// If one machine is running slower, then it will fill its input by duplicating the most recent command to keep a constant framerate.
 	virtual void update(float deltaTime, GameState &gs) = 0;
 private:
-    unsigned int currentFrameNumber;
-    boost::circular_buffer<InputState> circular_buffer{MAX_FRAMES};
+	unsigned int currentFrameNumber;
+	boost::circular_buffer<InputState> circular_buffer{MAX_FRAMES};
 };
 
+// Localplayer InputStream
 class LocalPlayerInputStream: public InputStream {
 public:
 	//std::string hostIP;
@@ -107,21 +130,22 @@ public:
 	void update(float deltaTime, GameState &gs);
 };
 
+// AI InputStream
 class AIInputStream: public InputStream {
 public:
 	SimpleAI *ai;
-	AIInputStream(int pNum, SimpleAI *ai1) : ai(ai1) { playerNum = pNum;}
+	AIInputStream(int pNum, SimpleAI *ai1) : ai(ai1), InputStream() { playerNum = pNum;}
 	// This will have access to the input state from the last frame, and the gamestate for this frame.
 	// After this function is called, the currentState for the AIInputStream should be updated to what we want for next frame.
 	void update(float deltaTime, GameState &gs);
 };
 
-/*
+// GIANNI'S CHANGE
+// Network Player InputStream
 class NetworkPlayerInputStream: public InputStream {
-	NetworkPlayer *socketInfo;
 public:
-	InputState updateInputState(float deltaTime, GameState &gs);
+	NetworkPlayerInputStream(int pNum) : InputStream() { playerNum = pNum; }
+	void update(float deltaTime, GameState &gs);
 };
-*/
 
 #endif /*InputStream_hpp*/

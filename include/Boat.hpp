@@ -21,25 +21,23 @@ class InputStream;
 
 class Boat
 {
-    
-    float soulCollectionRadius;
-    
-    float forwardForce;
-    float reverseForce;
-    //float turningImpulse;
-    float turnRate;
-    //float firingForce;
+	float soulCollectionRadius;
+	float forwardForce;
+	float reverseForce;
+	//float turningImpulse;
+	float turnRate;
+	//float firingForce;
 public:
-    int currentSouls;
-    int playerNum;
+	int currentSouls;
+	int playerNum;
 	float segPosition;
-    InputStream* inputStream;
-    b2Body *rigidBody;
-    Boat(b2Vec2 , b2World&, SimpleAI *ai1, int pNum);
-    //float getMaxSpeed();
-    void update(float deltaT, GameState &gs);
+	InputStream* inputStream;
+	b2Body *rigidBody;
+	Boat(b2Vec2 , b2World&, SimpleAI *ai1, int pNum);
+	//float getMaxSpeed();
+	void update(float deltaT, GameState &gs);
 	float getX();
-    float getY();
+	float getY();
 	float getRot();
 };
 

@@ -2,29 +2,32 @@
 #define Networking_hpp
 
 #include "GameState.hpp"
-#include "InputStream.hpp"
+#define MAX_FRAMES 50
+
+class InputStream;
 
 struct Networking
 {
 	char *outputList;
 	InputStream *inputStream;
-	std::vector<std::string> destIPAddressList;
-	std::vector<int> destPortNumList;
+	std::vector <std::pair<std::string, int>> *broadcastTargets;
 	int broadcastSize;
-	int receivePortNum;
 
-	Networking(std::vector<std::string> IPList, std::vector<int> portsList, int recPortNum, InputStream *inStream)
+	// IP List -> Vector of destination IP addresses
+	// portsList -> Vector of destination port numbers
+	// inStream -> Inputstream pointer
+	Networking(std::vector <std::pair<std::string, int>> *broadcastList, InputStream *inStream)
 	{
 		outputList = (char *) malloc((MAX_FRAMES + 8) * sizeof(char));
-		destIPAddressList = IPList;
-		destPortNumList = portsList;
-		broadcastSize = IPList.size();
-		receivePortNum = recPortNum;
+		broadcastTargets = broadcastList;
+		broadcastSize = broadcastTargets->size();
 		inputStream = inStream;
 	}
 
-	// For sending InputStreams and GameState Info
+	// For sending InputStreams
 	void broadcastInputStream();
+
+	// Gamestate
 	void sendGameStateInfo(GameState* world);
 	void receiveGameStateInfo(GameState* world);
 };
