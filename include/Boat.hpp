@@ -29,6 +29,7 @@ class Boat
 	BoatCollisionHandler *collisionHandler;
 	float dampingCoefficient();
 public:
+	bool disabled;
 	int playerNum;
 	float segPosition;
 	InputStream* inputStream;

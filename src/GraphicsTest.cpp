@@ -279,8 +279,6 @@ int main( int, char**)
 	Graphics g;
 	boost::signals2::signal<void (GameState*)> sig;
 	sig.connect(boost::bind(&Graphics::update, g, _1));
-
-	//Gianni: Init the scene and shit
 	osgViewer::Viewer viewer = g.startupScene(gState);
 
 	//Main game loop
