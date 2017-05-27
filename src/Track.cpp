@@ -1,5 +1,5 @@
-#include<cmath>
-#include "Track.hpp"
+
+#include "Testbed/include/Track.hpp"
 #include<time.h>
 #include<iostream>
 vec2::vec2(float x, float y)
@@ -53,9 +53,9 @@ Track::Track(int N, float step, float width, float smoothness = 15)
 	p = new vec2[N];
 	c = new float[N];
 	srand(time(NULL));
-	l[0] = vec2(0,0);
-	r[0] = vec2(width,0);
-	p[0] = vec2(0,1);
+	l[0] = { 0,0 };
+	r[0] = { width,0 };
+	p[0] = { 0,1 };
 	c[0] = 0;
 	int backStep = 1;
 	for (int i = 1; i<N; i++)
@@ -178,25 +178,58 @@ float Track::getNewSegPosition(float currentSegPosition, vec2 pos)
 	}
 	return N - 1 + dot(pos, p[N - 1]) + c[N - 1];
 }
-
-void Track::addTrackToWorld(b2World &b2WorldRef) {
-	b2BodyDef bd;
-	b2Body *ground = b2WorldRef.CreateBody(&bd);
-
-	b2Vec2 *left = new b2Vec2[N];
-	b2Vec2 *right = new b2Vec2[N];
-	for(int i = 0; i < N; i++)
+vec2* Track::getInitialSoulPositions(int numSouls)
+{
+	vec2 *sp = new vec2[numSouls];
+	srand(time(NULL));
+	for (int i = 0; i < numSouls; i++)
 	{
-	    left[i].Set(l[i].x, l[i].y);
-	    right[i].Set(r[i].x, r[i].y);
+		int seg = rand() % (N - 5) + 5;
+		float p1 = rand() / (float)RAND_MAX;
+		float p2 = rand() / (float)RAND_MAX;
+		sp[i] = add(add(mul(l[seg] , p1 * p2), mul(l[seg - 1], (1 - p1) * p2)), add(mul(r[seg] , p1*(1 - p2)),mul(r[seg - 1], (1 - p1)*(1 - p2))));
 	}
-	
-	b2ChainShape innerShape;
-	innerShape.CreateChain(left, N);
-	ground->CreateFixture(&innerShape, 0.0f);
-	
-	b2ChainShape outerShape;
-	outerShape.CreateChain(right, N);
-	ground->CreateFixture(&outerShape, 0.0f);
+	return sp;
 }
 
+vec2* Track::getInitialBoatPositions(int numBoats, float width_offset, float legnth_offset)
+{
+	vec2 *bp = new vec2[numBoats];
+	int boats_per_row = r[0].x / width_offset;
+	int num_full_rows = numBoats / boats_per_row;
+	int boats_in_last_row = numBoats % boats_per_row;
+	int mark = 1;
+	for (int i = 0; i < boats_in_last_row; i++)
+	{
+		float p1 = ((float)(2 * i + 1)) / (2 * boats_in_last_row);
+		bp[i] = add(mul(l[1], p1), mul(r[1], (1 - p1)));
+		mark = 2;
+	}
+	for (int i = 0; i < numBoats - boats_in_last_row; i++)
+	{
+		float p1 = ((float)(2 * (i % boats_per_row) + 1)) / (2 * boats_per_row);
+		int row = mark + i / boats_per_row;
+		bp[i + boats_in_last_row] = add(mul(l[row], p1), mul(r[row], (1 - p1)));
+	}
+	return bp;
+}
+
+float* Track::getInitialSegPositions(int numBoats, float width_offset, float legnth_offset)
+{
+	float *seg = new float[numBoats];
+	int boats_per_row = r[0].x / width_offset;
+	int num_full_rows = numBoats / boats_per_row;
+	int boats_in_last_row = numBoats % boats_per_row;
+	int mark = 1;
+	for (int i = 0; i < boats_in_last_row; i++)
+	{
+		seg[i] = 0;
+		mark = 2;
+	}
+	for (int i = 0; i < numBoats - boats_in_last_row; i++)
+	{
+		int row = mark + i / boats_per_row;
+		seg[i + boats_in_last_row] = row;
+	}
+	return seg;
+}
