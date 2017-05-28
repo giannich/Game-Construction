@@ -1,7 +1,10 @@
 CC = g++
 INC = include
 LIB_PATH = lib
-LIB_FLAGS = -std=c++11 -losgDB -losgViewer -losg -lOpenThreads -losgUtil -losgGA $(LIB_PATH)/libBox2d.a
+#PLUGIN_PATH = lib/osgPlugins-3.4.0
+#PLUGINS := $(basename $(notdir $(wildcard $(PLUGIN_PATH)/*.so)))
+LINK_PLUGINS := $(addprefix -l, $(subst osgdb_,,$(PLUGINS)))
+LIB_FLAGS = -std=c++11 -losgDB -losgViewer -losg -lOpenThreads -losgUtil -losgGA $(LINK_PLUGINS) $(LIB_PATH)/libBox2d.a
 CC_FLAGS = -rpath .
 EXECUTABLE = gtest
 
