@@ -73,6 +73,7 @@ struct Graphics
 		//Set up camera
 		viewer.getCamera()->setClearColor(osg::Vec4(0.8f,0.8f,0.8f,0.8f));
 	
+		std::cout << world->boats->size() << std::endl;
 		Boat boat = (*(world->boats))[myBoat];
 		float x = boat.getX();
 		float y = -boat.getY();
@@ -224,7 +225,6 @@ int main( int argc, char** argv)
 	Graphics g;
 	boost::signals2::signal<void (GameState*)> sig;
 	sig.connect(boost::bind(&Graphics::update, g, _1));
-	osgViewer::Viewer viewer = g.startupScene(gState);
 
 	//Initialize SDL for input handling
 	SDL_Event e;
@@ -248,6 +248,7 @@ int main( int argc, char** argv)
 			std::cout << "Made local boat at position number " << std::to_string(i) << "\n";
 			Boat *local_boat = new LocalBoat(b2Vec2(12.5f, 0.0f), *m_world, nullptr, i, &broadcastList);
 			gState->addPlayer(*local_boat);
+			myBoat = i;
 		}
 
 		// Network Player
@@ -271,6 +272,8 @@ int main( int argc, char** argv)
 
 	// Start the network receiving thread, mostly good!
 	std::thread networkReceivingThread(receiveInputStream, gState, atoi(argv[2]), &playerDiscardList);
+
+	osgViewer::Viewer viewer = g.startupScene(gState);
 
 	//Main game loop
 	float timestep = 1/60.0f;
@@ -308,7 +311,7 @@ int main( int argc, char** argv)
 		oldAngle = angle;
 		viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, up);
 	
-		//viewer.frame();
+		viewer.frame();
 		std::this_thread::sleep_until(now + ++i * std::chrono::duration<double>(timestep));
 	}
 }
