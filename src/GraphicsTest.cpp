@@ -43,56 +43,6 @@ Vec3f up = {0,1,0};
 unsigned int myBoat = 0;
 
 PositionAttitudeTransform *transform[maxNumBoats];
-/*
-class PickHandler : public osgGA::GUIEventHandler {
-	public: 
-		PickHandler() {}
-		~PickHandler() {}
-		bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa);
-	protected:
-};
-
-bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, 
-						 osgGA::GUIActionAdapter& aa)
-{
-	switch(ea.getEventType())
-	{
-		case(osgGA::GUIEventAdapter::KEYDOWN):
-		{
-			if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Up)
-			{
-				std::cout<<"Forward"<<std::endl;
-				x += 10 * cos(rot);
-				z += 10 * sin(rot);
-			}
-			else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Down)
-			{
-				std::cout<<"Backward"<<std::endl;
-				x -= 10 * cos(rot);
-				z -= 10 * sin(rot);
-			}
-			else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Left) {
-				std::cout<<"Left"<<std::endl;
-				rot -= .1;
-				if(rot < 0)
-					rot+=6.28;
-			}
-			else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Right)
-			{
-				std::cout<<"Right"<<std::endl;
-				rot += .1;
-				if(rot > 6.29)
-					rot-=6.28;
-
-
-			}
-			return false;
-		}
-		default:
-			return false;
-	}
-}
-*/
 
 // This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
@@ -245,7 +195,7 @@ struct Graphics
 	}
 };
 
-int main( int, char**)
+int main( int argc, char** argv)
 {
 	// Game Setup
 	std::vector <std::pair<std::string, int>> broadcastList;

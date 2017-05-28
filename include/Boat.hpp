@@ -21,7 +21,6 @@ class InputStream;
 
 class Boat
 {
-	int currentSouls;
 	float soulCollectionRadius;
 	float forwardForce;
 	float reverseForce;
@@ -29,6 +28,7 @@ class Boat
 	BoatCollisionHandler *collisionHandler;
 	float dampingCoefficient();
 public:
+	int currentSouls;
 	int playerNum;
 	float segPosition;
 	InputStream* inputStream;
