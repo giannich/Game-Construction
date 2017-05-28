@@ -195,124 +195,15 @@ struct Graphics
 
 int main(int argc, char**argv)
 {
-	bool isHost;
-	int recPortNum;
-	int serverPortNum;
-	int playerNum;
-	int expectedPlayerNums;
-	int aiPlayerNums;
-	int totalNumberOfPlayers;
-
+	// Game Setup
 	std::vector <std::pair<std::string, int>> broadcastList;
+	std::vector<int> playerTypeList;
+	gameSetup(argv, &broadcastList, &playerTypeList);
+	std::vector<int> playerDiscardList;
 
-	// Client or host
-	if(!strcmp(argv[1], "host"))
-	{
-		std::cout << "I am a host\n";
-		isHost = true;
-	}
-	else if (!strcmp(argv[1], "client"))
-	{
-		std::cout << "I am a client\n";
-		isHost = false;
-	}
-	else
-		exit(1);
-
-	if(isHost)
-	{
-		
-		// Receiving port number
-		recPortNum = atoi(argv[2]);
-
-		// Expected number of players
-		expectedPlayerNums = atoi(argv[3]);
-
-		// Number of AI players
-		aiPlayerNums = atoi(argv[4]);
-
-		// Player number for host is always 0
-		playerNum = 0;
-
-		// NEEDS TO CREATE A LOCAL BOAT HERE
-
-		// For playerlist stuff
-		std::string destIPAddress = "localhost";
-		int bufferSize = 5;
-		char buffer[bufferSize];
-		int tempPlayerPort;
-
-		// Loop listening for players
-		for(int i = 1; i <= expectedPlayerNums; i++)
-		{
-			std::cout << "Listening in for connections\n";
-
-			// Gets the player's port number
-			receiveDatagram(&tempPlayerPort, sizeof(int) * bufferSize, recPortNum);
-
-			std::cout << "Accepted connection number " << std::to_string(i) << "\n";
-
-			// Sends back the player number
-			sendDatagram(&i, sizeof(int), destIPAddress, tempPlayerPort);
-
-			// Adds contact information on the broadcastList
-			std::pair <std::string, int> tempPlayer = std::make_pair(destIPAddress, tempPlayerPort);
-			broadcastList.push_back(tempPlayer);
-
-			std::cout << "Successfully created player number " << std::to_string(i) << "\n";
-
-			// NEEDS TO CREATE A NETWORK BOAT HERE
-		}
-
-		// Finally sends players a message indicating the total number of players
-		totalNumberOfPlayers = expectedPlayerNums + aiPlayerNums + 1;
-
-		std::cout << "Sending total number of players to broadcast list\n";
-
-		// Note that it cant be larger than 9!
-		for(int i = 0; i < expectedPlayerNums; i++)
-			sendDatagram(&totalNumberOfPlayers, sizeof(int), broadcastList.at(i).first, broadcastList.at(i).second);
-
-		std::cout << "Successfully finished setup process for host\n";
-		std::cout << "Debug\n";
-	}
-	else
-	{
-		// Receiving port number
-		recPortNum = atoi(argv[2]);
-
-		// Server's port number
-		serverPortNum = atoi(argv[3]);
-
-		// Server's ip address
-		std::string destIPAddress = "localhost";
-
-		// Port number
-		int bufferSize = 5;
-		char buffer[bufferSize];
-
-		// Sends the receiving port number to the server
-		sendDatagram(&recPortNum, sizeof(int) * bufferSize, destIPAddress, serverPortNum);
-
-		std::cout << "Sending receiving port number to server\n";
-
-		// Gets the player number and assigns it to playerNum
-		receiveDatagram(&playerNum, sizeof(int), recPortNum);
-
-		std::cout << "Assigned to player number " << std::to_string(playerNum) << "\n";
-
-		// Finally receives the total number of players that are in the game from the host
-		receiveDatagram(&totalNumberOfPlayers, sizeof(int), recPortNum);
-
-		std::cout << "There are a total of " << std::to_string(totalNumberOfPlayers) << " players in this game\n";
-
-		// NEEDS TO CREATE NETWORK BOATS HERE IN A FOR LOOP
-
-		std::cout << "Successfully finished setup process for client\n";
-	}
-
-	std::cout << "Debug\n";
-	return 0;
+	// Debugging stuff
+	for(int i = 0; i < broadcastList.size(); i++)
+		std::cout << "Player number " << std::to_string(i) << " has port number " << std::to_string(broadcastList.at(i).second) << "\n";
 
 	//Initialize Phyiscs world
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
@@ -329,22 +220,67 @@ int main(int argc, char**argv)
 	SDL_Event e;
 	SDL_Init(SDL_INIT_EVERYTHING);
 	
+	/*
+
 	//Initialize AIs and Players
 	//SimpleAI *ai = new SimpleAI(m_track,3,.7,.5,.99);
-	Boat *m_boat = new Boat(b2Vec2(12.5f, 0.0f), *m_world, nullptr,0);
+	Boat *m_boat = new Boat(b2Vec2(12.5f, 0.0f), *m_world, nullptr,0, 1, &broadcastList);
 
 	SimpleAI *ai2 = new SimpleAI(m_track,1,.7,.5,.99);
-	Boat *p2_boat = new Boat(b2Vec2(12.5f, -25.0f), *m_world, ai2,1);
+	Boat *p2_boat = new Boat(b2Vec2(12.5f, -25.0f), *m_world, ai2, 1, 1, &broadcastList);
 
 	//Add players to world
 	gState->addPlayer(*m_boat);
 	gState->addPlayer(*p2_boat);
 
-	osgViewer::Viewer viewer = g.startupScene(gState);
+	*/
 
 	// GIANNI'S CHANGE
+
+	bool isBroadcasting;
+	if (broadcastList.size() == 1)
+		isBroadcasting = false;
+	else
+		isBroadcasting = true;
+
+	std::cout << "There are a total of " << std::to_string(playerTypeList.size()) << " players\n";
+
+	for (unsigned int i = 0; i < playerTypeList.size(); i++)
+	{
+		// Local Player
+		if (playerTypeList.at(i) == 0)
+		{
+			playerDiscardList.push_back(i);
+			std::cout << "Made local boat at position number " << std::to_string(i) << "\n";
+			Boat *local_boat = new LocalBoat(b2Vec2(12.5f, 0.0f), *m_world, nullptr, i, &broadcastList);
+			gState->addPlayer(*local_boat);
+		}
+
+		// Network Player
+		else if (playerTypeList.at(i) == 1)
+		{
+			std::cout << "Made network boat at position number " << std::to_string(i) << "\n";
+			Boat *net_boat = new NetworkBoat(b2Vec2(12.5f, 0.0f), *m_world, nullptr, i, &broadcastList, isBroadcasting);
+			gState->addPlayer(*net_boat);
+		}
+
+		// AI Player
+		else if (playerTypeList.at(i) == 2)
+		{
+			playerDiscardList.push_back(i);
+			std::cout << "Made ai boat at position number " << std::to_string(i) << "\n";
+			SimpleAI *ai2 = new SimpleAI(m_track,1,.7,.5,.99);
+			Boat *ai_boat = new AIBoat(b2Vec2(12.5f, 0.0f), *m_world, ai2, i, &broadcastList);
+			gState->addPlayer(*ai_boat);
+		}	
+	}
+
 	// Start the network receiving thread, mostly good!
-	std::thread networkReceivingThread(receiveInputStream, gState, 12345);
+	std::thread networkReceivingThread(receiveInputStream, gState, atoi(argv[2]), &playerDiscardList);
+
+	// END GIANNI'S CHANGE
+
+	osgViewer::Viewer viewer = g.startupScene(gState);
 
 	//Main game loop
 	float timestep = 1/60.0f;
@@ -380,7 +316,7 @@ int main(int argc, char**argv)
 		oldAngle = angle;
 		viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, up);
 	
-		viewer.frame();
+		//viewer.frame();
 		std::this_thread::sleep_until(now + ++i * std::chrono::duration<double>(timestep));
 	}
 }

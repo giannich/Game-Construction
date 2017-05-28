@@ -8,8 +8,7 @@
 
 #include "Boat.hpp"
 
-
-Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, int pNum)
+Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, unsigned int pNum)
 {
 	//Create rigidbody
 	{
@@ -47,14 +46,6 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, int pNum)
 	//firingForce = 0.0f;
 	
 	segPosition = -0.5;
-
-	// TODO: Need to add something for network inputstream
-
-	//Input Stream
-	if(ai1 != nullptr)
-		inputStream = new AIInputStream(playerNum, ai1);
-	else
-		inputStream = new LocalPlayerInputStream(playerNum);
 }
 
 void Boat::update(float deltaT, GameState &gs)

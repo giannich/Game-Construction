@@ -18,6 +18,150 @@
 
 #define MAX_JSON_CHARS 4096
 
+/****************
+* Initial Setup *
+****************/
+
+void gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcastList, std::vector<int> *playerTypeList)
+{
+	bool isHost;
+	int recPortNum;
+	int serverPortNum;
+	int playerNum;
+	int expectedPlayerNums;
+	int aiPlayerNums;
+	int totalNumberOfPlayers;
+
+	// Client or host
+	if(!strcmp(argv[1], "host"))
+	{
+		std::cout << "I am a host\n";
+		isHost = true;
+	}
+	else if (!strcmp(argv[1], "client"))
+	{
+		std::cout << "I am a client\n";
+		isHost = false;
+	}
+	else
+		exit(1);
+
+	if(isHost)
+	{
+		// Receiving port number
+		recPortNum = atoi(argv[2]);
+
+		// Expected number of players
+		expectedPlayerNums = atoi(argv[3]);
+
+		// Number of AI players
+		aiPlayerNums = atoi(argv[4]);
+
+		// Player number for host is always 0
+		playerNum = 0;
+
+		// NEEDS TO CREATE A LOCAL BOAT HERE
+		playerTypeList->push_back(0);
+
+		// For playerlist stuff
+		std::string destIPAddress = "localhost";
+		int bufferSize = sizeof(int);
+		int *intBuffer = (int *) malloc(bufferSize);
+		int tempPlayerPort;
+		std::pair <std::string, int> tempPlayer;
+
+		// Loop listening for players
+		for(int i = 1; i <= expectedPlayerNums; i++)
+		{
+			std::cout << "Listening in for connections\n";
+
+			// Gets the player's port number
+			receiveDatagram(intBuffer, bufferSize, recPortNum);
+			tempPlayerPort = *intBuffer;
+
+			std::cout << "Accepted connection number " << std::to_string(i) << " from player port number " << std::to_string(tempPlayerPort) << "\n";
+
+			// Sends back the player number
+			*intBuffer = i;
+			sendDatagram(intBuffer, bufferSize, destIPAddress, tempPlayerPort);
+
+			// Adds contact information on the broadcastList
+			tempPlayer = std::make_pair(destIPAddress, tempPlayerPort);
+			broadcastList->push_back(tempPlayer);
+			playerTypeList->push_back(1);
+
+			std::cout << "Successfully created player number " << std::to_string(i) << "\n";
+			// NEEDS TO CREATE A NETWORK BOAT HERE
+		}
+
+		// Loop for creating ai players
+		for(int i = 0; i < aiPlayerNums; i++)
+			playerTypeList->push_back(2);
+
+		// Finally sends players a message indicating the total number of players
+		totalNumberOfPlayers = expectedPlayerNums + aiPlayerNums + 1;
+		*intBuffer = totalNumberOfPlayers;
+
+		std::cout << "Sending total number of players to broadcast list\n";
+
+		for(int i = 0; i < expectedPlayerNums; i++)
+			sendDatagram(intBuffer, bufferSize, broadcastList->at(i).first, broadcastList->at(i).second);
+
+		std::cout << "Successfully finished setup process for host\n";
+	}
+	else
+	{
+		// Receiving port number
+		recPortNum = atoi(argv[2]);
+
+		// Server's port number
+		serverPortNum = atoi(argv[3]);
+
+		// Server's ip address
+		std::string destIPAddress = "localhost";
+
+		// Port number
+		int bufferSize = sizeof(int);
+		int *intBuffer = (int *) malloc(bufferSize);
+
+		// Sends the receiving port number to the server
+		*intBuffer = recPortNum;
+		sendDatagram(intBuffer, bufferSize, destIPAddress, serverPortNum);
+		std::cout << "Sending receiving port number " << std::to_string(recPortNum) << " to server at port number " << std::to_string(serverPortNum) << "\n";
+
+		// Gets the player number and assigns it to playerNum
+		receiveDatagram(intBuffer, bufferSize, recPortNum);
+		playerNum = *intBuffer;
+
+		std::cout << "Assigned to player number " << std::to_string(playerNum) << "\n";
+
+		// Finally receives the total number of players that are in the game from the host
+		receiveDatagram(intBuffer, bufferSize, recPortNum);
+		totalNumberOfPlayers = *intBuffer;
+
+		std::cout << "There are a total of " << std::to_string(totalNumberOfPlayers) << " players in this game\n";
+
+		// The broadcastlist will only have the server
+		broadcastList->push_back(std::make_pair(destIPAddress, serverPortNum));
+
+		// NEEDS TO CREATE NETWORK BOATS HERE IN A FOR LOOP
+		for (int i = 0; i < totalNumberOfPlayers; i++)
+		{
+			// If local
+			if (i == playerNum)
+				playerTypeList->push_back(0);
+
+			// If network
+			else
+				playerTypeList->push_back(1);
+		}
+
+		std::cout << "Successfully finished setup process for client\n";
+	}
+
+	return;
+}
+
 /***************
 * InputStreams *
 ***************/
@@ -39,7 +183,7 @@ void Networking::broadcastInputStream()
 
 // Receives a datagram and decodes it to the correct InputStream
 // This will be called at the beginning of the game
-void receiveInputStream(GameState *world, int receivePortNum)
+void receiveInputStream(GameState *world, int receivePortNum, std::vector<int> *playerDiscardList)
 {
 	// Mallocs the encodedInputStream 
 	char *encodedInputStream = (char *) malloc((MAX_FRAMES + 8) * sizeof(char));
@@ -57,6 +201,10 @@ void receiveInputStream(GameState *world, int receivePortNum)
 					   ((unsigned int) (encodedInputStream[MAX_FRAMES + 5] << 8) & 65280) +
 					   ((unsigned int) (encodedInputStream[MAX_FRAMES + 6] << 16) & 16711680) +
 					   ((unsigned int) (encodedInputStream[MAX_FRAMES + 7] << 24) & 4278190080);
+
+		// Skips if receiving own player packets
+		if (std::find(playerDiscardList->begin(), playerDiscardList->end(), playerNumber) != playerDiscardList->end())
+			continue;
 
 		std::cout << "Received packet from player number " << std::to_string(playerNumber) << "\n";
 

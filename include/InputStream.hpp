@@ -14,6 +14,7 @@
 #include <boost/circular_buffer.hpp>
 #include <stdio.h>
 #include <string>
+#include <iostream>
 #include "Networking.hpp"
 #define MAX_FRAMES 50
 
@@ -66,25 +67,11 @@ public:
 	InputState lastInputState;
 	Networking *networkingHandler;
 	unsigned int playerNum;
-	std::vector <std::pair<std::string, int>> *broadcastPointer;
-
-	// TODO: Take off later
-	std::vector <std::pair<std::string, int>> broadcastList;
 	
 	// Constructor
 	// TODO: Needs to change so that it can accept an external broadcastlist pointer
 	InputStream()
 	{
-		// Networking settings here
-		std::string targetAddress = "localhost";
-		int targetPort = 12346;
-
-		// Networking setup code here
-		std::pair <std::string, int> broadcastTarget = std::make_pair(targetAddress, targetPort);
-		broadcastList.push_back(broadcastTarget);
-
-
-		networkingHandler = new Networking(&broadcastList, this);
 		currentFrameNumber = 0;
 	}
 
@@ -110,6 +97,7 @@ public:
 	// Gets the current frame number
 	// Used for debugging
 	int getCurrentFrameNumber();
+	void setCurrentFrameNumber(int targetFrameNumber);
 
 	// Need deltaTime to make sure that all machines are inputting at the same rate.
 	// If one machine is running slower, then it will fill its input by duplicating the most recent command to keep a constant framerate.
@@ -126,7 +114,11 @@ public:
 	// Need some SDL Data?
 	// Send commands to remote host if necessary
 	//InputState updateInputState(float deltaTime, GameState &gs);
-	LocalPlayerInputStream(int pNum) { playerNum = pNum; }
+	LocalPlayerInputStream(int pNum, std::vector <std::pair<std::string, int>> *broadcastPointer) : InputStream()
+	{ 
+		playerNum = pNum;
+		networkingHandler = new Networking(broadcastPointer, this);
+	}
 	void update(float deltaTime, GameState &gs);
 };
 
@@ -134,7 +126,11 @@ public:
 class AIInputStream: public InputStream {
 public:
 	SimpleAI *ai;
-	AIInputStream(int pNum, SimpleAI *ai1) : ai(ai1), InputStream() { playerNum = pNum;}
+	AIInputStream(int pNum, SimpleAI *ai1, std::vector <std::pair<std::string, int>> *broadcastPointer) : ai(ai1), InputStream()
+	{ 
+		playerNum = pNum;
+		networkingHandler = new Networking(broadcastPointer, this);
+	}
 	// This will have access to the input state from the last frame, and the gamestate for this frame.
 	// After this function is called, the currentState for the AIInputStream should be updated to what we want for next frame.
 	void update(float deltaTime, GameState &gs);
@@ -144,8 +140,21 @@ public:
 // Network Player InputStream
 class NetworkPlayerInputStream: public InputStream {
 public:
-	NetworkPlayerInputStream(int pNum) : InputStream() { playerNum = pNum; }
+	NetworkPlayerInputStream(int pNum, std::vector <std::pair<std::string, int>> *broadcastPointer, bool broadcast) : InputStream()
+	{ 
+		playerNum = pNum; 
+		networkingHandler = new Networking(broadcastPointer, this);
+		isBroadcasting = broadcast;
+		
+		for (int i = 0; i < MAX_FRAMES; i++)
+			writeSingleState(InputState());
+
+		setCurrentFrameNumber(1);
+	}
 	void update(float deltaTime, GameState &gs);
+
+private:
+	bool isBroadcasting;
 };
 
 #endif /*InputStream_hpp*/

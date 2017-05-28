@@ -97,11 +97,20 @@ InputState InputStream::readSingleState(int targetFrameNumber)
 	catch (int errorNum)
 	{
 		if (errorNum == -1)
+		{
 			std::cout << "Physics engine is asking for a frame that is too old!\n";
-		else if (errorNum == -1)
+			exit(1);
+		}
+		else if (errorNum == -2)
+		{
 			std::cout << "Physics engine is asking for a frame that is too new!\n";
+			exit(1);
+		}
 		else
+		{
 			std::cout << "This error should not exist!\n";
+			exit(1);
+		}	
 	}
 
 	// This is when the physics engine is asking for a frame that is present in the InputStream
@@ -111,8 +120,8 @@ InputState InputStream::readSingleState(int targetFrameNumber)
 // Writes a single InputState
 void InputStream::writeSingleState(InputState newInputState)
 {
-	std::cout << "Writing inputstate for player number " << std::to_string(playerNum) << "\n";
-	std::cout << newInputState.toString() << "\n";
+	//std::cout << "Writing inputstate for player number " << std::to_string(playerNum) << "\n";
+	std::cout << "For player number " << std::to_string(playerNum) << " the inputstate is: " << newInputState.toString() << "\n";
 	circular_buffer.push_back(newInputState);
 	currentFrameNumber++;
 }
@@ -120,7 +129,7 @@ void InputStream::writeSingleState(InputState newInputState)
 // Reads a bunch of InputStates
 void InputStream::encodeInputStates(char *outputList)
 {
-	// Filles the outputList with all the elements from the buffer in order
+	// Fills the outputList with all the elements from the buffer in order
 	for (int i = 0; i < circular_buffer.size(); i++)
 		outputList[i] = circular_buffer.at(i).toChar();
 
@@ -193,6 +202,11 @@ int InputStream::getCurrentFrameNumber()
 	return currentFrameNumber;
 }
 
+void InputStream::setCurrentFrameNumber(int targetFrameNumber)
+{
+	currentFrameNumber = targetFrameNumber;
+}
+
 void LocalPlayerInputStream::update(float deltaT, GameState &gs) {
 	SDL_Event e;
 	while(SDL_PollEvent(&e)) {
@@ -258,6 +272,9 @@ void LocalPlayerInputStream::update(float deltaT, GameState &gs) {
 		}
 	}
 
+	writeSingleState(lastInputState);
+	std::cout << "Local Player broadcast!\n";
+	networkingHandler->broadcastInputStream();
 }
 
 void AIInputStream::update(float deltaTime, GameState &gs) {
@@ -266,6 +283,7 @@ void AIInputStream::update(float deltaTime, GameState &gs) {
 
 	// Writes in the inputstate and broadcasts it
 	writeSingleState(lastInputState);
+	std::cout << "AI Player broadcast!\n";
 	networkingHandler->broadcastInputStream();
 }
 
@@ -273,6 +291,13 @@ void AIInputStream::update(float deltaTime, GameState &gs) {
 void NetworkPlayerInputStream::update(float deltaTime, GameState &gs) {
 	// Here we grab the inputstate by using readSingleState on the latest frame number
 	int latestFrame = getCurrentFrameNumber() - 1;
+	std::cout << "In network update for player number " << std::to_string(playerNum) << " looking for frame number: " << std::to_string(latestFrame) << "\n";
 	lastInputState = readSingleState(latestFrame);
-	// Then we apply the physiscs at the Boat level
+
+	// Only broadcast if it is a network inputstream at host level
+	if (isBroadcasting)
+	{
+		std::cout << "Networking Player broadcast!\n";
+		networkingHandler->broadcastInputStream();
+	}
 }
