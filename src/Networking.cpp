@@ -22,11 +22,12 @@
 * Initial Setup *
 ****************/
 
-unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcastList, std::vector<int> *playerTypeList)
+unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcastList, std::vector <std::pair<std::string, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList)
 {
 	bool isHost;
 	int recPortNum;
 	int serverPortNum;
+	int gamestatePortNum;
 	int playerNum;
 	int expectedPlayerNums;
 	int aiPlayerNums;
@@ -67,8 +68,10 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 		// For playerlist stuff
 		std::string destIPAddress = "localhost";
 		int bufferSize = sizeof(int);
+		int *intArrBuffer = (int *) malloc(bufferSize * 2);
 		int *intBuffer = (int *) malloc(bufferSize);
 		int tempPlayerPort;
+		int tempGamestatePort;
 		std::pair <std::string, int> tempPlayer;
 
 		// Loop listening for players
@@ -76,12 +79,11 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 		{
 			std::cout << "Listening in for connections\n";
 
-			// Gets the player's port number
-			receiveDatagram(intBuffer, bufferSize, recPortNum);
-			tempPlayerPort = *intBuffer;
-
-			std::cout << "Accepted connection number " << std::to_string(i) << " from player port number " << std::to_string(tempPlayerPort) << "\n";
-
+			// Gets the player's port numbers
+			receiveDatagram(intArrBuffer, bufferSize * 2, recPortNum);
+			tempPlayerPort = intArrBuffer[0];
+			tempGamestatePort = intArrBuffer[1];
+			
 			// Sends back the player number
 			*intBuffer = i;
 			sendDatagram(intBuffer, bufferSize, destIPAddress, tempPlayerPort);
@@ -90,9 +92,10 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 			tempPlayer = std::make_pair(destIPAddress, tempPlayerPort);
 			broadcastList->push_back(tempPlayer);
 			playerTypeList->push_back(1);
+			tempPlayer = std::make_pair(destIPAddress, tempGamestatePort);
+			gamestateBroadcastList->push_back(tempPlayer);
 
 			std::cout << "Successfully created player number " << std::to_string(i) << "\n";
-			// NEEDS TO CREATE A NETWORK BOAT HERE
 		}
 
 		// Loop for creating ai players
@@ -118,29 +121,32 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 
 		free(intBuffer);
 		free(unsignedBuffer);
+		free(intArrBuffer);
 		std::cout << "Successfully finished setup process for host\n";
 	}
 	else
 	{
-		// Receiving port number
+		// Receiving port number - InputStream
 		recPortNum = atoi(argv[2]);
 
 		// Server's port number
 		serverPortNum = atoi(argv[3]);
 
+		// Receiving port number - GameState
+		gamestatePortNum = atoi(argv[4]);
+
 		// Server's ip address
 		std::string destIPAddress = "localhost";
 
-		// Port number
-		int bufferSize = sizeof(int);
-		int *intBuffer = (int *) malloc(bufferSize);
-
 		// Sends the receiving port number to the server
-		*intBuffer = recPortNum;
-		sendDatagram(intBuffer, bufferSize, destIPAddress, serverPortNum);
-		std::cout << "Sending receiving port number " << std::to_string(recPortNum) << " to server at port number " << std::to_string(serverPortNum) << "\n";
-
+		int bufferSize = sizeof(int);
+		int *intArrBuffer = (int *) malloc(bufferSize * 2);
+		intArrBuffer[0] = recPortNum;
+		intArrBuffer[1] = gamestatePortNum;
+		sendDatagram(intArrBuffer, bufferSize * 2, destIPAddress, serverPortNum);
+		
 		// Gets the player number and assigns it to playerNum
+		int *intBuffer = (int *) malloc(bufferSize);
 		receiveDatagram(intBuffer, bufferSize, recPortNum);
 		playerNum = *intBuffer;
 
@@ -175,6 +181,7 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 
 		free(intBuffer);
 		free(unsignedBuffer);
+		free(intArrBuffer);
 		std::cout << "Successfully finished setup process for client\n";
 	}
 
@@ -251,7 +258,7 @@ http://stackoverflow.com/questions/2114466/creating-json-arrays-in-boost-using-p
 */
 
 // Encodes a GameState and sends it through UDP
-void Networking::sendGameStateInfo(GameState *world)
+void sendGameStateInfo(GameState *world, std::vector <std::pair<std::string, int>> gamestateBroadcastList)
 {
 	// Convert GameState into a ptree
 	boost::property_tree::ptree pt;
@@ -274,9 +281,6 @@ void Networking::sendGameStateInfo(GameState *world)
 		pt.put("positionX" + std::to_string(i), playerBoat.rigidBody->GetPosition().x);
 		pt.put("positionY" + std::to_string(i), playerBoat.rigidBody->GetPosition().y);
 		pt.put("currentSouls" + std::to_string(i), playerBoat.currentSouls);
-
-		// Need to encode this from enum to chars?
-		//pt.put("inputStream", playerBoat->inputStream);
 	}
 
 	// Convert ptree into a stringstream
@@ -296,60 +300,65 @@ void Networking::sendGameStateInfo(GameState *world)
 	stringBuffer[aString.length()] = '\0';
 
 	// Finally send the datagram
-	sendDatagram(&stringBuffer, bufferSize, "localhost", 12346);
+	for (int i = 0; i < gamestateBroadcastList.size(); i++)
+	{
+		std::cout << "Broadcasting GameState to port number " << std::to_string(gamestateBroadcastList.at(i).second) << "!\n";
+		sendDatagram(&stringBuffer, bufferSize, gamestateBroadcastList.at(i).first, gamestateBroadcastList.at(i).second);
+	}
 }
 
 // Receives a message from UDP and decodes it into a GameState
-void Networking::receiveGameStateInfo(GameState *world)
+void receiveGameStateInfo(GameState *world, int receivePortNum, bool isHost)
 {
 	// Receive a char *
 	char stringBuffer[MAX_JSON_CHARS];
-	int msgLen = receiveDatagram(stringBuffer, MAX_JSON_CHARS, 12346);
+	int msgLen;
 
-	// Convert char * to string
-	std::string midString(stringBuffer);
-
-	// Convert string to a stringstream
-	std::stringstream ss;
-	ss << midString.substr(0, msgLen);
-
-	// Debugging info
-	std::cout << ss.str();
-
-	// Convert stringstream to a ptree
-	boost::property_tree::ptree pt;
-	read_json(ss, pt);
-
-	// Convert ptree to a GameState, careful, this is a long process
-
-	// Gets the player number, and if it fails, will get 0
-	int playerNum = pt.get<int>("playerNum", 0.0f);
-
-	// Iterates through the boat list
-	for (int i = 0; i < playerNum; i++)
+	while (!isHost)
 	{
-		// Linear Velocity
-		float32 velx = pt.get<float32>("linearVelocityX" + std::to_string(i));
-		float32 vely = pt.get<float32>("linearVelocityY" + std::to_string(i));
-		world->boats->at(i).rigidBody->SetLinearVelocity(b2Vec2(velx, vely));
+		msgLen = receiveDatagram(stringBuffer, MAX_JSON_CHARS, receivePortNum);
 
-		// Rotational Velocity
-		float32 rotvel = pt.get<float32>("rotVelocity" + std::to_string(i));
-		world->boats->at(i).rigidBody->SetAngularVelocity(rotvel);
+		// Convert char * to string
+		std::string midString(stringBuffer);
 
-		// Orientation & Position
-		float32 orient = pt.get<float32>("orientation" + std::to_string(i));
-		float32 posx = pt.get<float32>("positionX" + std::to_string(i));
-		float32 posy = pt.get<float32>("positionY" + std::to_string(i));
-		world->boats->at(i).rigidBody->SetTransform(b2Vec2(posx, posy), orient);
+		// Convert string to a stringstream
+		std::stringstream ss;
+		ss << midString.substr(0, msgLen);
 
-		// Current Souls
-		int souls = pt.get<int>("currentSouls" + std::to_string(i));
-		world->boats->at(i).currentSouls = souls;
+		// Debugging info
+		std::cout << ss.str();
 
-		// InputStream
-		//InputStream input = pt.get<InputStream>("inputStream" + std::to_string(i));
-		//world->boats->at(i).InputStream = input;
+		// Convert stringstream to a ptree
+		boost::property_tree::ptree pt;
+		read_json(ss, pt);
+
+		// Convert ptree to a GameState, careful, this is a long process
+
+		// Gets the player number, and if it fails, will get 0
+		int playerNum = pt.get<int>("playerNum", 0.0f);
+
+		// Iterates through the boat list
+		for (int i = 0; i < playerNum; i++)
+		{
+			// Linear Velocity
+			float32 velx = pt.get<float32>("linearVelocityX" + std::to_string(i));
+			float32 vely = pt.get<float32>("linearVelocityY" + std::to_string(i));
+			world->boats->at(i).rigidBody->SetLinearVelocity(b2Vec2(velx, vely));
+
+			// Rotational Velocity
+			float32 rotvel = pt.get<float32>("rotVelocity" + std::to_string(i));
+			world->boats->at(i).rigidBody->SetAngularVelocity(rotvel);
+
+			// Orientation & Position
+			float32 orient = pt.get<float32>("orientation" + std::to_string(i));
+			float32 posx = pt.get<float32>("positionX" + std::to_string(i));
+			float32 posy = pt.get<float32>("positionY" + std::to_string(i));
+			world->boats->at(i).rigidBody->SetTransform(b2Vec2(posx, posy), orient);
+
+			// Current Souls
+			int souls = pt.get<int>("currentSouls" + std::to_string(i));
+			world->boats->at(i).currentSouls = souls;
+		}
 	}
 
 }

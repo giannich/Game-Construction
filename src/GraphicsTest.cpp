@@ -200,13 +200,25 @@ int main( int argc, char** argv)
 {
 	// Game Setup
 	std::vector <std::pair<std::string, int>> broadcastList;
+	std::vector <std::pair<std::string, int>> gamestateBroadcastList;
 	std::vector<int> playerTypeList;
-	unsigned int seed = gameSetup(argv, &broadcastList, &playerTypeList);
 	std::vector<int> playerDiscardList;
+	bool isHost;
+	unsigned int seed = gameSetup(argv, &broadcastList, &gamestateBroadcastList, &playerTypeList);
+
+	if (playerTypeList.at(0) == 0)
+		isHost = true;
+	else
+		isHost = false;
 
 	// Debugging stuff
 	for(int i = 0; i < broadcastList.size(); i++)
 		std::cout << "Player number " << std::to_string(i) << " has port number " << std::to_string(broadcastList.at(i).second) << "\n";
+
+	// Debugging stuff
+	if (isHost)
+		for(int i = 0; i < broadcastList.size(); i++)
+			std::cout << "Player number " << std::to_string(i) << " has gamestate port number " << std::to_string(gamestateBroadcastList.at(i).second) << "\n";
 
 	//Initialize Phyiscs world
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
@@ -270,24 +282,37 @@ int main( int argc, char** argv)
 		}	
 	}
 
+	std::cout << "Setup is done!\n";
+
 	// Start the network receiving thread, mostly good!
 	std::thread networkReceivingThread(receiveInputStream, gState, atoi(argv[2]), &playerDiscardList);
+	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, atoi(argv[4]), isHost);
 
+	std::cout << "Setup is done!\n";
+	
 	osgViewer::Viewer viewer = g.startupScene(gState);
 
 	//Main game loop
+	int stopper = 0;
 	float timestep = 1/60.0f;
 	int i = 0;
 	float oldAngle = 0; 
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 	while(!viewer.done()) 
 	{
+		stopper++;
+		//if (stopper > 100)
+		//	break;
 		//Step the physics engine forward 1 frame
 		m_world->Step(timestep,10,10);
 		//std::cout << "Position: " << m_boat->rigidBody->GetPosition().x << m_boat->rigidBody->GetPosition().y << std::endl;
 
 		//Broadcast update to all game entities
 		gState->update(timestep);
+
+		// Will send the gamestate only if host
+		if (isHost && ((stopper % 5) == 0))
+			sendGameStateInfo(gState, gamestateBroadcastList);
 
 		//This passes the gamestate to anything that has registered to sig
 		//For example, our graphics would now draw the updated gamestate
