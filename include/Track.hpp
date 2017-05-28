@@ -25,7 +25,7 @@ public:
 	int N;             //Number of segments
 	vec2 *l, *r, *p;
 	float *c;
-	Track(int N, float step, float width, float smoothness);
+	Track(int N, float step, float width, float smoothness, unsigned int seed);
 	float getNewSegPosition(float currentSegPosition, vec2 pos);
 	void addTrackToWorld(b2World&);
 };

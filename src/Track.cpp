@@ -45,14 +45,14 @@ float dist2(vec2 a, vec2 b)
 	return norm2(sub(a, b));
 }
 
-Track::Track(int N, float step, float width, float smoothness = 15)
+Track::Track(int N, float step, float width, float smoothness = 15, unsigned int seed)
 {
 	this->N = N;
 	l = new vec2[N];
 	r = new vec2[N];
 	p = new vec2[N];
 	c = new float[N];
-	srand(time(NULL));
+	srand(seed);
 	l[0] = vec2(0,0);
 	r[0] = vec2(width,0);
 	p[0] = vec2(0,1);
