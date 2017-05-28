@@ -5,7 +5,7 @@ LIB_PATH = lib
 #PLUGINS := $(basename $(notdir $(wildcard $(PLUGIN_PATH)/*.so)))
 LINK_PLUGINS := $(addprefix -l, $(subst osgdb_,,$(PLUGINS)))
 LIB_FLAGS = -std=c++11 -losgDB -losgViewer -losg -lOpenThreads -losgUtil -losgGA $(LINK_PLUGINS) $(LIB_PATH)/libBox2d.a
-CC_FLAGS = -rpath .
+CC_FLAGS = -rpath . -g
 EXECUTABLE = gtest
 
 all: $(EXECUTABLE)
