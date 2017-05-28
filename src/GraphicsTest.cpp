@@ -201,7 +201,7 @@ int main( int argc, char** argv)
 	// Game Setup
 	std::vector <std::pair<std::string, int>> broadcastList;
 	std::vector<int> playerTypeList;
-	gameSetup(argv, &broadcastList, &playerTypeList);
+	unsigned int seed = gameSetup(argv, &broadcastList, &playerTypeList);
 	std::vector<int> playerDiscardList;
 
 	// Debugging stuff
@@ -210,7 +210,7 @@ int main( int argc, char** argv)
 
 	//Initialize Phyiscs world
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
-	Track *m_track = new Track(1000,2.5f,11.0f,4);
+	Track *m_track = new Track(1000,2.5f,11.0f,4, seed);
 	m_track->addTrackToWorld(*m_world);
 	GameState *gState = new GameState(*m_track);
 

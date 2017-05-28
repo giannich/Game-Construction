@@ -22,7 +22,7 @@
 * Initial Setup *
 ****************/
 
-void gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcastList, std::vector<int> *playerTypeList)
+unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcastList, std::vector<int> *playerTypeList)
 {
 	bool isHost;
 	int recPortNum;
@@ -31,6 +31,7 @@ void gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcast
 	int expectedPlayerNums;
 	int aiPlayerNums;
 	int totalNumberOfPlayers;
+	unsigned int randomSeed;
 
 	// Client or host
 	if(!strcmp(argv[1], "host"))
@@ -101,12 +102,22 @@ void gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcast
 		// Finally sends players a message indicating the total number of players
 		totalNumberOfPlayers = expectedPlayerNums + aiPlayerNums + 1;
 		*intBuffer = totalNumberOfPlayers;
-
 		std::cout << "Sending total number of players to broadcast list\n";
 
-		for(int i = 0; i < expectedPlayerNums; i++)
-			sendDatagram(intBuffer, bufferSize, broadcastList->at(i).first, broadcastList->at(i).second);
+		// Also sends the track random seed
+		randomSeed = time(NULL);
+		unsigned int *unsignedBuffer = (unsigned int *) malloc(sizeof(unsigned int));
+		*unsignedBuffer = randomSeed;
+		std::cout << "Host has generated a random seed of " << std::to_string(randomSeed) << "\n";
 
+		for(int i = 0; i < expectedPlayerNums; i++)
+		{
+			sendDatagram(intBuffer, bufferSize, broadcastList->at(i).first, broadcastList->at(i).second);
+			sendDatagram(unsignedBuffer, sizeof(unsigned int), broadcastList->at(i).first, broadcastList->at(i).second);
+		}
+
+		free(intBuffer);
+		free(unsignedBuffer);
 		std::cout << "Successfully finished setup process for host\n";
 	}
 	else
@@ -138,8 +149,14 @@ void gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcast
 		// Finally receives the total number of players that are in the game from the host
 		receiveDatagram(intBuffer, bufferSize, recPortNum);
 		totalNumberOfPlayers = *intBuffer;
-
 		std::cout << "There are a total of " << std::to_string(totalNumberOfPlayers) << " players in this game\n";
+
+		// Also receives the random seed from the host
+		unsigned int *unsignedBuffer = (unsigned int *) malloc(sizeof(unsigned int));
+		receiveDatagram(unsignedBuffer, sizeof(unsigned int), recPortNum);
+		randomSeed = *unsignedBuffer;
+
+		std::cout << "Host has generated a random seed of " << std::to_string(randomSeed) << "\n";
 
 		// The broadcastlist will only have the server
 		broadcastList->push_back(std::make_pair(destIPAddress, serverPortNum));
@@ -156,10 +173,12 @@ void gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcast
 				playerTypeList->push_back(1);
 		}
 
+		free(intBuffer);
+		free(unsignedBuffer);
 		std::cout << "Successfully finished setup process for client\n";
 	}
 
-	return;
+	return randomSeed;
 }
 
 /***************

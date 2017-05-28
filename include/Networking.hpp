@@ -32,7 +32,7 @@ struct Networking
 	void receiveGameStateInfo(GameState* world);
 };
 
-void gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcastList, std::vector<int> *playerTypeList);
+unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcastList, std::vector<int> *playerTypeList);
 void receiveInputStream(GameState *world, int receivePortNum, std::vector<int> *playerDiscardList);
 void error(const char *msg);
 void sendDatagram(void *msgObject, size_t objLen, std::string destIPAddress, int destPortNum);
