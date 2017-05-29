@@ -8,6 +8,7 @@
 #include <osg/Quat>
 
 #include <osgDB/ReadFile>
+#include <deque>
 
 #include <osgUtil/SmoothingVisitor>
 
@@ -50,7 +51,6 @@ struct Graphics
 	// Init the viewer and other shit
 	osgViewer::Viewer startupScene(GameState *world)
 	{
-		
 		//Create startup scene with boats loaded
 		Group *scene = new Group();
 		Node * n = loadBoats(scene, world);
@@ -60,20 +60,23 @@ struct Graphics
 		createTrack(polyGeom, world);
 		scene->addChild(polyGeom);
 
+		std::deque<std::string> libs = osgDB::Registry::instance()->getLibraryFilePathList();
+		for(auto it = libs.begin(); it != libs.end(); ++it)
+			std::cout << "Lib path: " << *it << std::endl;
+
+		std::cout << "Load Status: " << osgDB::Registry::instance()->loadLibrary("osgdb_osg");
+		osg::ref_ptr<Node> airboat = osgDB::readNodeFile("models/airboat.obj");
+		std::cout << "Node PTR: "<< airboat << std::endl;
+
 		//Custimize viewer
 		osg::ref_ptr<osgViewer::WindowSizeHandler> handler = new osgViewer::WindowSizeHandler();
 
 		osgViewer::Viewer viewer;
 		viewer.setUpViewInWindow(500, 50, 800, 800);
 
-		//Set up keyboard event handling
-		//viewer.addEventHandler(handler);
-		//viewer.addEventHandler(new PickHandler());
-
 		//Set up camera
 		viewer.getCamera()->setClearColor(osg::Vec4(0.8f,0.8f,0.8f,0.8f));
 	
-		std::cout << world->boats->size() << std::endl;
 		Boat boat = (*(world->boats))[myBoat];
 		float x = boat.getX();
 		float y = -boat.getY();
