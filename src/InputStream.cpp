@@ -70,5 +70,5 @@ void LocalPlayerInputStream::update(float deltaT, GameState &gs) {
 
 void AIInputStream::update(float deltaTime, GameState &gs) {
 	b2Body *rigidBody = (*gs.boats)[playerNum].rigidBody;
-	lastInputState = ai->getCommand(vec2(rigidBody->GetPosition().x, rigidBody->GetPosition().y), vec2(rigidBody->GetLinearVelocity().x, rigidBody->GetLinearVelocity().y), rigidBody->GetAngle(), (*gs.boats)[playerNum].segPosition);
+	lastInputState = ai->getCommand(*gs.boats);
 }

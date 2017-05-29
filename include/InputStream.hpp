@@ -15,7 +15,7 @@ typedef enum AccelerationAxis {Accelerating, Idling, Reversing} AccelerationAxis
 typedef enum Firing {NotFiring, Firing} FiringState;
 
 class GameState;
-class SimpleAI;
+class AI;
 
 class InputState {
 public:
@@ -55,8 +55,8 @@ public:
 
 class AIInputStream: public InputStream {
 public:
-	SimpleAI *ai;
-	AIInputStream(int pNum, SimpleAI *ai1) : ai(ai1) { playerNum = pNum;}
+	AI *ai;
+	AIInputStream(int pNum, AI *ai1) : ai(ai1) { playerNum = pNum;}
 	// This will have access to the input state from the last frame, and the gamestate for this frame.
 	// After this function is called, the currentState for the AIInputStream should be updated to what we want for next frame.
 	void update(float deltaTime, GameState &gs);

@@ -1,4 +1,4 @@
-#include "Box2d/Box2d.h"
+#include "Box2D/Box2D.h"
 
 class ContactListener : public b2ContactListener
 {

@@ -25,6 +25,7 @@
 #include "Boat.hpp"
 #include "GameState.hpp"
 #include "Soul.hpp"
+#include "AI_1_0.hpp"
 
 #include <SDL.h>
 
@@ -273,10 +274,11 @@ int main( int, char**)
 	SDL_Init(SDL_INIT_EVERYTHING);
 	
 	//Initialize AIs and Players
-	//SimpleAI *ai = new SimpleAI(m_track,3,.7,.5,.99);
-	Boat *m_boat = new Boat(b2Vec2(1.25f, 0.0f), *m_world, nullptr,0);
+	int numBoats = 2;
+	AI *ai = new AI_1_0(m_track, 0, numBoats,3,.7,.5,.99);
+	Boat *m_boat = new Boat(b2Vec2(1.25f, 0.0f), *m_world, ai,0);
 
-	SimpleAI *ai2 = new SimpleAI(m_track,1,.7,.5,.99);
+	AI *ai2 = new AI_1_0(m_track, 1, numBoats,1,.7,.5,.99);
 	Boat *p2_boat = new Boat(b2Vec2(1.25f, -2.5f), *m_world, ai2,1);
 
 	//Add players to world

@@ -9,7 +9,7 @@
 #include "Boat.hpp"
 #include <algorithm>
 
-Boat::Boat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, int pNum)
+Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, int pNum)
 {
 	collisionHandler = new BoatCollisionHandler(this);
     //Create rigidbody
