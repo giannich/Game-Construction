@@ -282,13 +282,10 @@ int main( int argc, char** argv)
 		}	
 	}
 
-	std::cout << "Setup is done!\n";
-
 	// Start the network receiving thread, mostly good!
+	std::queue<GameStatePatch *> gsp_queue;
 	std::thread networkReceivingThread(receiveInputStream, gState, atoi(argv[2]), &playerDiscardList);
-	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, atoi(argv[4]), isHost);
-
-	std::cout << "Setup is done!\n";
+	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, atoi(argv[4]), isHost, &gsp_queue);
 	
 	osgViewer::Viewer viewer = g.startupScene(gState);
 
