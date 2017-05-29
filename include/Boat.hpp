@@ -10,7 +10,7 @@
 #define Boat_hpp
 
 #include <stdio.h>
-#include "SimpleAI.hpp"
+#include "AI.hpp"
 #include "CollisionHandler.hpp"
 #include "Box2D/Box2D.h"
 
@@ -33,7 +33,7 @@ public:
 	float segPosition;
 	InputStream* inputStream;
 	b2Body *rigidBody;
-	Boat(b2Vec2 , b2World&, SimpleAI*, unsigned int);
+	Boat(b2Vec2 , b2World&, AI *ai1, unsigned int);
 	void update(float deltaT, GameState &gs);
 	float getX();
 	float getY();

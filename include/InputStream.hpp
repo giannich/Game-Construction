@@ -16,7 +16,7 @@
 #define MAX_FRAMES 50
 
 class GameState;
-class SimpleAI;
+class AI;
 
 typedef enum TurnAxis 
 {
@@ -128,8 +128,8 @@ public:
 // AI InputStream
 class AIInputStream: public InputStream {
 public:
-	SimpleAI *ai;
-	AIInputStream(int pNum, SimpleAI *ai1, std::vector <std::pair<std::string, int>> *broadcastPointer) : ai(ai1), InputStream()
+	AI *ai;
+	AIInputStream(int pNum, AI *ai1, std::vector <std::pair<std::string, int>> *broadcastPointer) : ai(ai1), InputStream()
 	{ 
 		playerNum = pNum;
 		networkingHandler = new Networking(broadcastPointer, this);

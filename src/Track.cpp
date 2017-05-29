@@ -1,4 +1,4 @@
-#include<cmath>
+
 #include "Track.hpp"
 #include<time.h>
 #include<iostream>
@@ -44,18 +44,21 @@ float dist2(vec2 a, vec2 b)
 {
 	return norm2(sub(a, b));
 }
-
-Track::Track(int N, float step, float width, float smoothness = 15, unsigned int seed = time(NULL))
+float cross_z(vec2 a, vec2 b)
+{
+	return a.x*b.y - a.y*b.x;
+}
+Track::Track(int N, float step, float width, float smoothness = 15)
 {
 	this->N = N;
 	l = new vec2[N];
 	r = new vec2[N];
 	p = new vec2[N];
 	c = new float[N];
-	srand(seed);
-	l[0] = vec2(0,0);
-	r[0] = vec2(width,0);
-	p[0] = vec2(0,1);
+	srand(time(NULL));
+	l[0] = { 0,0 };
+	r[0] = { width,0 };
+	p[0] = { 0,1 };
 	c[0] = 0;
 	int backStep = 1;
 	for (int i = 1; i<N; i++)
@@ -178,8 +181,64 @@ float Track::getNewSegPosition(float currentSegPosition, vec2 pos)
 	}
 	return N - 1 + dot(pos, p[N - 1]) + c[N - 1];
 }
+vec2* Track::getInitialSoulPositions(int numSouls)
+{
+	vec2 *sp = new vec2[numSouls];
+	srand(time(NULL));
+	for (int i = 0; i < numSouls; i++)
+	{
+		int seg = rand() % (N - 5) + 5;
+		float p1 = rand() / (float)RAND_MAX;
+		float p2 = rand() / (float)RAND_MAX;
+		sp[i] = add(add(mul(l[seg] , p1 * p2), mul(l[seg - 1], (1 - p1) * p2)), add(mul(r[seg] , p1*(1 - p2)),mul(r[seg - 1], (1 - p1)*(1 - p2))));
+	}
+	return sp;
+}
 
-void Track::addTrackToWorld(b2World &b2WorldRef) {
+vec2* Track::getInitialBoatPositions(int numBoats, float width_offset, float legnth_offset)
+{
+	vec2 *bp = new vec2[numBoats];
+	int boats_per_row = r[0].x / width_offset;
+	int num_full_rows = numBoats / boats_per_row;
+	int boats_in_last_row = numBoats % boats_per_row;
+	int mark = 1;
+	for (int i = 0; i < boats_in_last_row; i++)
+	{
+		float p1 = ((float)(2 * i + 1)) / (2 * boats_in_last_row);
+		bp[i] = add(mul(l[1], p1), mul(r[1], (1 - p1)));
+		mark = 2;
+	}
+	for (int i = 0; i < numBoats - boats_in_last_row; i++)
+	{
+		float p1 = ((float)(2 * (i % boats_per_row) + 1)) / (2 * boats_per_row);
+		int row = mark + i / boats_per_row;
+		bp[i + boats_in_last_row] = add(mul(l[row], p1), mul(r[row], (1 - p1)));
+	}
+	return bp;
+}
+
+float* Track::getInitialSegPositions(int numBoats, float width_offset, float legnth_offset)
+{
+	float *seg = new float[numBoats];
+	int boats_per_row = r[0].x / width_offset;
+	int num_full_rows = numBoats / boats_per_row;
+	int boats_in_last_row = numBoats % boats_per_row;
+	int mark = 1;
+	for (int i = 0; i < boats_in_last_row; i++)
+	{
+		seg[i] = 0;
+		mark = 2;
+	}
+	for (int i = 0; i < numBoats - boats_in_last_row; i++)
+	{
+		int row = mark + i / boats_per_row;
+		seg[i + boats_in_last_row] = row;
+	}
+	return seg;
+}
+
+void Track::addTrackToWorld(b2World &b2WorldRef) 
+{
 	b2BodyDef bd;
 	b2Body *ground = b2WorldRef.CreateBody(&bd);
 
@@ -200,3 +259,144 @@ void Track::addTrackToWorld(b2World &b2WorldRef) {
 	ground->CreateFixture(&outerShape, 0.0f);
 }
 
+Map Track::getMap(float x_cell, float y_cell, float pad)
+{
+	pad+=x_cell+y_cell;
+	float x_min = 0;
+	float y_min = 0;
+	float x_max = 0;
+	float y_max = 0;
+	for(int i = 0; i < N; i++)
+	{
+		if(l[i].x < x_min)
+		{
+			x_min = l[i].x;
+		}
+		if(l[i].x > x_max)
+		{
+			x_max = l[i].x;
+		}
+		if(l[i].y < y_min)
+		{
+			y_min = l[i].y;
+		}
+		if(l[i].y > y_max)
+		{
+			y_max = l[i].y;
+		}
+
+		if(r[i].x < x_min)
+		{
+			x_min = r[i].x;
+		}
+		if(r[i].x > x_max)
+		{
+			x_max = r[i].x;
+		}
+		if(r[i].y < y_min)
+		{
+			y_min = r[i].y;
+		}
+		if(r[i].y > y_max)
+		{
+			y_max = r[i].y;
+		}
+	}
+	x_min-=pad;
+	x_max+=pad;
+	y_min-=pad;
+	y_max+=pad;
+	int x_n = 1+(x_max-x_min)/x_cell;
+	int y_n = 1+(y_max-y_min)/y_cell;
+	x_max = x_min + x_cell*x_n;
+	y_max = y_min + y_cell*y_n;
+	bool **grid = new bool*[x_n];
+	for(int i = 0; i < x_n; i++)
+	{
+		grid[i] = new bool[y_n];
+		for(int j = 0; j < y_n; j++)
+			grid[i][j] = false;
+	}
+
+	for(int i = 0; i < N - 1; i++)
+	{
+		int x1[4], y1[4];
+		x1[0] = (l[i].x - x_min)/x_cell;
+		y1[0] = (l[i].y - y_min)/y_cell;
+		x1[1] = (l[i+1].x - x_min)/x_cell;
+		y1[1] = (l[i+1].y - y_min)/y_cell;
+		x1[2] = (r[i].x - x_min)/x_cell;
+		y1[2] = (r[i].y - y_min)/y_cell;
+		x1[3] = (r[i+1].x - x_min)/x_cell;
+		y1[3] = (r[i+1].y - y_min)/y_cell;
+		int xmin=x1[0], xmax=x1[0], ymin=y1[0], ymax=y1[0];
+		for(int j = 1; j < 4; j++)
+		{
+			if(xmin > x1[j])
+				xmin = x1[j];
+			if(xmax < x1[j])
+				xmax = x1[j];
+			if(ymin > y1[j])
+				ymin = y1[j];
+			if(ymax < y1[j])
+				ymax = y1[j];
+		}
+		for(int j = 0; j < 4; j++)
+		{
+			grid[x1[j]][y1[j]] = 1;
+			//std::cout<<x1[j]<<","<<y1[j]<<" : " << x_min + x1[j]*x_cell<<", "<<y_min + y1[j]*y_cell << std::endl;
+		}
+		//::cout << l[i+1].x << " " << l[i+1].y << std::endl;
+		//std::cout << r[i+1].x << " " << r[i+1].y << std::endl;
+		assert(xmin-1 >= 0);
+		assert(xmax+1 < x_n);
+		assert(ymin-1 >= 0);
+		assert(ymax+1 < y_n);
+
+		vec2 l1 = sub(l[i+1],l[i]);
+		vec2 r1 = sub(r[i+1],r[i]);
+		for(int j = xmin; j <= xmax; j++)
+			for(int k = ymin; k <= ymax; k++)
+			{
+				vec2 pos(x_min + j*x_cell, y_min + k*y_cell);
+				if(dot(pos, p[i]) + c[i]>0)
+					if(dot(pos, p[i+1]) + c[i+1]<0)
+						if(cross_z(l1,sub(pos,l[i]))<0)
+							if(cross_z(r1,sub(pos,r[i]))>0)
+							{
+								grid[j][k]=1;
+								grid[j-1][k]=1;
+								grid[j][k-1]=1;
+								grid[j-1][k-1]=1;
+							}
+			}
+	}
+
+	return Map(grid,x_n,y_n,x_min,x_max,y_min,y_max,x_cell,y_cell);
+}
+
+Map::Map(bool** grid, int x_n, int y_n, float x_min, float x_max, float y_min, float y_max, float x_cell, float y_cell)
+{
+	this->grid = grid;
+	this->x_n = x_n;
+	this->y_n = y_n;
+	this->x_min = x_min;
+	this->x_max = x_max;
+	this->y_min = y_min;
+	this->y_max = y_max;
+	this->x_cell = x_cell;
+	this->y_cell = y_cell;
+}
+
+//Test
+/*
+int main()
+{
+	Track t(6,2.5f,11.0f,4);
+	Map m = t.getMap(.2,.2,.5);
+	
+	for(int i = 0; i < m.x_n; i++, std::cout<<"\n")
+		for(int j = 0; j < m.y_n; std::cout<<((m.grid[i][j++])?'*':' ')<<" ");
+		
+	std::cout<<m.x_n<<" "<<m.y_n<<"\n";
+}*/
