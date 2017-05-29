@@ -21,7 +21,6 @@ class InputStream;
 
 class Boat
 {
-	int currentSouls;
 	float soulCollectionRadius;
 	float forwardForce;
 	float reverseForce;
@@ -29,16 +28,44 @@ class Boat
 	BoatCollisionHandler *collisionHandler;
 	float dampingCoefficient();
 public:
+	int currentSouls;
 	int playerNum;
 	float segPosition;
 	InputStream* inputStream;
 	b2Body *rigidBody;
-	Boat(b2Vec2 , b2World&, AI *ai1, int pNum);
+	Boat(b2Vec2 , b2World&, AI *ai1, unsigned int);
 	void update(float deltaT, GameState &gs);
 	float getX();
 	float getY();
 	float getRot();
 	void addSoul();
+};
+
+class LocalBoat: public Boat {
+public:
+	LocalBoat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, unsigned int pNum, std::vector <std::pair<std::string, int>> *broadcastPointer) : 
+	Boat(initPos, m_world, ai1, pNum)
+	{
+		inputStream = new LocalPlayerInputStream(playerNum, broadcastPointer);
+	}
+};
+
+class NetworkBoat: public Boat {
+public:
+	NetworkBoat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, unsigned int pNum, std::vector <std::pair<std::string, int>> *broadcastPointer, bool isBroadcasting) : 
+	Boat(initPos, m_world, ai1, pNum)
+	{
+		inputStream = new NetworkPlayerInputStream(playerNum, broadcastPointer, isBroadcasting);
+	}
+};
+
+class AIBoat: public Boat {
+public:
+	AIBoat(b2Vec2 initPos, b2World& m_world, SimpleAI *ai1, unsigned int pNum, std::vector <std::pair<std::string, int>> *broadcastPointer) : 
+	Boat(initPos, m_world, ai1, pNum)
+	{
+		inputStream = new AIInputStream(playerNum, ai1, broadcastPointer);
+	}
 };
 
 #endif /* Boat_hpp */

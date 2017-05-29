@@ -8,6 +8,7 @@
 #include <osg/Quat>
 
 #include <osgDB/ReadFile>
+#include <deque>
 
 #include <osgUtil/SmoothingVisitor>
 
@@ -26,6 +27,7 @@
 #include "GameState.hpp"
 #include "Soul.hpp"
 #include "AI_1_0.hpp"
+#include "Networking.hpp"
 
 #include <SDL.h>
 
@@ -43,65 +45,13 @@ Vec3f up = {0,1,0};
 unsigned int myBoat = 0;
 
 PositionAttitudeTransform *transform[maxNumBoats];
-/*
-class PickHandler : public osgGA::GUIEventHandler {
-	public: 
-		PickHandler() {}
-		~PickHandler() {}
-		bool handle(const osgGA::GUIEventAdapter& ea, osgGA::GUIActionAdapter& aa);
-	protected:
-};
-
-bool PickHandler::handle(const osgGA::GUIEventAdapter& ea, 
-						 osgGA::GUIActionAdapter& aa)
-{
-	switch(ea.getEventType())
-	{
-		case(osgGA::GUIEventAdapter::KEYDOWN):
-		{
-			if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Up)
-			{
-				std::cout<<"Forward"<<std::endl;
-				x += 10 * cos(rot);
-				z += 10 * sin(rot);
-			}
-			else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Down)
-			{
-				std::cout<<"Backward"<<std::endl;
-				x -= 10 * cos(rot);
-				z -= 10 * sin(rot);
-			}
-			else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Left) {
-				std::cout<<"Left"<<std::endl;
-				rot -= .1;
-				if(rot < 0)
-					rot+=6.28;
-			}
-			else if (ea.getKey() == osgGA::GUIEventAdapter::KEY_Right)
-			{
-				std::cout<<"Right"<<std::endl;
-				rot += .1;
-				if(rot > 6.29)
-					rot-=6.28;
-
-
-			}
-			return false;
-		}
-		default:
-			return false;
-	}
-}
-*/
 
 // This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
 {
-
 	// Init the viewer and other shit
 	osgViewer::Viewer startupScene(GameState *world)
 	{
-		
 		//Create startup scene with boats loaded
 		Group *scene = new Group();
 		Node * n = loadBoats(scene, world);
@@ -111,15 +61,19 @@ struct Graphics
 		createTrack(polyGeom, world);
 		scene->addChild(polyGeom);
 
+		std::deque<std::string> libs = osgDB::Registry::instance()->getLibraryFilePathList();
+		for(auto it = libs.begin(); it != libs.end(); ++it)
+			std::cout << "Lib path: " << *it << std::endl;
+
+		std::cout << "Load Status: " << osgDB::Registry::instance()->loadLibrary("osgdb_osg");
+		osg::ref_ptr<Node> airboat = osgDB::readNodeFile("models/airboat.obj");
+		std::cout << "Node PTR: "<< airboat << std::endl;
+
 		//Custimize viewer
 		osg::ref_ptr<osgViewer::WindowSizeHandler> handler = new osgViewer::WindowSizeHandler();
 
 		osgViewer::Viewer viewer;
 		viewer.setUpViewInWindow(500, 50, 800, 800);
-
-		//Set up keyboard event handling
-		//viewer.addEventHandler(handler);
-		//viewer.addEventHandler(new PickHandler());
 
 		//Set up camera
 		viewer.getCamera()->setClearColor(osg::Vec4(0.8f,0.8f,0.8f,0.8f));
@@ -248,11 +202,33 @@ struct Graphics
 	}
 };
 
-int main( int, char**)
+int main( int argc, char** argv)
 {
+	// Game Setup
+	std::vector <std::pair<std::string, int>> broadcastList;
+	std::vector <std::pair<std::string, int>> gamestateBroadcastList;
+	std::vector<int> playerTypeList;
+	std::vector<int> playerDiscardList;
+	bool isHost;
+	unsigned int seed = gameSetup(argv, &broadcastList, &gamestateBroadcastList, &playerTypeList);
+
+	if (playerTypeList.at(0) == 0)
+		isHost = true;
+	else
+		isHost = false;
+
+	// Debugging stuff
+	for(int i = 0; i < broadcastList.size(); i++)
+		std::cout << "Player number " << std::to_string(i) << " has port number " << std::to_string(broadcastList.at(i).second) << "\n";
+
+	// Debugging stuff
+	if (isHost)
+		for(int i = 0; i < broadcastList.size(); i++)
+			std::cout << "Player number " << std::to_string(i) << " has gamestate port number " << std::to_string(gamestateBroadcastList.at(i).second) << "\n";
+
 	//Initialize Phyiscs world
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
-	Track *m_track = new Track(1000,2.5f,11.0f,4);
+	Track *m_track = new Track(1000,2.5f,11.0f,4, seed);
 	m_track->addTrackToWorld(*m_world);
 	GameState *gState = new GameState(*m_track);
 
@@ -269,43 +245,86 @@ int main( int, char**)
 	ContactListener contactListener;
 	m_world->SetContactListener(&contactListener);
 
-	//Initialize SDL for input handling
-	SDL_Event e;
-	SDL_Init(SDL_INIT_EVERYTHING);
-	
-	//Initialize AIs and Players
-	int numBoats = 2;
-	AI *ai = new AI_1_0(m_track, 0, numBoats,3,.7,.5,.99);
-	Boat *m_boat = new Boat(b2Vec2(1.25f, 0.0f), *m_world, ai,0);
-
-	AI *ai2 = new AI_1_0(m_track, 1, numBoats,1,.7,.5,.99);
-	Boat *p2_boat = new Boat(b2Vec2(1.25f, -2.5f), *m_world, ai2,1);
-
-	//Add players to world
-	gState->addPlayer(*m_boat);
-	gState->addPlayer(*p2_boat);
-
 	//Initialize Graphics
 	Graphics g;
 	boost::signals2::signal<void (GameState*)> sig;
 	sig.connect(boost::bind(&Graphics::update, g, _1));
 
-	//Gianni: Init the scene and shit
+	//Initialize SDL for input handling
+	SDL_Event e;
+	SDL_Init(SDL_INIT_EVERYTHING);
+	
+	//Setup Networking
+	bool isBroadcasting;
+	if (broadcastList.size() == 1)
+		isBroadcasting = false;
+	else
+		isBroadcasting = true;
+
+	std::cout << "There are a total of " << std::to_string(playerTypeList.size()) << " players\n";
+
+	for (unsigned int i = 0; i < playerTypeList.size(); i++)
+	{
+		// Local Player
+		if (playerTypeList.at(i) == 0)
+		{
+			playerDiscardList.push_back(i);
+			std::cout << "Made local boat at position number " << std::to_string(i) << "\n";
+			Boat *local_boat = new LocalBoat(b2Vec2(12.5f, 0.0f), *m_world, nullptr, i, &broadcastList);
+			gState->addPlayer(*local_boat);
+			myBoat = i;
+		}
+
+		// Network Player
+		else if (playerTypeList.at(i) == 1)
+		{
+			std::cout << "Made network boat at position number " << std::to_string(i) << "\n";
+			Boat *net_boat = new NetworkBoat(b2Vec2(12.5f, 0.0f), *m_world, nullptr, i, &broadcastList, isBroadcasting);
+			gState->addPlayer(*net_boat);
+		}
+
+		// AI Player
+		else if (playerTypeList.at(i) == 2)
+		{
+			playerDiscardList.push_back(i);
+			std::cout << "Made ai boat at position number " << std::to_string(i) << "\n";
+			AI *ai = new AI_1_0(m_track,i,numBoats,.7,.5,.99);
+			Boat *ai_boat = new AIBoat(b2Vec2(12.5f, 0.0f), *m_world, ai2, i, &broadcastList);
+			gState->addPlayer(*ai_boat);
+		}	
+	}
+
+	std::cout << "Setup is done!\n";
+
+	// Start the network receiving thread, mostly good!
+	std::thread networkReceivingThread(receiveInputStream, gState, atoi(argv[2]), &playerDiscardList);
+	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, atoi(argv[4]), isHost);
+
+	std::cout << "Setup is done!\n";
+	
 	osgViewer::Viewer viewer = g.startupScene(gState);
 
 	//Main game loop
+	int stopper = 0;
 	float timestep = 1/60.0f;
 	int i = 0;
 	float oldAngle = 0; 
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
 	while(!viewer.done()) 
 	{
+		stopper++;
+		//if (stopper > 100)
+		//	break;
 		//Step the physics engine forward 1 frame
 		m_world->Step(timestep,10,10);
 		//std::cout << "Position: " << m_boat->rigidBody->GetPosition().x << m_boat->rigidBody->GetPosition().y << std::endl;
 
 		//Broadcast update to all game entities
 		gState->update(timestep);
+
+		// Will send the gamestate only if host
+		if (isHost && ((stopper % 5) == 0))
+			sendGameStateInfo(gState, gamestateBroadcastList);
 
 		//This passes the gamestate to anything that has registered to sig
 		//For example, our graphics would now draw the updated gamestate
