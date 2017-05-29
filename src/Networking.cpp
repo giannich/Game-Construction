@@ -190,7 +190,7 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 // TODO: FIGURE OUT WHERE TO CALL THIS!!!
 void Networking::broadcastInputStream()
 {
-	std::cout << "Sending a new InputStream packet to " << std::to_string(broadcastSize) << " other receivers\n";
+	//std::cout << "Sending a new InputStream packet to " << std::to_string(broadcastSize) << " other receivers\n";
 
 	// Encodes the inutStream into outputList
 	inputStream->encodeInputStates(outputList);
@@ -211,7 +211,7 @@ void receiveInputStream(GameState *world, int receivePortNum, std::vector<int> *
 	// Loops and receives all datagrams
 	while(1)
 	{
-		std::cout << "Waiting on new packets\n";
+		//std::cout << "Waiting on new packets\n";
 		// Receives a datagram
 		receiveDatagram(encodedInputStream, MAX_FRAMES + 8, receivePortNum);
 
@@ -225,7 +225,7 @@ void receiveInputStream(GameState *world, int receivePortNum, std::vector<int> *
 		if (std::find(playerDiscardList->begin(), playerDiscardList->end(), playerNumber) != playerDiscardList->end())
 			continue;
 
-		std::cout << "Received packet from player number " << std::to_string(playerNumber) << "\n";
+		//std::cout << "Received packet from player number " << std::to_string(playerNumber) << "\n";
 
 		// Decode the InputStream in the right boat
 		world->boats->at(playerNumber).inputStream->decodeInputStates(encodedInputStream);
