@@ -26,13 +26,12 @@ struct Networking
 
 	// For sending InputStreams
 	void broadcastInputStream();
-
-	// Gamestate
-	void sendGameStateInfo(GameState* world);
-	void receiveGameStateInfo(GameState* world);
 };
 
-unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcastList, std::vector<int> *playerTypeList);
+// Gamestate
+void sendGameStateInfo(GameState *world, std::vector <std::pair<std::string, int>> gamestateBroadcastList);
+void receiveGameStateInfo(GameState *world, int receivePortNum, bool isHost);
+unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcastList, std::vector <std::pair<std::string, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList);
 void receiveInputStream(GameState *world, int receivePortNum, std::vector<int> *playerDiscardList);
 void error(const char *msg);
 void sendDatagram(void *msgObject, size_t objLen, std::string destIPAddress, int destPortNum);
