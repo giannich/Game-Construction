@@ -120,7 +120,7 @@ InputState InputStream::readSingleState(int targetFrameNumber)
 void InputStream::writeSingleState(InputState newInputState)
 {
 	//std::cout << "Writing inputstate for player number " << std::to_string(playerNum) << "\n";
-	std::cout << "For player number " << std::to_string(playerNum) << " the inputstate is: " << newInputState.toString() << "\n";
+	//std::cout << "For player number " << std::to_string(playerNum) << " the inputstate is: " << newInputState.toString() << "\n";
 	circular_buffer.push_back(newInputState);
 	currentFrameNumber++;
 }
@@ -133,7 +133,7 @@ void InputStream::encodeInputStates(char *outputList)
 		outputList[i] = circular_buffer.at(i).toChar();
 
 	// Debug info
-	std::cout << "Encoding player number " << std::to_string(playerNum) << "'s InputStream with CurrentFrameNumber: " << std::to_string(currentFrameNumber) << "\n";
+	//std::cout << "Encoding player number " << std::to_string(playerNum) << "'s InputStream with CurrentFrameNumber: " << std::to_string(currentFrameNumber) << "\n";
 
 	// Encode Frame Number
 	outputList[MAX_FRAMES + 0] = (char) (currentFrameNumber);
@@ -176,7 +176,7 @@ void InputStream::decodeInputStates(char *outputList)
 			std::cout << "This error should not exist!\n";
 	}
 
-	std::cout << "Latest frame number: " << std::to_string(latestFrameNumber) << "\n";
+	//std::cout << "Latest frame number: " << std::to_string(latestFrameNumber) << "\n";
 
 	// Get the start and fill it up
 	int startFromIndex;
@@ -262,7 +262,7 @@ void LocalPlayerInputStream::update(float deltaT, GameState &gs) {
 	}
 
 	writeSingleState(lastInputState);
-	std::cout << "Local Player broadcast!\n";
+	//std::cout << "Local Player broadcast!\n";
 	networkingHandler->broadcastInputStream();
 }
 
@@ -272,7 +272,7 @@ void AIInputStream::update(float deltaTime, GameState &gs) {
 
 	// Writes in the inputstate and broadcasts it
 	writeSingleState(lastInputState);
-	std::cout << "AI Player broadcast!\n";
+	//std::cout << "AI Player broadcast!\n";
 	networkingHandler->broadcastInputStream();
 }
 
@@ -280,7 +280,7 @@ void AIInputStream::update(float deltaTime, GameState &gs) {
 void NetworkPlayerInputStream::update(float deltaTime, GameState &gs) {
 	// Here we grab the inputstate by using readSingleState on the latest frame number
 	int latestFrame = getCurrentFrameNumber() - 1;
-	std::cout << "In network update for player number " << std::to_string(playerNum) << " looking for frame number: " << std::to_string(latestFrame) << "\n";
+	//std::cout << "In network update for player number " << std::to_string(playerNum) << " looking for frame number: " << std::to_string(latestFrame) << "\n";
 	lastInputState = readSingleState(latestFrame);
 
 	// Only broadcast if it is a network inputstream at host level
