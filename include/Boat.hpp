@@ -29,6 +29,7 @@ class Boat
 	float dampingCoefficient();
 public:
 	int currentSouls;
+	bool disabled;
 	int playerNum;
 	float segPosition;
 	InputStream* inputStream;

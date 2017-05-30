@@ -303,7 +303,8 @@ int main( int argc, char** argv)
 	std::queue<GameStatePatch *> gsp_queue;
 	std::thread networkReceivingThread(receiveInputStream, gState, atoi(argv[2]), &playerDiscardList);
 	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, atoi(argv[4]), isHost, &gsp_queue);
-	
+
+	// Start the osg Viewer and finish graphics init
 	osgViewer::Viewer viewer = g.startupScene(gState);
 
 	//Main game loop
