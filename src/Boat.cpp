@@ -17,6 +17,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 		b2BodyDef bd;
 		bd.type = b2_dynamicBody;
 		bd.position.Set(initPos.x, initPos.y);
+		bd.angle = M_PI/2.0f;
 		rigidBody = m_world.CreateBody(&bd);
 
 		b2PolygonShape shape;
