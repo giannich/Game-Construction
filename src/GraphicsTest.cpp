@@ -320,6 +320,7 @@ int main( int argc, char** argv)
 
 		while(!gsp_queue.empty()) {
 			gsp_queue.front()->applyPatch(gState);
+			delete gsp_queue.front();
 			gsp_queue.pop();
 		}
 
