@@ -21,6 +21,7 @@
 #include <boost/signals2/signal.hpp>
 #include <chrono>
 #include <thread>
+#include <queue>
 
 #include "Box2D/Box2D.h"
 #include "Boat.hpp"
@@ -295,13 +296,10 @@ int main( int argc, char** argv)
 		}	
 	}
 
-	std::cout << "Setup is done!\n";
-
 	// Start the network receiving thread, mostly good!
+	std::queue<GameStatePatch *> gsp_queue;
 	std::thread networkReceivingThread(receiveInputStream, gState, atoi(argv[2]), &playerDiscardList);
-	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, atoi(argv[4]), isHost);
-
-	std::cout << "Setup is done!\n";
+	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, atoi(argv[4]), isHost, &gsp_queue);
 	
 	osgViewer::Viewer viewer = g.startupScene(gState);
 
@@ -319,6 +317,11 @@ int main( int argc, char** argv)
 		//Step the physics engine forward 1 frame
 		m_world->Step(timestep,10,10);
 		//std::cout << "Position: " << m_boat->rigidBody->GetPosition().x << m_boat->rigidBody->GetPosition().y << std::endl;
+
+		while(!gsp_queue.empty()) {
+			gsp_queue.front()->applyPatch(gState);
+			gsp_queue.pop();
+		}
 
 		//Broadcast update to all game entities
 		gState->update(timestep);

@@ -308,7 +308,7 @@ void sendGameStateInfo(GameState *world, std::vector <std::pair<std::string, int
 }
 
 // Receives a message from UDP and decodes it into a GameState
-void receiveGameStateInfo(GameState *world, int receivePortNum, bool isHost)
+void receiveGameStateInfo(GameState *world, int receivePortNum, bool isHost, std::queue<GameStatePatch *> *gsp_queue)
 {
 	// Receive a char *
 	char stringBuffer[MAX_JSON_CHARS];
@@ -336,6 +336,7 @@ void receiveGameStateInfo(GameState *world, int receivePortNum, bool isHost)
 
 		// Gets the player number, and if it fails, will get 0
 		int playerNum = pt.get<int>("playerNum", 0.0f);
+		GameStatePatch *aPatch = new GameStatePatch(playerNum);
 
 		// Iterates through the boat list
 		for (int i = 0; i < playerNum; i++)
@@ -343,24 +344,56 @@ void receiveGameStateInfo(GameState *world, int receivePortNum, bool isHost)
 			// Linear Velocity
 			float32 velx = pt.get<float32>("linearVelocityX" + std::to_string(i));
 			float32 vely = pt.get<float32>("linearVelocityY" + std::to_string(i));
-			world->boats->at(i).rigidBody->SetLinearVelocity(b2Vec2(velx, vely));
 
 			// Rotational Velocity
 			float32 rotvel = pt.get<float32>("rotVelocity" + std::to_string(i));
-			world->boats->at(i).rigidBody->SetAngularVelocity(rotvel);
 
 			// Orientation & Position
 			float32 orient = pt.get<float32>("orientation" + std::to_string(i));
 			float32 posx = pt.get<float32>("positionX" + std::to_string(i));
 			float32 posy = pt.get<float32>("positionY" + std::to_string(i));
-			world->boats->at(i).rigidBody->SetTransform(b2Vec2(posx, posy), orient);
 
 			// Current Souls
 			int souls = pt.get<int>("currentSouls" + std::to_string(i));
-			world->boats->at(i).currentSouls = souls;
-		}
-	}
 
+			BoatPatch *aBoatPatch = new BoatPatch(velx, vely, rotvel, orient, posx, posy, souls);
+			aPatch->boatPatches->push_back(aBoatPatch);
+		}
+
+		// Finally push the gamestatepatch into the queue
+		gsp_queue->push(aPatch);
+	}
+}
+
+// Constructor
+BoatPatch::BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient, float32 posx, float32 posy, int souls)
+{
+	_velx = velx;
+	_vely = vely;
+	_rotvel = rotvel;
+	_orient = orient;
+	_posx = posx;
+	_posy = posy;
+	_souls = souls;
+}
+
+// Applies the patches to original gamestate
+void GameStatePatch::applyPatch(GameState *world)
+{
+	for (int i = 0; i < playerNum; i++)
+	{
+		// Linear Velocity
+		world->boats->at(i).rigidBody->SetLinearVelocity(b2Vec2(boatPatches->at(i)->_velx, boatPatches->at(i)->_vely));
+
+		// Rotational Velocity
+		world->boats->at(i).rigidBody->SetAngularVelocity(boatPatches->at(i)->_rotvel);
+
+		// Orientation & Position
+		world->boats->at(i).rigidBody->SetTransform(b2Vec2(boatPatches->at(i)->_posx, boatPatches->at(i)->_posy), boatPatches->at(i)->_orient);
+
+		// Current Souls
+		world->boats->at(i).currentSouls = boatPatches->at(i)->_souls;
+	}
 }
 
 /*****************
