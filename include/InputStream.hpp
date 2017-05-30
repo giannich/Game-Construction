@@ -117,7 +117,7 @@ public:
 	// Need some SDL Data?
 	// Send commands to remote host if necessary
 	//InputState updateInputState(float deltaTime, GameState &gs);
-	LocalPlayerInputStream(int pNum, std::vector <std::pair<std::string, int>> *broadcastPointer) : InputStream()
+	LocalPlayerInputStream(int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer) : InputStream()
 	{ 
 		playerNum = pNum;
 		networkingHandler = new Networking(broadcastPointer, this);
@@ -129,7 +129,7 @@ public:
 class AIInputStream: public InputStream {
 public:
 	AI *ai;
-	AIInputStream(int pNum, AI *ai1, std::vector <std::pair<std::string, int>> *broadcastPointer) : ai(ai1), InputStream()
+	AIInputStream(int pNum, AI *ai1, std::vector <std::pair<in_addr, int>> *broadcastPointer) : ai(ai1), InputStream()
 	{ 
 		playerNum = pNum;
 		networkingHandler = new Networking(broadcastPointer, this);
@@ -143,7 +143,7 @@ public:
 // Network Player InputStream
 class NetworkPlayerInputStream: public InputStream {
 public:
-	NetworkPlayerInputStream(int pNum, std::vector <std::pair<std::string, int>> *broadcastPointer, bool broadcast) : InputStream()
+	NetworkPlayerInputStream(int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer, bool broadcast) : InputStream()
 	{ 
 		playerNum = pNum; 
 		networkingHandler = new Networking(broadcastPointer, this);

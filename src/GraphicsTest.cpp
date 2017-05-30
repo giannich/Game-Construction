@@ -19,6 +19,7 @@
 #include <osgViewer/ViewerEventHandlers>
 
 #include <boost/signals2/signal.hpp>
+#include <netinet/in.h>
 #include <chrono>
 #include <thread>
 #include <queue>
@@ -206,8 +207,8 @@ struct Graphics
 int main( int argc, char** argv)
 {
 	// Game Setup
-	std::vector <std::pair<std::string, int>> broadcastList;
-	std::vector <std::pair<std::string, int>> gamestateBroadcastList;
+	std::vector <std::pair<in_addr, int>> broadcastList;
+	std::vector <std::pair<in_addr, int>> gamestateBroadcastList;
 	std::vector<int> playerTypeList;
 	std::vector<int> playerDiscardList;
 	bool isHost;

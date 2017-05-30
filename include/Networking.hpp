@@ -2,6 +2,7 @@
 #define Networking_hpp
 
 #include "GameState.hpp"
+#include <netinet/in.h>
 #include <queue>
 #define MAX_FRAMES 50
 
@@ -11,13 +12,13 @@ struct Networking
 {
 	char *outputList;
 	InputStream *inputStream;
-	std::vector <std::pair<std::string, int>> *broadcastTargets;
+	std::vector <std::pair<in_addr, int>> *broadcastTargets;
 	int broadcastSize;
 
 	// IP List -> Vector of destination IP addresses
 	// portsList -> Vector of destination port numbers
 	// inStream -> Inputstream pointer
-	Networking(std::vector <std::pair<std::string, int>> *broadcastList, InputStream *inStream)
+	Networking(std::vector <std::pair<in_addr, int>> *broadcastList, InputStream *inStream)
 	{
 		outputList = (char *) malloc((MAX_FRAMES + 8) * sizeof(char));
 		broadcastTargets = broadcastList;
@@ -67,12 +68,14 @@ struct GameStatePatch
 };
 
 // Gamestate
-void sendGameStateInfo(GameState *world, std::vector <std::pair<std::string, int>> gamestateBroadcastList);
+void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> gamestateBroadcastList);
 void receiveGameStateInfo(GameState *world, int receivePortNum, bool isHost, std::queue<GameStatePatch *> *gsp_queue);
-unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcastList, std::vector <std::pair<std::string, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList);
+unsigned int gameSetup(char **argv, std::vector <std::pair<in_addr, int>> *broadcastList, std::vector <std::pair<in_addr, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList);
 void receiveInputStream(GameState *world, int receivePortNum, std::vector<int> *playerDiscardList);
 void error(const char *msg);
-void sendDatagram(void *msgObject, size_t objLen, std::string destIPAddress, int destPortNum);
+//void sendDatagram(void *msgObject, size_t objLen, std::string destIPAddress, int destPortNum);
+void sendDatagram(void *msgObject, size_t objLen, in_addr *serverAddressBuffer, int destPortNum);
 int receiveDatagram(void *buffer, size_t bufferSize, int receivePortNum);
+int receiveDatagramAddr(void *buffer, size_t bufferSize, int receivePortNum, in_addr *serverAddressBuffer);
 
 #endif /* Networking_hpp */
