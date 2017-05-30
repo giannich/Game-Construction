@@ -48,14 +48,14 @@ float cross_z(vec2 a, vec2 b)
 {
 	return a.x*b.y - a.y*b.x;
 }
-Track::Track(int N, float step, float width, float smoothness = 15)
+Track::Track(int N, float step, float width, float smoothness = 15, unsigned int seed = time(NULL))
 {
 	this->N = N;
 	l = new vec2[N];
 	r = new vec2[N];
 	p = new vec2[N];
 	c = new float[N];
-	srand(time(NULL));
+	srand(seed);
 	l[0] = { 0,0 };
 	r[0] = { width,0 };
 	p[0] = { 0,1 };

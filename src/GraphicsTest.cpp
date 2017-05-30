@@ -261,7 +261,8 @@ int main( int argc, char** argv)
 	else
 		isBroadcasting = true;
 
-	std::cout << "There are a total of " << std::to_string(playerTypeList.size()) << " players\n";
+	int numBoats = playerTypeList.size();
+	std::cout << "There are a total of " << std::to_string(numBoats) << " players\n";
 
 	for (unsigned int i = 0; i < playerTypeList.size(); i++)
 	{
@@ -288,8 +289,8 @@ int main( int argc, char** argv)
 		{
 			playerDiscardList.push_back(i);
 			std::cout << "Made ai boat at position number " << std::to_string(i) << "\n";
-			AI *ai = new AI_1_0(m_track,i,numBoats,.7,.5,.99);
-			Boat *ai_boat = new AIBoat(b2Vec2(12.5f, 0.0f), *m_world, ai2, i, &broadcastList);
+			AI *ai = new AI_1_0(m_track,i,numBoats);
+			Boat *ai_boat = new AIBoat(b2Vec2(12.5f, 0.0f), *m_world, ai, i, &broadcastList);
 			gState->addPlayer(*ai_boat);
 		}	
 	}

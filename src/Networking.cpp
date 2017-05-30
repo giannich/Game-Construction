@@ -124,7 +124,7 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 		free(intArrBuffer);
 		std::cout << "Successfully finished setup process for host\n";
 	}
-	else
+	else // Client Code
 	{
 		// Receiving port number - InputStream
 		recPortNum = atoi(argv[2]);
