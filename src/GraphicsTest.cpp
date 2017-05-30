@@ -20,6 +20,7 @@
 #include <boost/signals2/signal.hpp>
 #include <chrono>
 #include <thread>
+#include <queue>
 
 #include "Box2D/Box2D.h"
 #include "Boat.hpp"
@@ -303,6 +304,11 @@ int main( int argc, char** argv)
 		//Step the physics engine forward 1 frame
 		m_world->Step(timestep,10,10);
 		//std::cout << "Position: " << m_boat->rigidBody->GetPosition().x << m_boat->rigidBody->GetPosition().y << std::endl;
+
+		while(!gsp_queue.empty()) {
+			gsp_queue.front()->applyPatch(gState);
+			gsp_queue.pop();
+		}
 
 		//Broadcast update to all game entities
 		gState->update(timestep);
