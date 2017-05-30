@@ -27,3 +27,5 @@ void BoatCollisionHandler::handleCollision(EType other) {
 void SoulCollisionHandler::handleCollision(EType other) {
 	std::cout << "Delete Soul!" << std::endl;
 }
+
+void FinishLineCollisionHandler::handleCollision(EType other) { }

@@ -29,6 +29,7 @@
 #include "Soul.hpp"
 #include "AI_1_0.hpp"
 #include "Networking.hpp"
+#include "FinishLine.hpp"
 
 #include <SDL.h>
 
@@ -241,6 +242,14 @@ int main( int argc, char** argv)
 		std::cout << "(x,y): " << soulPos[i].x << ", " << soulPos[i].y << std::endl;
 		souls->push_back(s);
 	}
+
+	//Add finish line to track
+	int finishLineSeg = 980;
+	vec2 finishL = m_track->l[finishLineSeg];
+	vec2 finishR = m_track->r[finishLineSeg];
+	vec2 finishM = mul(add(finishL,finishR),2.0f);
+	b2Vec2 finishLinePos = b2Vec2(finishM.x, finishM.y);
+	FinishLine *finish = new FinishLine(finishLinePos, 11.0f, *m_world);
 
 	//Initialize Contact Listener for physics
 	ContactListener contactListener;
