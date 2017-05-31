@@ -95,6 +95,13 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 			std::cout << "Successfully created player number " << std::to_string(i) << "\n";
 		}
 
+		// Waiting on acks
+		for(int i = 1; i <= expectedPlayerNums; i++)
+		{
+			std::cout << "Waiting on acks\n";
+			receiveDatagram(intArrBuffer, bufferSize * 2, SERVER_PORT);
+		}
+
 		// Loop for creating ai players
 		for(int i = 0; i < aiPlayerNums; i++)
 			playerTypeList->push_back(2);
@@ -140,6 +147,7 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 		receiveDatagram(intBuffer, bufferSize, CLIENT_PORT);
 		playerNum = *intBuffer;
 		std::cout << "Assigned to player number " << std::to_string(playerNum) << "\n";
+		sendDatagram(intArrBuffer, bufferSize * 2, hostAddress, SERVER_PORT);
 
 		// Receives the total number of players and the seed number
 		unsigned int *unsignedBuffer = (unsigned int *) malloc(sizeof(unsigned int) * 2);

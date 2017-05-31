@@ -355,7 +355,7 @@ int main(int argc, char** argv)
 		gState->update(timestep);
 
 		// Will send the gamestate only if host
-		if (isHost && ((stopper % 5) == 0))
+		if (isHost && ((stopper % 10) == 0))
 			sendGameStateInfo(gState, gamestateBroadcastList);
 
 		//This passes the gamestate to anything that has registered to sig
