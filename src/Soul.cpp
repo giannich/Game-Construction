@@ -33,3 +33,11 @@ void Soul::update(float deltaT){
 Soul::~Soul() {
 	std::cout << "Don't call ~Soul!!" << std::endl;
 }
+
+float Soul::getX(){
+	return rigidBody->GetPosition().x;
+}
+
+float Soul::getY() {
+	return rigidBody->GetPosition().y;
+}

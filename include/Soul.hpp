@@ -12,6 +12,8 @@ public:
 	b2Body *rigidBody;
 	Soul(b2Vec2, float, b2World&);
 	void update(float);
+	float getX();
+	float getY();
 	~Soul();
 };
 
