@@ -257,7 +257,6 @@ int main(int argc, char** argv)
 		souls.push_back(s);
 	}
 
-
 	//Add finish line to track
 	int finishLineSeg = 980;
 	vec2 finishL = m_track->l[finishLineSeg];
