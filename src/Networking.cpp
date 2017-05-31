@@ -112,7 +112,7 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 
 		// Finally sends the total number of players and the seed number back
 		for(int i = 0; i < expectedPlayerNums; i++)
-			sendDatagram(intArrBuffer, bufferSize, &broadcastList->at(i).first, broadcastList->at(i).second);
+			sendDatagram(intArrBuffer, bufferSize * 2, &broadcastList->at(i).first, broadcastList->at(i).second);
 
 		free(intBuffer);
 		free(intArrBuffer);
@@ -142,7 +142,7 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 		std::cout << "Assigned to player number " << std::to_string(playerNum) << "\n";
 
 		// Finally receives the total number of players that are in the game from the host
-		receiveDatagram(intArrBuffer, bufferSize, CLIENT_PORT);
+		receiveDatagram(intArrBuffer, bufferSize * 2, CLIENT_PORT);
 		totalNumberOfPlayers = intArrBuffer[0];
 		randomSeed = intArrBuffer[1];
 		std::cout << "There are a total of " << std::to_string(totalNumberOfPlayers) << " players in this game\n";
