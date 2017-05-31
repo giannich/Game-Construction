@@ -5,6 +5,9 @@
 #include <netinet/in.h>
 #include <queue>
 #define MAX_FRAMES 50
+#define SERVER_PORT 12345
+#define CLIENT_PORT 12346
+#define GAMESTATE_PORT 12347
 
 class InputStream;
 

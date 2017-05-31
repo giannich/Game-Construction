@@ -51,13 +51,13 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<in_addr, int>> *broad
 	if(isHost)
 	{
 		// Receiving port number
-		recPortNum = atoi(argv[2]);
+		recPortNum = SERVER_PORT;
 
 		// Expected number of players
-		expectedPlayerNums = atoi(argv[3]);
+		expectedPlayerNums = atoi(argv[2]);
 
 		// Number of AI players
-		aiPlayerNums = atoi(argv[4]);
+		aiPlayerNums = atoi(argv[3]);
 
 		// Player number for host is always 0
 		playerNum = 0;
@@ -126,18 +126,18 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<in_addr, int>> *broad
 	}
 	else // Client Code
 	{
-		// Receiving port number - InputStream
-		recPortNum = atoi(argv[2]);
-
 		// Server's port number
-		serverPortNum = atoi(argv[3]);
+		serverPortNum = SERVER_PORT;
+		
+		// Receiving port number - InputStream
+		recPortNum = CLIENT_PORT;
 
 		// Receiving port number - GameState
-		gamestatePortNum = atoi(argv[4]);
+		gamestatePortNum = GAMESTATE_PORT;
 
 		// Server's ip address
 		char *destIPAddress = (char *) malloc(sizeof(char) * 16);
-		destIPAddress = argv[5];
+		destIPAddress = argv[2];
 		in_addr *hostAddress = (in_addr *) malloc(sizeof(in_addr));
 		inet_aton(destIPAddress, hostAddress);
 
