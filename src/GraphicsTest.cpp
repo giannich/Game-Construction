@@ -203,7 +203,7 @@ struct Graphics
 	}
 };
 
-int main( int argc, char** argv)
+int main(int argc, char** argv)
 {
 	// Game Setup
 	std::vector <std::pair<in_addr, int>> broadcastList;
@@ -211,29 +211,7 @@ int main( int argc, char** argv)
 	std::vector<int> playerTypeList;
 	std::vector<int> playerDiscardList;
 	bool isHost;
-	unsigned int seed = gameSetup(argv, &broadcastList, &gamestateBroadcastList, &playerTypeList);
-	
-	int recPortNum;
-
-	if (playerTypeList.at(0) == 0)
-	{
-		recPortNum = SERVER_PORT;
-		isHost = true;
-	}
-	else
-	{
-		recPortNum = CLIENT_PORT;
-		isHost = false;
-	}
-
-	// Debugging stuff
-	for(int i = 0; i < broadcastList.size(); i++)
-		std::cout << "Player number " << std::to_string(i) << " has port number " << std::to_string(broadcastList.at(i).second) << "\n";
-
-	// Debugging stuff
-	if (isHost)
-		for(int i = 0; i < broadcastList.size(); i++)
-			std::cout << "Player number " << std::to_string(i) << " has gamestate port number " << std::to_string(gamestateBroadcastList.at(i).second) << "\n";
+	unsigned int seed = gameSetup(argc, argv, &broadcastList, &gamestateBroadcastList, &playerTypeList, &isHost);
 
 	//Initialize Phyiscs world
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
@@ -315,10 +293,10 @@ int main( int argc, char** argv)
 		}	
 	}
 
-	// Start the network receiving thread, mostly good!
+	// If host, will only run networkreceiving thread, otherwise if client will also run gamestate receiving thread
 	std::queue<GameStatePatch *> gsp_queue;
-	std::thread networkReceivingThread(receiveInputStream, gState, recPortNum, &playerDiscardList);
-	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, GAMESTATE_PORT, isHost, &gsp_queue);
+	std::thread networkReceivingThread(receiveInputStream, gState, isHost, &playerDiscardList);
+	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, isHost, &gsp_queue);
 
 	// Start the osg Viewer and finish graphics init
 	osgViewer::Viewer viewer = g.startupScene(gState);

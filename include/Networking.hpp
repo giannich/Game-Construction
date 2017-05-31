@@ -71,12 +71,11 @@ struct GameStatePatch
 };
 
 // Gamestate
-void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> gamestateBroadcastList);
-void receiveGameStateInfo(GameState *world, int receivePortNum, bool isHost, std::queue<GameStatePatch *> *gsp_queue);
-unsigned int gameSetup(char **argv, std::vector <std::pair<in_addr, int>> *broadcastList, std::vector <std::pair<in_addr, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList);
-void receiveInputStream(GameState *world, int receivePortNum, std::vector<int> *playerDiscardList);
 void error(const char *msg);
-//void sendDatagram(void *msgObject, size_t objLen, std::string destIPAddress, int destPortNum);
+void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> gamestateBroadcastList);
+void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePatch *> *gsp_queue);
+unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, int>> *broadcastList, std::vector <std::pair<in_addr, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList, bool *isHost);
+void receiveInputStream(GameState *world, bool isHost, std::vector<int> *playerDiscardList);
 void sendDatagram(void *msgObject, size_t objLen, in_addr *serverAddressBuffer, int destPortNum);
 int receiveDatagram(void *buffer, size_t bufferSize, int receivePortNum);
 int receiveDatagramAddr(void *buffer, size_t bufferSize, int receivePortNum, in_addr *serverAddressBuffer);
