@@ -19,6 +19,7 @@
 #include <osgViewer/ViewerEventHandlers>
 
 #include <boost/signals2/signal.hpp>
+#include <netinet/in.h>
 #include <chrono>
 #include <thread>
 #include <queue>
@@ -146,8 +147,6 @@ struct Graphics
 		osg::ref_ptr<osg::Geode> anotherGeode = new osg::Geode;
 		anotherGeode->addDrawable(otherShape.get());
 
-		osg::Node *cessnaNode = osgDB::readNodeFile("cessna.osg");
-
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it){
 			int i = it - world->boats->begin();
 			transform[i] = new PositionAttitudeTransform;
@@ -235,17 +234,25 @@ struct Graphics
 int main( int argc, char** argv)
 {
 	// Game Setup
-	std::vector <std::pair<std::string, int>> broadcastList;
-	std::vector <std::pair<std::string, int>> gamestateBroadcastList;
+	std::vector <std::pair<in_addr, int>> broadcastList;
+	std::vector <std::pair<in_addr, int>> gamestateBroadcastList;
 	std::vector<int> playerTypeList;
 	std::vector<int> playerDiscardList;
 	bool isHost;
 	unsigned int seed = gameSetup(argv, &broadcastList, &gamestateBroadcastList, &playerTypeList);
+	
+	int recPortNum;
 
 	if (playerTypeList.at(0) == 0)
+	{
+		recPortNum = SERVER_PORT;
 		isHost = true;
+	}
 	else
+	{
+		recPortNum = CLIENT_PORT;
 		isHost = false;
+	}
 
 	// Debugging stuff
 	for(int i = 0; i < broadcastList.size(); i++)
@@ -341,8 +348,8 @@ int main( int argc, char** argv)
 
 	// Start the network receiving thread, mostly good!
 	std::queue<GameStatePatch *> gsp_queue;
-	std::thread networkReceivingThread(receiveInputStream, gState, atoi(argv[2]), &playerDiscardList);
-	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, atoi(argv[4]), isHost, &gsp_queue);
+	std::thread networkReceivingThread(receiveInputStream, gState, recPortNum, &playerDiscardList);
+	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, GAMESTATE_PORT, isHost, &gsp_queue);
 
 	// Start the osg Viewer and finish graphics init
 	osgViewer::Viewer viewer = g.startupScene(gState, souls);

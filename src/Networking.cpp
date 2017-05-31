@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 
 #include <boost/property_tree/ptree.hpp>
@@ -22,7 +22,7 @@
 * Initial Setup *
 ****************/
 
-unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *broadcastList, std::vector <std::pair<std::string, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList)
+unsigned int gameSetup(char **argv, std::vector <std::pair<in_addr, int>> *broadcastList, std::vector <std::pair<in_addr, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList)
 {
 	bool isHost;
 	int recPortNum;
@@ -51,13 +51,13 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 	if(isHost)
 	{
 		// Receiving port number
-		recPortNum = atoi(argv[2]);
+		recPortNum = SERVER_PORT;
 
 		// Expected number of players
-		expectedPlayerNums = atoi(argv[3]);
+		expectedPlayerNums = atoi(argv[2]);
 
 		// Number of AI players
-		aiPlayerNums = atoi(argv[4]);
+		aiPlayerNums = atoi(argv[3]);
 
 		// Player number for host is always 0
 		playerNum = 0;
@@ -66,13 +66,12 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 		playerTypeList->push_back(0);
 
 		// For playerlist stuff
-		std::string destIPAddress = "localhost";
 		int bufferSize = sizeof(int);
 		int *intArrBuffer = (int *) malloc(bufferSize * 2);
 		int *intBuffer = (int *) malloc(bufferSize);
 		int tempPlayerPort;
 		int tempGamestatePort;
-		std::pair <std::string, int> tempPlayer;
+		std::pair <in_addr, int> tempPlayer;
 
 		// Loop listening for players
 		for(int i = 1; i <= expectedPlayerNums; i++)
@@ -80,19 +79,20 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 			std::cout << "Listening in for connections\n";
 
 			// Gets the player's port numbers
-			receiveDatagram(intArrBuffer, bufferSize * 2, recPortNum);
+			in_addr *serverAddress = (in_addr *) malloc(sizeof(in_addr));
+			receiveDatagramAddr(intArrBuffer, bufferSize * 2, recPortNum, serverAddress);
 			tempPlayerPort = intArrBuffer[0];
 			tempGamestatePort = intArrBuffer[1];
 			
 			// Sends back the player number
 			*intBuffer = i;
-			sendDatagram(intBuffer, bufferSize, destIPAddress, tempPlayerPort);
+			sendDatagram(intBuffer, bufferSize, serverAddress, tempPlayerPort);
 
 			// Adds contact information on the broadcastList
-			tempPlayer = std::make_pair(destIPAddress, tempPlayerPort);
+			tempPlayer = std::make_pair(*serverAddress, tempPlayerPort);
 			broadcastList->push_back(tempPlayer);
 			playerTypeList->push_back(1);
-			tempPlayer = std::make_pair(destIPAddress, tempGamestatePort);
+			tempPlayer = std::make_pair(*serverAddress, tempGamestatePort);
 			gamestateBroadcastList->push_back(tempPlayer);
 
 			std::cout << "Successfully created player number " << std::to_string(i) << "\n";
@@ -115,8 +115,8 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 
 		for(int i = 0; i < expectedPlayerNums; i++)
 		{
-			sendDatagram(intBuffer, bufferSize, broadcastList->at(i).first, broadcastList->at(i).second);
-			sendDatagram(unsignedBuffer, sizeof(unsigned int), broadcastList->at(i).first, broadcastList->at(i).second);
+			sendDatagram(intBuffer, bufferSize, &broadcastList->at(i).first, broadcastList->at(i).second);
+			sendDatagram(unsignedBuffer, sizeof(unsigned int), &broadcastList->at(i).first, broadcastList->at(i).second);
 		}
 
 		free(intBuffer);
@@ -126,24 +126,27 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 	}
 	else // Client Code
 	{
-		// Receiving port number - InputStream
-		recPortNum = atoi(argv[2]);
-
 		// Server's port number
-		serverPortNum = atoi(argv[3]);
+		serverPortNum = SERVER_PORT;
+		
+		// Receiving port number - InputStream
+		recPortNum = CLIENT_PORT;
 
 		// Receiving port number - GameState
-		gamestatePortNum = atoi(argv[4]);
+		gamestatePortNum = GAMESTATE_PORT;
 
 		// Server's ip address
-		std::string destIPAddress = "localhost";
+		char *destIPAddress = (char *) malloc(sizeof(char) * 16);
+		destIPAddress = argv[2];
+		in_addr *hostAddress = (in_addr *) malloc(sizeof(in_addr));
+		inet_aton(destIPAddress, hostAddress);
 
 		// Sends the receiving port number to the server
 		int bufferSize = sizeof(int);
 		int *intArrBuffer = (int *) malloc(bufferSize * 2);
 		intArrBuffer[0] = recPortNum;
 		intArrBuffer[1] = gamestatePortNum;
-		sendDatagram(intArrBuffer, bufferSize * 2, destIPAddress, serverPortNum);
+		sendDatagram(intArrBuffer, bufferSize * 2, hostAddress, serverPortNum);
 		
 		// Gets the player number and assigns it to playerNum
 		int *intBuffer = (int *) malloc(bufferSize);
@@ -165,7 +168,7 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 		std::cout << "Host has generated a random seed of " << std::to_string(randomSeed) << "\n";
 
 		// The broadcastlist will only have the server
-		broadcastList->push_back(std::make_pair(destIPAddress, serverPortNum));
+		broadcastList->push_back(std::make_pair(*hostAddress, serverPortNum));
 
 		// NEEDS TO CREATE NETWORK BOATS HERE IN A FOR LOOP
 		for (int i = 0; i < totalNumberOfPlayers; i++)
@@ -182,6 +185,7 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<std::string, int>> *b
 		free(intBuffer);
 		free(unsignedBuffer);
 		free(intArrBuffer);
+		//free(destIPAddress);
 		std::cout << "Successfully finished setup process for client\n";
 	}
 
@@ -204,7 +208,7 @@ void Networking::broadcastInputStream()
 
 	// Broadcasts the outputlist to all the destination addresses
 	for (unsigned int i = 0; i < broadcastSize; i++)
-		sendDatagram(outputList, MAX_FRAMES + 8, broadcastTargets->at(i).first, broadcastTargets->at(i).second);
+		sendDatagram(outputList, MAX_FRAMES + 8, &broadcastTargets->at(i).first, broadcastTargets->at(i).second);
 }
 
 // Receives a datagram and decodes it to the correct InputStream
@@ -258,7 +262,7 @@ http://stackoverflow.com/questions/2114466/creating-json-arrays-in-boost-using-p
 */
 
 // Encodes a GameState and sends it through UDP
-void sendGameStateInfo(GameState *world, std::vector <std::pair<std::string, int>> gamestateBroadcastList)
+void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> gamestateBroadcastList)
 {
 	// Convert GameState into a ptree
 	boost::property_tree::ptree pt;
@@ -303,7 +307,7 @@ void sendGameStateInfo(GameState *world, std::vector <std::pair<std::string, int
 	for (int i = 0; i < gamestateBroadcastList.size(); i++)
 	{
 		std::cout << "Broadcasting GameState to port number " << std::to_string(gamestateBroadcastList.at(i).second) << "!\n";
-		sendDatagram(&stringBuffer, bufferSize, gamestateBroadcastList.at(i).first, gamestateBroadcastList.at(i).second);
+		sendDatagram(&stringBuffer, bufferSize, &gamestateBroadcastList.at(i).first, gamestateBroadcastList.at(i).second);
 	}
 }
 
@@ -407,9 +411,10 @@ void error(const char *msg)
 	exit(1);
 }
 
-// Function for sending a datagram
+/* Function for sending a datagram
 void sendDatagram(void *msgObject, size_t objLen, std::string destIPAddress, int destPortNum)
 {
+
 	// Initialize some values
 	int socketDescriptor, msgLen;
 	struct sockaddr_in serverAddress;
@@ -426,6 +431,42 @@ void sendDatagram(void *msgObject, size_t objLen, std::string destIPAddress, int
 
 	// Gets the servername
 	server = gethostbyname(destAddressPtr);
+	if (server == NULL) 
+		error("ERROR no such host");
+
+	// No idea whats going on here, but I think this is mostly for setting up the server address? Need to check again...
+	bzero((char *) &serverAddress, sizeof(serverAddress));
+	serverAddress.sin_family = AF_INET;
+	bcopy((char *)server->h_addr, (char *)&serverAddress.sin_addr.s_addr, server->h_length);
+	serverAddress.sin_port = htons(destPortNum);
+
+	// Send a message
+	msgLen = sendto(socketDescriptor, msgObject, objLen, 0, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
+	if (msgLen < 0)
+		error("Error failed sendto");
+
+	//std::cout << "Sent message of length " << std::to_string(msgLen) << "\n";
+
+	// Finally the close descriptor
+	close(socketDescriptor);
+	return;
+}*/
+
+// Function for sending a datagram
+void sendDatagram(void *msgObject, size_t objLen, in_addr *serverAddressBuffer, int destPortNum)
+{
+	// Initialize some values
+	int socketDescriptor, msgLen;
+	struct sockaddr_in serverAddress;
+	struct hostent *server;
+
+	// Creates socket file descriptor for socket communication
+	socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
+	if (socketDescriptor < 0)
+		error("ERROR opening socket");
+
+	// Gets the servername
+	server = gethostbyaddr(serverAddressBuffer, sizeof(in_addr), AF_INET);
 	if (server == NULL) 
 		error("ERROR no such host");
 
@@ -478,6 +519,52 @@ int receiveDatagram(void *buffer, size_t bufferSize, int receivePortNum)
 
 	// Receives the actual message
 	msgLen = recvfrom(socketDescriptor, buffer, bufferSize, 0, (struct sockaddr *)&senderAddress, &senderLength);
+
+	if (msgLen < 0)
+		error("ERROR on receiving");
+
+	//std::cout << "Received message of length " << std::to_string(msgLen) << "\n";
+
+	// Close descriptor and return the message
+	close(socketDescriptor);
+
+	return msgLen;
+}
+
+// Function for accepting a datagram
+int receiveDatagramAddr(void *buffer, size_t bufferSize, int receivePortNum, in_addr *serverAddressBuffer)
+{
+	// Initialize some values
+	int msgLen, reuseTrue;
+	socklen_t senderLength;
+	struct sockaddr_in receiverAddress, senderAddress;
+
+	// Creates socket file descriptor for socket communication
+	int socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
+	if (socketDescriptor < 0)
+		error("ERROR opening socket");
+
+	// This prevents the socket from hogging space in case it is not closed prematurely
+	reuseTrue = 1;
+	if (setsockopt(socketDescriptor, SOL_SOCKET, SO_REUSEADDR, &reuseTrue, sizeof(int)) == -1) 
+		error("ERROR socket options");
+
+	// Sets up the server address stuff and actually binds to a socket
+	receiverAddress.sin_family = AF_INET;
+	receiverAddress.sin_addr.s_addr = INADDR_ANY;
+	receiverAddress.sin_port = htons(receivePortNum);
+	if (bind(socketDescriptor, (struct sockaddr *) &receiverAddress, sizeof(receiverAddress)) < 0)
+		error("ERROR on binding");
+		 
+	// Listens to socket with the socketDescriptor and can accept up to 5 connections in queue
+	listen(socketDescriptor, 5);
+	senderLength = sizeof(senderAddress);
+
+	// Receives the actual message
+	msgLen = recvfrom(socketDescriptor, buffer, bufferSize, 0, (struct sockaddr *)&senderAddress, &senderLength);
+
+	// Stores the server address into the buffer
+	*serverAddressBuffer = senderAddress.sin_addr;
 
 	if (msgLen < 0)
 		error("ERROR on receiving");

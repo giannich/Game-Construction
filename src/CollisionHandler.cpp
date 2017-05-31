@@ -8,6 +8,7 @@ void BoatCollisionHandler::handleCollision(EType other) {
 	switch (other) {
 		case SoulType:
 			std::cout << "a Soul!" << std::endl;
+			parent->addSoul();
 			break;
 		case WallType:
 			std::cout << "the wall!" << std::endl;
