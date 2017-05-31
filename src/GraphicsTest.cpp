@@ -30,6 +30,7 @@
 #include "Soul.hpp"
 #include "AI_1_0.hpp"
 #include "Networking.hpp"
+#include "FinishLine.hpp"
 
 #include <SDL.h>
 
@@ -243,6 +244,14 @@ int main( int argc, char** argv)
 		souls->push_back(s);
 	}
 
+	//Add finish line to track
+	int finishLineSeg = 980;
+	vec2 finishL = m_track->l[finishLineSeg];
+	vec2 finishR = m_track->r[finishLineSeg];
+	vec2 finishM = mul(add(finishL,finishR),2.0f);
+	b2Vec2 finishLinePos = b2Vec2(finishM.x, finishM.y);
+	FinishLine *finish = new FinishLine(finishLinePos, 11.0f, *m_world);
+
 	//Initialize Contact Listener for physics
 	ContactListener contactListener;
 	m_world->SetContactListener(&contactListener);
@@ -304,7 +313,8 @@ int main( int argc, char** argv)
 	std::queue<GameStatePatch *> gsp_queue;
 	std::thread networkReceivingThread(receiveInputStream, gState, atoi(argv[2]), &playerDiscardList);
 	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, atoi(argv[4]), isHost, &gsp_queue);
-	
+
+	// Start the osg Viewer and finish graphics init
 	osgViewer::Viewer viewer = g.startupScene(gState);
 
 	//Main game loop

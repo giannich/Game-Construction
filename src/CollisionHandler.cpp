@@ -17,6 +17,7 @@ void BoatCollisionHandler::handleCollision(EType other) {
 			break;
 		case FinishLineType:
 			std::cout << "the Finish Line!" << std::endl;
+			parent->disabled = true;
 			break;
 		default:
 			break;
@@ -26,3 +27,5 @@ void BoatCollisionHandler::handleCollision(EType other) {
 void SoulCollisionHandler::handleCollision(EType other) {
 	std::cout << "Delete Soul!" << std::endl;
 }
+
+void FinishLineCollisionHandler::handleCollision(EType other) { }

@@ -3,6 +3,7 @@
 #define CollisionHandler_hpp
 class Boat;
 class Soul;
+class FinishLine;
 
 typedef enum entityType{WallType, BoatType, SoulType, FinishLineType} EType;
 
@@ -24,6 +25,12 @@ class SoulCollisionHandler : CollisionHandler {
 	Soul *parent;
 public:
 	SoulCollisionHandler(Soul *s) : parent(s), CollisionHandler(SoulType) {}
+	void handleCollision(EType other);
+};
+
+class FinishLineCollisionHandler : CollisionHandler {
+public:
+	FinishLineCollisionHandler(FinishLine *f) : CollisionHandler(FinishLineType) {}
 	void handleCollision(EType other);
 };
 

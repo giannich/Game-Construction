@@ -20,6 +20,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 		bd.angle = M_PI/2.0f;
 		rigidBody = m_world.CreateBody(&bd);
 
+		/*
 		b2PolygonShape shape;
 		b2Vec2 vertices[6];
 		vertices[0].Set(-0.6f, 0.0f);
@@ -29,17 +30,31 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 		vertices[4].Set(0.4f, -0.4f);
 		vertices[5].Set(-0.4f, -0.4f);
 		shape.Set(vertices,6);
+		*/
+
+		b2CircleShape front, back;
+		b2PolygonShape middle;
+		front.m_radius = 0.5f;
+		front.m_p.Set(0.5f, 0.0f);
+		back.m_radius = 0.5f;
+		back.m_p.Set(-0.5f, 0.0f);
+		middle.SetAsBox(1.0f,1.0f);
 
 		b2FixtureDef fd;
-		fd.shape = &shape;
-		fd.density = 0.01f;
-		fd.restitution = 0.3f;
+		fd.density = 0.0012f;
+		fd.restitution = 0.2f;
+
+		fd.shape = &front;
+		rigidBody->CreateFixture(&fd);
+		fd.shape = &middle;
+		rigidBody->CreateFixture(&fd);
+		fd.shape = &back;
+		rigidBody->CreateFixture(&fd);
+		
 		rigidBody->SetLinearDamping(0.5f);
 		rigidBody->SetAngularDamping(5.0f);
-		rigidBody->CreateFixture(&fd);
 		rigidBody->SetUserData(collisionHandler);
 	}
-
 	playerNum = pNum;
 	currentSouls = 0;
 	soulCollectionRadius = 5.0f;
@@ -47,6 +62,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 	reverseForce = -2.0f;
 	turnRate = 0.9f;
 	segPosition = -0.5;
+	disabled = false;
 }
 
 float Boat::dampingCoefficient() {
@@ -63,39 +79,39 @@ void Boat::update(float deltaT, GameState &gs)
 {
 	inputStream->update(deltaT, gs);
 	InputState inputState = inputStream->lastInputState;
-	switch (inputState.acc)
-	{
-		case Accelerating:
+	if (!this->disabled) {
+		switch (inputState.acc)
 		{
-			b2Vec2 f = rigidBody->GetWorldVector(b2Vec2(forwardForce * deltaT, 0.0f));
-			b2Vec2 p = rigidBody->GetWorldPoint(b2Vec2(0.0f, 0.0f));
-			rigidBody->ApplyForce(f, p, true);
+			case Accelerating: {
+				b2Vec2 f = rigidBody->GetWorldVector(b2Vec2(forwardForce * deltaT, 0.0f));
+				b2Vec2 p = rigidBody->GetWorldPoint(b2Vec2(0.0f, 0.0f));
+				rigidBody->ApplyForce(f, p, true);
+				break;
+			}
+			case Reversing: {
+				b2Vec2 f = rigidBody->GetWorldVector(b2Vec2(reverseForce * deltaT, 0.0f));
+				b2Vec2 p = rigidBody->GetWorldPoint(b2Vec2(0.0f, 0.0f));
+				rigidBody->ApplyForce(f, p, true);
+				break;
+			}
+			case Idling:
+			default:
+				break;
 		}
-			break;
-		case Reversing:
-		{
-			b2Vec2 f = rigidBody->GetWorldVector(b2Vec2(reverseForce * deltaT, 0.0f));
-			b2Vec2 p = rigidBody->GetWorldPoint(b2Vec2(0.0f, 0.0f));
-			rigidBody->ApplyForce(f, p, true);
+
+		switch (inputState.turn) {
+			case Left: {
+				rigidBody->SetTransform(rigidBody->GetPosition(), rigidBody->GetAngle() + turnRate * deltaT);
+				break;
+			}
+			case Right: {
+				rigidBody->SetTransform(rigidBody->GetPosition(), rigidBody->GetAngle() - turnRate * deltaT);
+				break;
+			}
+			case Neutral:
+			default:
+				break;
 		}
-			break;
-	case Idling:
-		break;
-	}
-	
-	switch (inputState.turn) {
-		case Left:
-		{
-			rigidBody->SetTransform(rigidBody->GetPosition(), rigidBody->GetAngle() + turnRate * deltaT);
-		}
-			break;
-		case Right:
-		{
-			rigidBody->SetTransform(rigidBody->GetPosition(), rigidBody->GetAngle() - turnRate * deltaT);
-		}
-			break;
-	case Neutral:
-		break;
 	}
 }
 
@@ -110,3 +126,4 @@ float Boat::getY() {
 float Boat::getRot() {
 	return rigidBody->GetAngle();
 }
+
