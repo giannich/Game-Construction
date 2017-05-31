@@ -22,11 +22,10 @@ class InputStream;
 class Boat
 {
 	float soulCollectionRadius;
-	float forwardForce;
 	float reverseForce;
 	float turnRate;
 	BoatCollisionHandler *collisionHandler;
-	float dampingCoefficient();
+	float forwardForce();
 public:
 	int currentSouls;
 	bool disabled;
