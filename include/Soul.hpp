@@ -10,6 +10,8 @@ class Soul {
 	SoulCollisionHandler *collisionHandler;
 public:
 	Soul(b2Vec2, float, b2World&);
+	float getX();
+	float getY();
 	~Soul();
 };
 

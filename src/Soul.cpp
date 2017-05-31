@@ -26,3 +26,11 @@ Soul::~Soul() {
 	std::cout << "Delete Soul!!" << std::endl;
 	rigidBody->GetWorld()->DestroyBody(rigidBody);
 }
+
+float Soul::getX(){
+	return rigidBody->GetPosition().x;
+}
+
+float Soul::getY() {
+	return rigidBody->GetPosition().y;
+}
