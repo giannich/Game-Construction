@@ -44,10 +44,10 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 		b2CircleShape front, back;
 		b2PolygonShape middle;
 		front.m_radius = 0.5f;
-		front.m_p.Set(0.5f, 0.0f);
+		front.m_p.Set(1.0f, 0.0f);
 		back.m_radius = 0.5f;
-		back.m_p.Set(-0.5f, 0.0f);
-		middle.SetAsBox(1.0f,1.0f);
+		back.m_p.Set(-1.0f, 0.0f);
+		middle.SetAsBox(1.0f,0.5f);
 
 		b2FixtureDef fd;
 		fd.density = 0.0012f;
