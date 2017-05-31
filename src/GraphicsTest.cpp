@@ -49,13 +49,13 @@ Vec3f up = {0,1,0};
 unsigned int myBoat = 0;
 
 PositionAttitudeTransform *transform[maxNumBoats];
-PositionAttitudeTransform *transformSouls[maxNumsouls];
+PositionAttitudeTransform *transformSouls[maxNumSouls];
 
 // This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
 {
 	// Init the viewer and other shit
-	osgViewer::Viewer startupScene(GameState *world, std::vector<Soul*> *souls)
+	osgViewer::Viewer startupScene(GameState *world, std::vector<Soul*> souls)
 	{
 		//Create startup scene with boats loaded
 		Group *scene = new Group();
@@ -63,7 +63,7 @@ struct Graphics
 
 		//Create Track  and load in scene
 		osg::Geometry* polyGeom = new osg::Geometry();
-		createTrack(polyGeom, world, souls);
+		createTrack(polyGeom, world);
 		scene->addChild(polyGeom);
 
 		//Create souls and load in scene
@@ -105,11 +105,11 @@ struct Graphics
 		return viewer;
 	}
 
-	void loadSouls(Group *root, GameState *world, std::vector<Soul*> *souls)
+	void loadSouls(Group *root, GameState *world, std::vector<Soul*> souls)
 	{
 		osg::ref_ptr<osg::ShapeDrawable> myShape = new osg::ShapeDrawable;
 
-		osg::Sphere *sphere = new osg::Sphere(osg::Vec3(0.0f, 0.0f, 0.0f), 5);
+		osg::Sphere *sphere = new osg::Sphere(osg::Vec3(0.0f, 0.0f, 0.0f), 1);
 
 		myShape->setShape(sphere);
 		myShape->setColor(osg::Vec4(0.152, 0.701, 0.945, 0.5));
@@ -117,12 +117,13 @@ struct Graphics
 		osg::ref_ptr<osg::Geode> myGeode = new osg::Geode;
 		myGeode->addDrawable(myShape.get());
 
-		for (int i = 0; i < souls.size(); i++) {
+		for (int i = 0; i < std::min((float)souls.size(), (float)maxNumSouls); i++) {
 			transformSouls[i] = new PositionAttitudeTransform;
-			transformSouls[i]->setPosition(Vec3(souls[i]->getX(), 0.5f, souls[i]->getY()));
+			transformSouls[i]->setPosition(Vec3((souls[i])->getX(), 0.5f, (souls[i])->getY()));
 			transformSouls[i]->addChild(myGeode);
 			root->addChild(transformSouls[i]);
 		}
+		
 	}
 
 			
@@ -270,16 +271,14 @@ int main( int argc, char** argv)
 	GameState *gState = new GameState(*m_track);
 
 	//Add souls to track
-	std::vector<Soul*> *souls = new std::vector<Soul*>();
+	std::vector<Soul*> souls;
 	vec2* soulPos = m_track->getInitialSoulPositions(5);
 	for(int i = 0; i < 5; ++i) {
 		Soul *s = new Soul(b2Vec2(soulPos[i].x, soulPos[i].y), 5.0f, *m_world);
 		std::cout << "(x,y): " << soulPos[i].x << ", " << soulPos[i].y << std::endl;
-		souls->push_back(s);
+		souls.push_back(s);
 	}
 
-	//Create disabled souls vector
-	std::vector<Soul*> *invSouls = new std::vector<Soul*>();
 
 	//Add finish line to track
 	int finishLineSeg = 980;
