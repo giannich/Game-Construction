@@ -23,6 +23,7 @@
 #include <chrono>
 #include <thread>
 #include <queue>
+#include <algorithm>
 
 #include "Box2D/Box2D.h"
 #include "Boat.hpp"
@@ -55,7 +56,7 @@ PositionAttitudeTransform *transformSouls[maxNumSouls];
 struct Graphics
 {
 	// Init the viewer and other shit
-	osgViewer::Viewer startupScene(GameState *world, std::vector<Soul*> souls)
+	osgViewer::Viewer startupScene(GameState *world)
 	{
 		//Create startup scene with boats loaded
 		Group *scene = new Group();
@@ -67,7 +68,7 @@ struct Graphics
 		scene->addChild(polyGeom);
 
 		//Create souls and load in scene
-		loadSouls(scene, world, souls);
+		loadSouls(scene, world);
 
 		std::deque<std::string> libs = osgDB::Registry::instance()->getLibraryFilePathList();
 		for(auto it = libs.begin(); it != libs.end(); ++it)
@@ -105,7 +106,7 @@ struct Graphics
 		return viewer;
 	}
 
-	void loadSouls(Group *root, GameState *world, std::vector<Soul*> souls)
+	void loadSouls(Group *root, GameState *world)
 	{
 		osg::ref_ptr<osg::ShapeDrawable> myShape = new osg::ShapeDrawable;
 
@@ -117,9 +118,10 @@ struct Graphics
 		osg::ref_ptr<osg::Geode> myGeode = new osg::Geode;
 		myGeode->addDrawable(myShape.get());
 
-		for (int i = 0; i < std::min((float)souls.size(), (float)maxNumSouls); i++) {
+		std::vector<Soul> *souls = world->souls;
+		for (int i = 0; i < std::min<int>(souls->size(), maxNumSouls); i++) {
 			transformSouls[i] = new PositionAttitudeTransform;
-			transformSouls[i]->setPosition(Vec3((souls[i])->getX(), 0.5f, (souls[i])->getY()));
+			transformSouls[i]->setPosition(Vec3(souls->at(i).getX(), 0.5f, souls->at(i).getY()));
 			transformSouls[i]->addChild(myGeode);
 			root->addChild(transformSouls[i]);
 		}
@@ -244,17 +246,16 @@ int main(int argc, char** argv)
 
 	//Initialize Phyiscs world
 	b2World *m_world = new b2World(b2Vec2(0.0f,0.0f));
-	Track *m_track = new Track(1000,2.5f,11.0f,4, seed);
+	Track *m_track = new Track(1000,2.5f,17.0f,4, seed);
 	m_track->addTrackToWorld(*m_world);
 	GameState *gState = new GameState(*m_track);
 
 	//Add souls to track
-	std::vector<Soul*> souls;
 	vec2* soulPos = m_track->getInitialSoulPositions(5);
 	for(int i = 0; i < 5; ++i) {
 		Soul *s = new Soul(b2Vec2(soulPos[i].x, soulPos[i].y), 5.0f, *m_world);
 		std::cout << "(x,y): " << soulPos[i].x << ", " << soulPos[i].y << std::endl;
-		souls.push_back(s);
+		gState->addSoul(*s);
 	}
 
 
@@ -329,7 +330,7 @@ int main(int argc, char** argv)
 	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, isHost, &gsp_queue);
 
 	// Start the osg Viewer and finish graphics init
-	osgViewer::Viewer viewer = g.startupScene(gState, souls);
+	osgViewer::Viewer viewer = g.startupScene(gState);
 
 	//Main game loop
 	int stopper = 0;

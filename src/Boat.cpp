@@ -14,7 +14,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 	playerNum = pNum;
 	currentSouls = 0;
 	soulCollectionRadius = 5.0f;
-	forwardForce = 6.5f;
+	//forwardForce = 6.5f;
 	reverseForce = -2.0f;
 	turnRate = 0.9f;
 	segPosition = -0.5;
@@ -60,20 +60,19 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 		fd.shape = &back;
 		rigidBody->CreateFixture(&fd);
 		
-		rigidBody->SetLinearDamping(dampingCoefficient());
+		rigidBody->SetLinearDamping(0.5f);
 		rigidBody->SetAngularDamping(5.0f);
 		rigidBody->SetUserData(collisionHandler);
 	}
 }
 
-float Boat::dampingCoefficient() {
+float Boat::forwardForce() {
 	int soulCount = std::min(currentSouls,BOAT_MAX_SOULS);
-	return 0.5f - 0.05f*soulCount;
+	return 6.5f + 0.6f*soulCount;
 }
 
 void Boat::addSoul() {
 	currentSouls += 1;
-	rigidBody->SetLinearDamping(dampingCoefficient());
 	std::cout << "Now have " << currentSouls << " Souls" << std::endl;
 }
 
@@ -85,7 +84,7 @@ void Boat::update(float deltaT, GameState &gs)
 		switch (inputState.acc)
 		{
 			case Accelerating: {
-				b2Vec2 f = rigidBody->GetWorldVector(b2Vec2(forwardForce * deltaT, 0.0f));
+				b2Vec2 f = rigidBody->GetWorldVector(b2Vec2(this->forwardForce() * deltaT, 0.0f));
 				b2Vec2 p = rigidBody->GetWorldPoint(b2Vec2(0.0f, 0.0f));
 				rigidBody->ApplyForce(f, p, true);
 				break;
