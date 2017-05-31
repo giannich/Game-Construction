@@ -79,11 +79,11 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 
 			// Gets the player's port numbers
 			in_addr *serverAddress = (in_addr *) malloc(sizeof(in_addr));
-			receiveDatagramAddr(intArrBuffer, bufferSize * 2, SERVER_PORT, serverAddress);
+			receiveStreamAddr(intArrBuffer, bufferSize * 2, REGISTRATION_PORT, serverAddress);
 			
 			// Sends back the player number
 			*intBuffer = i;
-			sendDatagram(intBuffer, bufferSize, serverAddress, CLIENT_PORT);
+			sendStream(intBuffer, bufferSize, serverAddress, CLIENT_PORT);
 
 			// Adds contact information on the broadcastList
 			tempPlayer = std::make_pair(*serverAddress, CLIENT_PORT);
@@ -99,7 +99,7 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 		for(int i = 1; i <= expectedPlayerNums; i++)
 		{
 			std::cout << "Waiting on acks\n";
-			receiveDatagram(intArrBuffer, bufferSize * 2, SERVER_PORT);
+			receiveStream(intArrBuffer, bufferSize * 2, SERVER_PORT);
 		}
 
 		// Loop for creating ai players
@@ -119,7 +119,7 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 
 		// Sends info to all players
 		for(int i = 0; i < expectedPlayerNums; i++)
-			sendDatagram(unsignedBuffer, sizeof(unsigned int) * 2, &broadcastList->at(i).first, broadcastList->at(i).second);
+			sendStream(unsignedBuffer, sizeof(unsigned int) * 2, &broadcastList->at(i).first, broadcastList->at(i).second);
 
 		free(intBuffer);
 		free(unsignedBuffer);
@@ -140,18 +140,18 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 		int *intArrBuffer = (int *) malloc(bufferSize * 2);
 		intArrBuffer[0] = CLIENT_PORT;
 		intArrBuffer[1] = GAMESTATE_PORT;
-		sendDatagram(intArrBuffer, bufferSize * 2, hostAddress, SERVER_PORT);
+		sendStream(intArrBuffer, bufferSize * 2, hostAddress, REGISTRATION_PORT);
 		
 		// Gets the player number and assigns it to playerNum
 		int *intBuffer = (int *) malloc(bufferSize);
-		receiveDatagram(intBuffer, bufferSize, CLIENT_PORT);
+		receiveStream(intBuffer, bufferSize, CLIENT_PORT);
 		playerNum = *intBuffer;
 		std::cout << "Assigned to player number " << std::to_string(playerNum) << "\n";
-		sendDatagram(intArrBuffer, bufferSize * 2, hostAddress, SERVER_PORT);
+		sendStream(intArrBuffer, bufferSize * 2, hostAddress, SERVER_PORT);
 
 		// Receives the total number of players and the seed number
 		unsigned int *unsignedBuffer = (unsigned int *) malloc(sizeof(unsigned int) * 2);
-		receiveDatagram(unsignedBuffer, sizeof(unsigned int) * 2, CLIENT_PORT);
+		receiveStream(unsignedBuffer, sizeof(unsigned int) * 2, CLIENT_PORT);
 		totalNumberOfPlayers = unsignedBuffer[0];
 		randomSeed = unsignedBuffer[1];
 		std::cout << "There are a total of " << std::to_string(totalNumberOfPlayers) << " players in this game\n";
@@ -480,7 +480,7 @@ int receiveDatagram(void *buffer, size_t bufferSize, int receivePortNum)
 	return msgLen;
 }
 
-// Function for accepting a datagram
+/* Function for accepting a datagram
 int receiveDatagramAddr(void *buffer, size_t bufferSize, int receivePortNum, in_addr *serverAddressBuffer)
 {
 	// Initialize some values
@@ -524,4 +524,142 @@ int receiveDatagramAddr(void *buffer, size_t bufferSize, int receivePortNum, in_
 	close(socketDescriptor);
 
 	return msgLen;
+} */
+
+/*****************
+* TCP Networking *
+*****************/
+
+// Function for sending a stream
+void sendStream(void *msgObject, size_t objLen, in_addr *serverAddressBuffer, int destPortNum)
+{
+	// Initialize some values
+	int socketDescriptor, msgLen;
+	struct sockaddr_in serverAddress;
+	struct hostent *server;
+
+	// Creates socket file descriptor for socket communication
+	socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
+	if (socketDescriptor < 0)
+		error("ERROR opening socket");
+
+	// Sets up the server address
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_addr = *serverAddressBuffer;
+	serverAddress.sin_port = htons(destPortNum);
+	if (connect(socketDescriptor, (struct sockaddr *) &serverAddress, sizeof(serverAddress)) < 0) 
+    	error("ERROR connecting");
+
+    // Writes
+	msgLen = write(socketDescriptor, msgObject, objLen);
+    if (msgLen < 0)
+        error("ERROR writing to socket");
+
+	//std::cout << "Sent message of length " << std::to_string(msgLen) << "\n";
+
+	// Finally the close descriptor
+	close(socketDescriptor);
+	return;
 }
+
+// Function for accepting a stream
+int receiveStream(void *buffer, size_t bufferSize, int receivePortNum)
+{
+	// Initialize some values
+	int msgLen, reuseTrue, newSocketDescriptor;
+	socklen_t senderLength;
+	struct sockaddr_in receiverAddress, senderAddress;
+
+	// Creates socket file descriptor for socket communication
+	int socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
+	if (socketDescriptor < 0)
+		error("ERROR opening socket");
+
+	// This prevents the socket from hogging space in case it is not closed prematurely
+	reuseTrue = 1;
+	if (setsockopt(socketDescriptor, SOL_SOCKET, SO_REUSEADDR, &reuseTrue, sizeof(int)) == -1) 
+		error("ERROR socket options");
+
+	// Sets up the server address stuff and actually binds to a socket
+	receiverAddress.sin_family = AF_INET;
+	receiverAddress.sin_addr.s_addr = INADDR_ANY;
+	receiverAddress.sin_port = htons(receivePortNum);
+	if (bind(socketDescriptor, (struct sockaddr *) &receiverAddress, sizeof(receiverAddress)) < 0)
+		error("ERROR on binding");
+
+	// Listens to socket with the socketDescriptor and can accept up to 5 connections in queue
+	listen(socketDescriptor, 5);
+	senderLength = sizeof(senderAddress);
+
+	// Accepts the connection here
+	newSocketDescriptor = accept(socketDescriptor, (struct sockaddr *) &senderAddress, &senderLength);
+	if (newSocketDescriptor < 0)
+		error("ERROR on accept");
+
+	// Clears the buffer and reads from the accepted connection
+	memset(buffer, 0, bufferSize);
+	msgLen = read(newSocketDescriptor, buffer, bufferSize);
+
+	if (msgLen < 0)
+		error("ERROR on receiving");
+
+	//std::cout << "Received message of length " << std::to_string(msgLen) << "\n";
+
+	// Close descriptor and return the message
+	close(socketDescriptor);
+	close(newSocketDescriptor);
+	return msgLen;
+}
+
+// Function for accepting a stream
+int receiveStreamAddr(void *buffer, size_t bufferSize, int receivePortNum, in_addr *serverAddressBuffer)
+{
+	// Initialize some values
+	int msgLen, reuseTrue, newSocketDescriptor;
+	socklen_t senderLength;
+	struct sockaddr_in receiverAddress, senderAddress;
+
+	// Creates socket file descriptor for socket communication
+	int socketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
+	if (socketDescriptor < 0)
+		error("ERROR opening socket");
+
+	// This prevents the socket from hogging space in case it is not closed prematurely
+	reuseTrue = 1;
+	if (setsockopt(socketDescriptor, SOL_SOCKET, SO_REUSEADDR, &reuseTrue, sizeof(int)) == -1) 
+		error("ERROR socket options");
+
+	// Sets up the server address stuff and actually binds to a socket
+	receiverAddress.sin_family = AF_INET;
+	receiverAddress.sin_addr.s_addr = INADDR_ANY;
+	receiverAddress.sin_port = htons(receivePortNum);
+	if (bind(socketDescriptor, (struct sockaddr *) &receiverAddress, sizeof(receiverAddress)) < 0)
+		error("ERROR on binding");
+
+	// Listens to socket with the socketDescriptor and can accept up to 5 connections in queue
+	listen(socketDescriptor, 5);
+	senderLength = sizeof(senderAddress);
+
+	// Accepts the connection here
+	newSocketDescriptor = accept(socketDescriptor, (struct sockaddr *) &senderAddress, &senderLength);
+	if (newSocketDescriptor < 0)
+		error("ERROR on accept");
+
+	// Clears the buffer and reads from the accepted connection
+	memset(buffer, 0, bufferSize);
+	msgLen = read(newSocketDescriptor, buffer, bufferSize);
+
+	// Stores the server address into the buffer
+	*serverAddressBuffer = senderAddress.sin_addr;
+
+	if (msgLen < 0)
+		error("ERROR on receiving");
+
+	//std::cout << "Received message of length " << std::to_string(msgLen) << "\n";
+
+	// Close descriptor and return the message
+	close(socketDescriptor);
+	close(newSocketDescriptor);
+	return msgLen;
+}
+
