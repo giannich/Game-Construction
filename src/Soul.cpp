@@ -3,6 +3,7 @@
 #include "Soul.hpp"
 
 Soul::Soul(b2Vec2 initPos, float radius, b2World &world_ref) {
+	collected = false;
 	collisionHandler = new SoulCollisionHandler(this);
     //Create rigidbody
     {
@@ -22,7 +23,13 @@ Soul::Soul(b2Vec2 initPos, float radius, b2World &world_ref) {
     }
 }
 
+void Soul::update(float deltaT){ 
+	if(rigidBody != nullptr && collected) {
+		rigidBody->GetWorld()->DestroyBody(rigidBody);
+		rigidBody = nullptr;
+	}
+}
+
 Soul::~Soul() {
-	std::cout << "Delete Soul!!" << std::endl;
-	rigidBody->GetWorld()->DestroyBody(rigidBody);
+	std::cout << "Don't call ~Soul!!" << std::endl;
 }

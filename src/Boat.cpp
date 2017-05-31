@@ -67,13 +67,14 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 }
 
 float Boat::dampingCoefficient() {
-	int soulCount = std::min(currentSouls,6);
+	int soulCount = std::min(currentSouls,BOAT_MAX_SOULS);
 	return 0.5f - 0.05f*soulCount;
 }
 
 void Boat::addSoul() {
 	currentSouls += 1;
 	rigidBody->SetLinearDamping(dampingCoefficient());
+	std::cout << "Now have " << currentSouls << " Souls" << std::endl;
 }
 
 void Boat::update(float deltaT, GameState &gs)

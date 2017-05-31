@@ -2,6 +2,7 @@
 #include "CollisionHandler.hpp"
 #include <iostream>
 #include "Boat.hpp"
+#include "Soul.hpp"
 
 void BoatCollisionHandler::handleCollision(EType other) {
 	std::cout << "Player " << parent->playerNum << " hit ";
@@ -26,7 +27,16 @@ void BoatCollisionHandler::handleCollision(EType other) {
 }
 
 void SoulCollisionHandler::handleCollision(EType other) {
-	std::cout << "Delete Soul!" << std::endl;
+	switch(other) {
+		case BoatType: {
+			parent->collected = true;
+			std::cout << "Delete Soul!" << std::endl;
+			break;
+		}
+		default:
+			std::cout << "Soul hit a " << other << std::endl;
+			break;
+	}
 }
 
 void FinishLineCollisionHandler::handleCollision(EType other) { }

@@ -5,11 +5,13 @@
 #include "Box2D/Box2D.h"
 
 class Soul {
-	b2Body *rigidBody;
 	float collectionRadius;
 	SoulCollisionHandler *collisionHandler;
 public:
+	bool collected;
+	b2Body *rigidBody;
 	Soul(b2Vec2, float, b2World&);
+	void update(float);
 	~Soul();
 };
 
