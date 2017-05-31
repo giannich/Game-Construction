@@ -20,6 +20,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 		bd.angle = M_PI/2.0f;
 		rigidBody = m_world.CreateBody(&bd);
 
+		/*
 		b2PolygonShape shape;
 		b2Vec2 vertices[6];
 		vertices[0].Set(-0.6f, 0.0f);
@@ -29,14 +30,29 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 		vertices[4].Set(0.4f, -0.4f);
 		vertices[5].Set(-0.4f, -0.4f);
 		shape.Set(vertices,6);
+		*/
+
+		b2CircleShape front, back;
+		b2PolygonShape middle;
+		front.m_radius = 0.5f;
+		front.m_p.Set(0.5f, 0.0f);
+		back.m_radius = 0.5f;
+		back.m_p.Set(-0.5f, 0.0f);
+		middle.SetAsBox(1.0f,1.0f);
 
 		b2FixtureDef fd;
-		fd.shape = &shape;
-		fd.density = 0.01f;
-		fd.restitution = 0.3f;
+		fd.density = 0.0012f;
+		fd.restitution = 0.2f;
+
+		fd.shape = &front;
+		rigidBody->CreateFixture(&fd);
+		fd.shape = &middle;
+		rigidBody->CreateFixture(&fd);
+		fd.shape = &back;
+		rigidBody->CreateFixture(&fd);
+		
 		rigidBody->SetLinearDamping(0.5f);
 		rigidBody->SetAngularDamping(5.0f);
-		rigidBody->CreateFixture(&fd);
 		rigidBody->SetUserData(collisionHandler);
 	}
 	playerNum = pNum;
