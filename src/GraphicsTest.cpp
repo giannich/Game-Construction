@@ -119,8 +119,6 @@ struct Graphics
 		osg::ref_ptr<osg::Geode> anotherGeode = new osg::Geode;
 		anotherGeode->addDrawable(otherShape.get());
 
-		osg::Node *cessnaNode = osgDB::readNodeFile("cessna.osg");
-
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it){
 			int i = it - world->boats->begin();
 			transform[i] = new PositionAttitudeTransform;
