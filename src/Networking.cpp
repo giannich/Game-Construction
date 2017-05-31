@@ -16,18 +16,16 @@
 #include "Box2D/Box2D.h"
 #include "Boat.hpp"
 
+extern int h_errno;
+
 #define MAX_JSON_CHARS 4096
 
 /****************
 * Initial Setup *
 ****************/
 
-unsigned int gameSetup(char **argv, std::vector <std::pair<in_addr, int>> *broadcastList, std::vector <std::pair<in_addr, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList)
+unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, int>> *broadcastList, std::vector <std::pair<in_addr, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList, bool *isHost)
 {
-	bool isHost;
-	int recPortNum;
-	int serverPortNum;
-	int gamestatePortNum;
 	int playerNum;
 	int expectedPlayerNums;
 	int aiPlayerNums;
@@ -35,24 +33,25 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<in_addr, int>> *broad
 	unsigned int randomSeed;
 
 	// Client or host
-	if(!strcmp(argv[1], "host"))
+	if(!strcmp(argv[1], "host") && (argc == 4))
 	{
 		std::cout << "I am a host\n";
-		isHost = true;
+		*isHost = true;
 	}
-	else if (!strcmp(argv[1], "client"))
+	else if (!strcmp(argv[1], "client") && (argc == 3))
 	{
 		std::cout << "I am a client\n";
-		isHost = false;
+		*isHost = false;
 	}
 	else
-		exit(1);
-
-	if(isHost)
 	{
-		// Receiving port number
-		recPortNum = SERVER_PORT;
+		std::cout << "Usage: ./gtest <host> <playerNums> <aiPlayerNums>\n";
+		std::cout << "Usage: ./gtest <client> <serverIPAddress> <aiPlayerNums>\n";
+		exit(1);
+	}
 
+	if(*isHost)
+	{
 		// Expected number of players
 		expectedPlayerNums = atoi(argv[2]);
 
@@ -80,19 +79,17 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<in_addr, int>> *broad
 
 			// Gets the player's port numbers
 			in_addr *serverAddress = (in_addr *) malloc(sizeof(in_addr));
-			receiveDatagramAddr(intArrBuffer, bufferSize * 2, recPortNum, serverAddress);
-			tempPlayerPort = intArrBuffer[0];
-			tempGamestatePort = intArrBuffer[1];
+			receiveDatagramAddr(intArrBuffer, bufferSize * 2, SERVER_PORT, serverAddress);
 			
 			// Sends back the player number
 			*intBuffer = i;
-			sendDatagram(intBuffer, bufferSize, serverAddress, tempPlayerPort);
+			sendDatagram(intBuffer, bufferSize, serverAddress, CLIENT_PORT);
 
 			// Adds contact information on the broadcastList
-			tempPlayer = std::make_pair(*serverAddress, tempPlayerPort);
+			tempPlayer = std::make_pair(*serverAddress, CLIENT_PORT);
 			broadcastList->push_back(tempPlayer);
 			playerTypeList->push_back(1);
-			tempPlayer = std::make_pair(*serverAddress, tempGamestatePort);
+			tempPlayer = std::make_pair(*serverAddress, GAMESTATE_PORT);
 			gamestateBroadcastList->push_back(tempPlayer);
 
 			std::cout << "Successfully created player number " << std::to_string(i) << "\n";
@@ -126,15 +123,7 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<in_addr, int>> *broad
 	}
 	else // Client Code
 	{
-		// Server's port number
-		serverPortNum = SERVER_PORT;
-		
-		// Receiving port number - InputStream
-		recPortNum = CLIENT_PORT;
-
-		// Receiving port number - GameState
-		gamestatePortNum = GAMESTATE_PORT;
-
+		std::cout << "hello\n";
 		// Server's ip address
 		char *destIPAddress = (char *) malloc(sizeof(char) * 16);
 		destIPAddress = argv[2];
@@ -144,31 +133,31 @@ unsigned int gameSetup(char **argv, std::vector <std::pair<in_addr, int>> *broad
 		// Sends the receiving port number to the server
 		int bufferSize = sizeof(int);
 		int *intArrBuffer = (int *) malloc(bufferSize * 2);
-		intArrBuffer[0] = recPortNum;
-		intArrBuffer[1] = gamestatePortNum;
-		sendDatagram(intArrBuffer, bufferSize * 2, hostAddress, serverPortNum);
+		intArrBuffer[0] = CLIENT_PORT;
+		intArrBuffer[1] = GAMESTATE_PORT;
+		sendDatagram(intArrBuffer, bufferSize * 2, hostAddress, SERVER_PORT);
 		
 		// Gets the player number and assigns it to playerNum
 		int *intBuffer = (int *) malloc(bufferSize);
-		receiveDatagram(intBuffer, bufferSize, recPortNum);
+		receiveDatagram(intBuffer, bufferSize, CLIENT_PORT);
 		playerNum = *intBuffer;
 
 		std::cout << "Assigned to player number " << std::to_string(playerNum) << "\n";
 
 		// Finally receives the total number of players that are in the game from the host
-		receiveDatagram(intBuffer, bufferSize, recPortNum);
+		receiveDatagram(intBuffer, bufferSize, CLIENT_PORT);
 		totalNumberOfPlayers = *intBuffer;
 		std::cout << "There are a total of " << std::to_string(totalNumberOfPlayers) << " players in this game\n";
 
 		// Also receives the random seed from the host
 		unsigned int *unsignedBuffer = (unsigned int *) malloc(sizeof(unsigned int));
-		receiveDatagram(unsignedBuffer, sizeof(unsigned int), recPortNum);
+		receiveDatagram(unsignedBuffer, sizeof(unsigned int), CLIENT_PORT);
 		randomSeed = *unsignedBuffer;
 
 		std::cout << "Host has generated a random seed of " << std::to_string(randomSeed) << "\n";
 
 		// The broadcastlist will only have the server
-		broadcastList->push_back(std::make_pair(*hostAddress, serverPortNum));
+		broadcastList->push_back(std::make_pair(*hostAddress, SERVER_PORT));
 
 		// NEEDS TO CREATE NETWORK BOATS HERE IN A FOR LOOP
 		for (int i = 0; i < totalNumberOfPlayers; i++)
@@ -213,11 +202,17 @@ void Networking::broadcastInputStream()
 
 // Receives a datagram and decodes it to the correct InputStream
 // This will be called at the beginning of the game
-void receiveInputStream(GameState *world, int receivePortNum, std::vector<int> *playerDiscardList)
+void receiveInputStream(GameState *world, bool isHost, std::vector<int> *playerDiscardList)
 {
 	// Mallocs the encodedInputStream 
 	char *encodedInputStream = (char *) malloc((MAX_FRAMES + 8) * sizeof(char));
 	unsigned int playerNumber;
+	int receivePortNum;
+
+	if (isHost)
+		receivePortNum = SERVER_PORT;
+	else
+		receivePortNum = CLIENT_PORT;
 
 	// Loops and receives all datagrams
 	while(1)
@@ -312,7 +307,7 @@ void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> g
 }
 
 // Receives a message from UDP and decodes it into a GameState
-void receiveGameStateInfo(GameState *world, int receivePortNum, bool isHost, std::queue<GameStatePatch *> *gsp_queue)
+void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePatch *> *gsp_queue)
 {
 	// Receive a char *
 	char stringBuffer[MAX_JSON_CHARS];
@@ -320,7 +315,7 @@ void receiveGameStateInfo(GameState *world, int receivePortNum, bool isHost, std
 
 	while (!isHost)
 	{
-		msgLen = receiveDatagram(stringBuffer, MAX_JSON_CHARS, receivePortNum);
+		msgLen = receiveDatagram(stringBuffer, MAX_JSON_CHARS, GAMESTATE_PORT);
 
 		// Convert char * to string
 		std::string midString(stringBuffer);
@@ -359,7 +354,7 @@ void receiveGameStateInfo(GameState *world, int receivePortNum, bool isHost, std
 
 			// Current Souls
 			int souls = pt.get<int>("currentSouls" + std::to_string(i));
-
+			
 			BoatPatch *aBoatPatch = new BoatPatch(velx, vely, rotvel, orient, posx, posy, souls);
 			aPatch->boatPatches->push_back(aBoatPatch);
 		}
@@ -411,47 +406,6 @@ void error(const char *msg)
 	exit(1);
 }
 
-/* Function for sending a datagram
-void sendDatagram(void *msgObject, size_t objLen, std::string destIPAddress, int destPortNum)
-{
-
-	// Initialize some values
-	int socketDescriptor, msgLen;
-	struct sockaddr_in serverAddress;
-	struct hostent *server;
-
-	// Creates socket file descriptor for socket communication
-	socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
-	if (socketDescriptor < 0)
-		error("ERROR opening socket");
-
-	// Converts the string into a char*
-	char *destAddressPtr = new char[destIPAddress.length() + 1];
-	std::strcpy(destAddressPtr, destIPAddress.c_str());
-
-	// Gets the servername
-	server = gethostbyname(destAddressPtr);
-	if (server == NULL) 
-		error("ERROR no such host");
-
-	// No idea whats going on here, but I think this is mostly for setting up the server address? Need to check again...
-	bzero((char *) &serverAddress, sizeof(serverAddress));
-	serverAddress.sin_family = AF_INET;
-	bcopy((char *)server->h_addr, (char *)&serverAddress.sin_addr.s_addr, server->h_length);
-	serverAddress.sin_port = htons(destPortNum);
-
-	// Send a message
-	msgLen = sendto(socketDescriptor, msgObject, objLen, 0, (struct sockaddr *)&serverAddress, sizeof(serverAddress));
-	if (msgLen < 0)
-		error("Error failed sendto");
-
-	//std::cout << "Sent message of length " << std::to_string(msgLen) << "\n";
-
-	// Finally the close descriptor
-	close(socketDescriptor);
-	return;
-}*/
-
 // Function for sending a datagram
 void sendDatagram(void *msgObject, size_t objLen, in_addr *serverAddressBuffer, int destPortNum)
 {
@@ -465,15 +419,9 @@ void sendDatagram(void *msgObject, size_t objLen, in_addr *serverAddressBuffer, 
 	if (socketDescriptor < 0)
 		error("ERROR opening socket");
 
-	// Gets the servername
-	server = gethostbyaddr(serverAddressBuffer, sizeof(in_addr), AF_INET);
-	if (server == NULL) 
-		error("ERROR no such host");
-
-	// No idea whats going on here, but I think this is mostly for setting up the server address? Need to check again...
-	bzero((char *) &serverAddress, sizeof(serverAddress));
+	// Sets up the server address
 	serverAddress.sin_family = AF_INET;
-	bcopy((char *)server->h_addr, (char *)&serverAddress.sin_addr.s_addr, server->h_length);
+	serverAddress.sin_addr = *serverAddressBuffer;
 	serverAddress.sin_port = htons(destPortNum);
 
 	// Send a message
