@@ -12,11 +12,16 @@
 
 #include <osgUtil/SmoothingVisitor>
 
+#include <osgText/Font>
+#include <osgText/Text>
+
 #include <osgGA/NodeTrackerManipulator>
 #include <osgGA/KeySwitchMatrixManipulator>
 #include <osgGA/TrackballManipulator>
+
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
+#include <osgViewer/CompositeViewer>
 
 #include <boost/signals2/signal.hpp>
 #include <netinet/in.h>
@@ -57,6 +62,8 @@ struct Graphics
 	// Init the viewer and other shit
 	osgViewer::Viewer startupScene(GameState *world, std::vector<Soul*> souls)
 	{
+		osgViewer::Viewer viewer;
+		
 		//Create startup scene with boats loaded
 		Group *scene = new Group();
 		Node * n = loadBoats(scene, world);
@@ -77,15 +84,79 @@ struct Graphics
 		osg::ref_ptr<Node> airboat = osgDB::readNodeFile("models/airboat.obj");
 		std::cout << "Node PTR: "<< airboat << std::endl;
 
-		//Custimize viewer
+		//Set up ui minimap
+		//Set up minimap camera
+		osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
+
+		unsigned int width, height;
+		wsi->getScreenResolution(osg::GraphicsContext::ScreenIdentifier(0),
+								 width, height);
+		osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
+		traits->x = 0;
+		traits->y = 0;
+		traits->width = width;
+		traits->height = height;
+		traits->windowDecoration = true;
+		traits->doubleBuffer = true;
+		traits->sharedContext = 0;
+
+		osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
+		if(gc.valid()){
+			gc->setClearColor(osg::Vec4f(0.2f,0.2f,0.6f,1.0f));
+			gc->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		}else{
+			printf("graphicswindow not created successfully");
+		}
+
+		osg::ref_ptr<osg::Camera> miniCamera = new osg::Camera;
+		miniCamera->setGraphicsContext(gc.get());
+		miniCamera->setViewport(new osg::Viewport((width * 4 / 5), 0,
+											  (width / 5), (height / 5)));
+		GLenum buffer = traits->doubleBuffer ? GL_BACK : GL_FRONT;
+		miniCamera->setDrawBuffer(buffer);
+		miniCamera->setReadBuffer(buffer);
+		
+	//	miniCamera->setViewMatrixAsLookAt({500,500,0}, bound.center(), up);
+
+		viewer.addSlave(miniCamera.get(), osg::Matrixd(),
+						osg::Matrixd::scale(5.0, 5.0, 5.0));
+											
+		
+		//miniCamera->setViewMatrixAsLookAt({0,0,0},bound.center(), up);
+		//miniCamera->getOrCreateStateSet()->setMode(GL_LIGHTING,
+												 //  osg::StateAttribute::OFF);
+
+		//Create timer in up right
+		osg::ref_ptr<osg::Geode> textGeode = new osg::Geode;
+		textGeode->addDrawable(createText(osg::Vec3(650.0f, 750.0f, 0.0f),
+								 "00:00",
+								 40.0f));
+		
+		//Set up hud camera and ui
+		osg::Camera* hudCamera = createHUDCamera(0, 800, 0, 800);
+		hudCamera->addChild(textGeode.get());
+		hudCamera->getOrCreateStateSet()->setMode(GL_LIGHTING, 
+											   osg::StateAttribute::OFF);
+		hudCamera->setRenderOrder(osg::Camera::POST_RENDER);
+		//scene->addChild(hudCamera);
+	//	scene->addChild(miniCamera);
+
+		//Customize viewer
 		osg::ref_ptr<osgViewer::WindowSizeHandler> handler = new osgViewer::WindowSizeHandler();
 
-		osgViewer::Viewer viewer;
-		viewer.setUpViewInWindow(500, 50, 800, 800);
+	//	viewer.setUpViewInWindow(500, 50, 800, 800);
 
 		//Set up camera
+		osg::ref_ptr<osg::Camera> normCamera = new osg::Camera;
+		normCamera->setGraphicsContext(gc.get());
+		normCamera->setViewport(new osg::Viewport(0, 0, width, height));
+		normCamera->setDrawBuffer(buffer);
+		normCamera->setReadBuffer(buffer);
+
+		normCamera->setRenderOrder(osg::Camera::PRE_RENDER);
+
 		viewer.getCamera()->setClearColor(osg::Vec4(0.8f,0.8f,0.8f,0.8f));
-	
+		
 		Boat boat = (*(world->boats))[myBoat];
 		float x = boat.getX();
 		float y = -boat.getY();
@@ -97,12 +168,24 @@ struct Graphics
 				  (float)(y - 200*sin(angle))};
 		newCent = {(float)(x+ 50*cos(angle)),0,
 				   (float)(y + 50*sin(angle))};
+		normCamera->setViewMatrixAsLookAt(newEye,newCent,up);
 
-		viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, up);
+		viewer.addSlave(normCamera.get(), osg::Matrixd(),
+						osg::Matrixd::scale(1.0, 1.0, 1.0));
+
 
 		///Add everything to viewer
 		viewer.setSceneData(scene);
+
 		return viewer;
+	}
+
+	osgViewer::Viewer* createView(int x, int y, int w, int h, osg::Node* scene)
+	{
+		osg::ref_ptr<osgViewer::Viewer> view = new osgViewer::Viewer;
+		view->setSceneData(scene);
+		view->setUpViewInWindow(x,y,w,h);
+		return view.release();
 	}
 
 	void loadSouls(Group *root, GameState *world, std::vector<Soul*> souls)
@@ -126,8 +209,31 @@ struct Graphics
 		
 	}
 
-			
+	osgText::Text* createText(const osg::Vec3& pos,
+							  const std::string& content,
+						      float size)
+	{
+		osg::ref_ptr<osgText::Font> g_font = osgText::readFontFile("fonts/Arial.tff");
+		osg::ref_ptr<osgText::Text> text = new osgText::Text;
+		text->setFont(g_font.get());
+		text->setCharacterSize(size);
+		text->setAxisAlignment(osgText::TextBase::XY_PLANE);
+		text->setPosition(pos);
+		text->setText(content);
+		return text.release();
+	}
 
+	osg::Camera* createHUDCamera(double left, double right, 
+								 double bottom, double top)
+	{
+		osg::ref_ptr<osg::Camera> camera = new osg::Camera;
+		camera->setReferenceFrame(osg::Transform::ABSOLUTE_RF);
+		camera->setClearMask(GL_DEPTH_BUFFER_BIT);
+		camera->setRenderOrder(osg::Camera::POST_RENDER);
+		camera->setAllowEventFocus(false);
+		camera->setProjectionMatrix(osg::Matrix::ortho2D(left,right,bottom,top));
+		return camera.release();
+	}
 	
 	Group* loadBoats(Group *root, GameState *world)
 	{
