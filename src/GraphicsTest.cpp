@@ -299,6 +299,12 @@ struct Graphics
 					transformSouls[i] = NULL;
 				}
 			}
+
+			float x = (*it)->getX();
+			float y = (*it)->getY();
+
+			if (transformSouls[i])
+				transformSouls[i]->setPosition(Vec3(x, 0.5f, y));
 		}
 	}
 
@@ -628,6 +634,7 @@ struct Graphics
 			transform[i]->setPosition(Vec3(x, 0.5f, y));
 			transform[i]->setAttitude(Quat(rot + M_PI / 2.0f, Vec3f(0, -1, 0)));
 		}
+
 		if (countDownTime > 0){
 			time_t curTime;
 			time(&curTime);
