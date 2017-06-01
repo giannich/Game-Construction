@@ -11,6 +11,7 @@
 
 Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 {
+	pickingUpSoul = false;
 	finishedRace = false;
 	disabled = true; //Start the race in a disabled state, then enable 5 seconds in
 	playerNum = pNum;
@@ -85,6 +86,11 @@ void Boat::update(float deltaT, GameState &gs)
 		inputState = inputStream->readSingleState(inputStream->getCurrentFrameNumber() - FRAME_LAG - 1);
 	else
 		inputState = inputStream->readSingleState(inputStream->getCurrentFrameNumber() - 1);
+
+	if (pickingUpSoul) {
+		addSoul();
+		pickingUpSoul = false;
+	}
 
 	if (!disabled) {
 		switch (inputState.acc)

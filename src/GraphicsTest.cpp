@@ -214,10 +214,15 @@ struct Graphics
 		
 		osg::ref_ptr<Node> head = osgDB::readNodeFile("models/head.ive");
 		osg::PositionAttitudeTransform *head_aligned = new PositionAttitudeTransform;
+		head_aligned->setPosition(Vec3f(0.0f,1.5f,0.0f));
 		head_aligned->setAttitude(Quat(M_PI/2.0f, Vec3f(0,0,-1))*
-								  Quat(M_PI/2.0f, Vec3f(1,0,0)) *
+								  Quat(M_PI/2.0f, Vec3f(-1,0,0)) *
 								  Quat(M_PI/2.0f, Vec3f(0,-1,0))
 				);	
+		osg::Material *green = new osg::Material;
+		green->setDiffuse(osg::Material::FRONT, Vec4(0.0f, 0.1f, 0.0f, 0.2f));
+		head_aligned->getOrCreateStateSet()->setAttribute(green, osg::StateAttribute::OVERRIDE);
+		head_aligned->setScale(Vec3f(0.5f,0.5f,0.5f));
 		head_aligned->addChild(head);
 /*
 		osg::ref_ptr<osg::ShapeDrawable> myShape = new osg::ShapeDrawable;
@@ -286,9 +291,10 @@ struct Graphics
 		osg::ref_ptr<Node> airboat = osgDB::readNodeFile("models/3d-model.3ds");
 
 		osg::PositionAttitudeTransform *airboat_aligned = new PositionAttitudeTransform;
-		airboat_aligned->setPosition(Vec3f(0.0f,-0.6f,0.0f));
+		airboat_aligned->setPosition(Vec3f(0.0f,-8.0f,0.0f));
 	//	airboat_aligned->setAttitude(Quat(M_PI / 2.0f, Vec3f(-1, 0, 0)) * Quat(M_PI / 2.0f,Vec3f(0,-1,0))); // This might change if we import a different model
-		airboat_aligned->setAttitude(Quat(M_PI / 2.0f, Vec3f(-1, 0, 0)));
+		airboat_aligned->setAttitude(Quat(M_PI / 2.0f, Vec3f(-1, 0, 0)) * Quat(M_PI,Vec3f(0,1,0)));
+		airboat_aligned->setScale(Vec3f(0.35f,0.35f,0.35f));
 	//	osg::Material *red = new osg::Material;
 	//	osg::Material *red = new osg::Material(osgDB::readImageFile("models/model.mtl"));
 	//	red->setDiffuse(osg::Material::FRONT, Vec4(0.3f, 0.0f, 0.0f, 0.2f));
