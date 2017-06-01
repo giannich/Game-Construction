@@ -146,12 +146,6 @@ void InputStream::encodeInputStates(char *outputList)
 	outputList[MAX_FRAMES + 5] = (char) (playerNum >> 8);
 	outputList[MAX_FRAMES + 6] = (char) (playerNum >> 16);
 	outputList[MAX_FRAMES + 7] = (char) (playerNum >> 24);
-
-	// Encode Soul Number
-	outputList[MAX_FRAMES + 8] = (char) (world->boats->at(playerNum)->currentSouls);
-	outputList[MAX_FRAMES + 9] = (char) (world->boats->at(playerNum)->currentSouls >> 8);
-	outputList[MAX_FRAMES + 10] = (char) (world->boats->at(playerNum)->currentSouls >> 16);
-	outputList[MAX_FRAMES + 11] = (char) (world->boats->at(playerNum)->currentSouls >> 24);
 }
 
 // Reads a bunch of InputStates
@@ -164,14 +158,6 @@ void InputStream::decodeInputStates(char *outputList)
 						((unsigned int) (outputList[MAX_FRAMES + 1] << 8) & 65280) +
 						((unsigned int) (outputList[MAX_FRAMES + 2] << 16) & 16711680) +
 						((unsigned int) (outputList[MAX_FRAMES + 3] << 24) & 4278190080);
-
-	// Decode Soul Number
-	int soulNumber;
-
-	soulNumber = ((unsigned int) (outputList[MAX_FRAMES + 8]) & 255) +
-				 ((unsigned int) (outputList[MAX_FRAMES + 9] << 8) & 65280) +
-				 ((unsigned int) (outputList[MAX_FRAMES + 10] << 16) & 16711680) +
-				 ((unsigned int) (outputList[MAX_FRAMES + 11] << 24) & 4278190080);
 						
 	int framesDifference = latestFrameNumber - currentFrameNumber;
 
@@ -204,12 +190,8 @@ void InputStream::decodeInputStates(char *outputList)
 	//std::cout << "Starting from index: " << std::to_string(startFromIndex) << "\n";
 	//std::cout << "For a total of frames: " << std::to_string(framesDifference) << "\n";
 
-	// Overwrites InputStream
 	for (int i = 0; i < framesDifference; i++)
 		writeSingleState(InputState(outputList[startFromIndex + i]));
-
-	// Overwrites SoulNum
-	world->boats->at(playerNum)->currentSouls = soulNumber;
 
 }
 
@@ -224,16 +206,10 @@ void InputStream::setCurrentFrameNumber(int targetFrameNumber)
 	currentFrameNumber = targetFrameNumber;
 }
 
-// Gets the current frame number
-int InputStream::getBufferSize()
-{
-	return circular_buffer.size();
-}
-
 void LocalPlayerInputStream::update(float deltaT, GameState &gs) {
 	SDL_Event e;
 	while(SDL_PollEvent(&e)) {
-		InputState iState = (*gs.boats)[playerNum]->inputStream->lastInputState;
+		InputState iState = (*gs.boats)[playerNum].inputStream->lastInputState;
 		switch (e.type) {
 			case SDL_KEYDOWN: 
 				switch (e.key.keysym.sym) {
@@ -291,7 +267,8 @@ void LocalPlayerInputStream::update(float deltaT, GameState &gs) {
 }
 
 void AIInputStream::update(float deltaTime, GameState &gs) {
-	lastInputState = ai->getCommand(gs.boats);
+	b2Body *rigidBody = (*gs.boats)[playerNum].rigidBody;
+	lastInputState = ai->getCommand(*gs.boats,*gs.souls);
 
 	// Writes in the inputstate and broadcasts it
 	writeSingleState(lastInputState);
@@ -302,13 +279,9 @@ void AIInputStream::update(float deltaTime, GameState &gs) {
 // GIANNI'S CHANGE
 void NetworkPlayerInputStream::update(float deltaTime, GameState &gs) {
 	// Here we grab the inputstate by using readSingleState on the latest frame number
-	//int latestFrame = getCurrentFrameNumber() - 0 - 1;
-	if (getCurrentFrameNumber() > FRAME_LAG)
-		lastInputState = readSingleState(getCurrentFrameNumber() - FRAME_LAG - 1);
-	else
-		lastInputState = readSingleState(getCurrentFrameNumber() - 1);
+	int latestFrame = getCurrentFrameNumber() - 1;
 	//std::cout << "In network update for player number " << std::to_string(playerNum) << " looking for frame number: " << std::to_string(latestFrame) << "\n";
-	//lastInputState = readSingleState(oldestFrame);
+	lastInputState = readSingleState(latestFrame);
 
 	// Only broadcast if it is a network inputstream at host level
 	if (isBroadcasting)

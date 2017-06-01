@@ -11,13 +11,13 @@ AI_1_0::AI_1_0(Track *t, int my_player, int num_boats, int s, float accelerating
 	revThreshold = reversingThreshold;
 	turnThreshold = turningThreshold;
 }
-InputState AI_1_0::getCommand(std::vector<Boat*>* boats)
+InputState AI_1_0::getCommand(std::vector<Boat>& boats,std::vector<Soul>& souls)
 {
-	vec2 pos(boats->at(myPlayer)->rigidBody->GetPosition().x, boats->at(myPlayer)->rigidBody->GetPosition().y);
+	vec2 pos(boats[myPlayer].rigidBody->GetPosition().x, boats[myPlayer].rigidBody->GetPosition().y);
 	//vec2 vel(boats[myPlayer]->rigidBody->GetLinearVelocity().x, boats[myPlayer]->rigidBody->GetLinearVelocity().y);
-	float ang = boats->at(myPlayer)->rigidBody->GetAngle();
+	float ang = boats[myPlayer].rigidBody->GetAngle();
 
-	int target = boats->at(myPlayer)->segPosition + segAhead + 1;
+	int target = boats[myPlayer].segPosition + segAhead + 1;
 	if (target >= track->N)
 		target = track->N - 1;
 	vec2 targetP = mul(add(track->l[target], track->r[target]), .5);

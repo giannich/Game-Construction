@@ -20,12 +20,12 @@ AI_1_4::AI_1_4(Track *t, int my_player, int num_boats, float width, float accele
 	accThreshold = acceleratingThreshold;
 	revThreshold = reversingThreshold;
 }
-InputState AI_1_4::getCommand(std::vector<Boat*>* boats)
+InputState AI_1_4::getCommand(std::vector<Boat>& boats,std::vector<Soul>& souls)
 {
-	vec2 pos(boats->at(myPlayer)->rigidBody->GetPosition().x, boats->at(myPlayer)->rigidBody->GetPosition().y);
-	vec2 vel(boats->at(myPlayer)->rigidBody->GetLinearVelocity().x, boats->at(myPlayer)->rigidBody->GetLinearVelocity().y);
-	float ang = boats->at(myPlayer)->rigidBody->GetAngle();
-	float seg = boats->at(myPlayer)->segPosition;
+	vec2 pos(boats[myPlayer].rigidBody->GetPosition().x, boats[myPlayer].rigidBody->GetPosition().y);
+	vec2 vel(boats[myPlayer].rigidBody->GetLinearVelocity().x, boats[myPlayer].rigidBody->GetLinearVelocity().y);
+	float ang = boats[myPlayer].rigidBody->GetAngle();
+	float seg = boats[myPlayer].segPosition;
 	
 	int I = N-1;
 	float timeToCrash = std::numeric_limits<float>::infinity();
@@ -92,7 +92,7 @@ InputState AI_1_4::getCommand(std::vector<Boat*>* boats)
 	else
 		is.acc = Reversing;
 	is.fire = NotFiring;
-	std::printf("Time To Crash = %f\n", timeToCrash);
+	//std::printf("Time To Crash = %f\n", timeToCrash);
 
 	//std::cout << d1 << "\t" << ang*180/3.14 <<" " << is.turn << " "<<apos.x*targetDir.y + apos.y*targetDir.x<<"\n";
 	//std::cout << targetDir.x << "\t" << targetDir.y << "\t" << apos.x << "\t" << apos.y << "\n";

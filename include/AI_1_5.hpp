@@ -13,6 +13,6 @@ public:
 	float accThreshold;
 	float revThreshold;
 	AI_1_5(Track *t, int my_player, int num_boats, float width, float acceleratingThreshold = 0.8, float reversingThreshold = 0.5);
-	InputState getCommand(std::vector<Boat>&);
+	InputState getCommand(std::vector<Boat>&,std::vector<Soul>&);
 };
 #endif

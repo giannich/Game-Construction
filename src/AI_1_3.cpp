@@ -20,7 +20,7 @@ AI_1_3::AI_1_3(Track *t, int my_player, int num_boats, float width, float accele
 	accThreshold = acceleratingThreshold;
 	revThreshold = reversingThreshold;
 }
-InputState AI_1_3::getCommand(std::vector<Boat>& boats)
+InputState AI_1_3::getCommand(std::vector<Boat>& boats,std::vector<Soul>& souls)
 {
 	vec2 pos(boats[myPlayer].rigidBody->GetPosition().x, boats[myPlayer].rigidBody->GetPosition().y);
 	vec2 vel(boats[myPlayer].rigidBody->GetLinearVelocity().x, boats[myPlayer].rigidBody->GetLinearVelocity().y);
