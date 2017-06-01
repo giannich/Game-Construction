@@ -347,9 +347,19 @@ int main(int argc, char** argv)
 		//std::cout << "Position: " << m_boat->rigidBody->GetPosition().x << m_boat->rigidBody->GetPosition().y << std::endl;
 
 		while(!gsp_queue.empty()) {
-			gsp_queue.front()->applyPatch(gState);
-			delete gsp_queue.front();
-			gsp_queue.pop();
+			if(gsp_queue.front()->frame == stopper) {
+				std::cout << "good update" << std::endl;
+				gsp_queue.front()->applyPatch(gState);
+				delete gsp_queue.front();
+				gsp_queue.pop();
+			}
+			if(gsp_queue.front()->frame < stopper) {
+				std::cout << "Missed update!" << std::endl;
+				gsp_queue.front()->applyPatch(gState);
+				std::this_thread::sleep_until(now + (stopper - gsp_queue.front()->frame) * std::chrono::duration<double>(timestep));
+				delete gsp_queue.front();
+				gsp_queue.pop();
+			}
 		}
 
 		//Broadcast update to all game entities

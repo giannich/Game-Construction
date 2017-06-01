@@ -329,7 +329,7 @@ void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePat
 		ss << midString.substr(0, msgLen);
 
 		// Debugging info
-		std::cout << ss.str();
+		//std::cout << ss.str();
 
 		// Convert stringstream to a ptree
 		boost::property_tree::ptree pt;
