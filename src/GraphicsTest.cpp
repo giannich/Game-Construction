@@ -7,6 +7,7 @@
 #include <osg/PositionAttitudeTransform>
 #include <osg/Quat>
 #include <osg/Material>
+#include <osg/Texture>
 
 #include <time.h>
 
@@ -201,6 +202,15 @@ struct Graphics
 
 	void loadSouls(Group *root, GameState *world)
 	{
+		
+		osg::ref_ptr<Node> head = osgDB::readNodeFile("models/head.ive");
+		osg::PositionAttitudeTransform *head_aligned = new PositionAttitudeTransform;
+		head_aligned->setAttitude(Quat(M_PI/2.0f, Vec3f(0,0,-1))*
+								  Quat(M_PI/2.0f, Vec3f(1,0,0)) *
+								  Quat(M_PI/2.0f, Vec3f(0,-1,0))
+				);	
+		head_aligned->addChild(head);
+/*
 		osg::ref_ptr<osg::ShapeDrawable> myShape = new osg::ShapeDrawable;
 
 		osg::Sphere *sphere = new osg::Sphere(osg::Vec3(0.0f, 0.0f, 0.0f), 1);
@@ -210,12 +220,13 @@ struct Graphics
 
 		osg::ref_ptr<osg::Geode> myGeode = new osg::Geode;
 		myGeode->addDrawable(myShape.get());
-
+*/
 		std::vector<Soul*> *souls = world->souls;
 		for (int i = 0; i < std::min<int>(souls->size(), maxNumSouls); i++) {
 			transformSouls[i] = new PositionAttitudeTransform;
 			transformSouls[i]->setPosition(Vec3(souls->at(i)->getX(), 0.5f, souls->at(i)->getY()));
-			transformSouls[i]->addChild(myGeode);
+			transformSouls[i]->setScale(Vec3(0.01f,0.01f,0.01f));
+			transformSouls[i]->addChild(head_aligned);
 			root->addChild(transformSouls[i]);
 		}
 		
@@ -249,14 +260,17 @@ struct Graphics
 	
 	Group* loadBoats(Group *root, GameState *world)
 	{
-		osg::ref_ptr<Node> airboat = osgDB::readNodeFile("models/zelda.stl");
+		osg::ref_ptr<Node> airboat = osgDB::readNodeFile("models/3d-model.3ds");
 
 		osg::PositionAttitudeTransform *airboat_aligned = new PositionAttitudeTransform;
-		airboat_aligned->setPosition(Vec3f(0.0f,-6.0f,0.0f));
-		airboat_aligned->setAttitude(Quat(M_PI / 2.0f, Vec3f(-1, 0, 0)) * Quat(M_PI / 2.0f,Vec3f(0,-1,0))); // This might change if we import a different model
-		osg::Material *red = new osg::Material;
-		red->setDiffuse(osg::Material::FRONT, Vec4(0.3f, 0.0f, 0.0f, 1.0f));
-		airboat_aligned->getOrCreateStateSet()->setAttribute(red, osg::StateAttribute::OVERRIDE);
+		airboat_aligned->setPosition(Vec3f(0.0f,-0.6f,0.0f));
+	//	airboat_aligned->setAttitude(Quat(M_PI / 2.0f, Vec3f(-1, 0, 0)) * Quat(M_PI / 2.0f,Vec3f(0,-1,0))); // This might change if we import a different model
+		airboat_aligned->setAttitude(Quat(M_PI / 2.0f, Vec3f(-1, 0, 0)));
+	//	osg::Material *red = new osg::Material;
+	//	osg::Material *red = new osg::Material(osgDB::readImageFile("models/model.mtl"));
+	//	red->setDiffuse(osg::Material::FRONT, Vec4(0.3f, 0.0f, 0.0f, 0.2f));
+	//	airboat_aligned->getOrCreateStateSet()->setAttribute(red, osg::StateAttribute::OVERRIDE);
+//		airboat_aligned->getOrCreateStateSet()->setTextureAttributeAndModes(0, tex);
 		airboat_aligned->addChild(airboat);
 
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it){
@@ -264,7 +278,7 @@ struct Graphics
 			transform[i] = new PositionAttitudeTransform;
 			transform[i]->setPosition(Vec3((*it)->getX(), 0.0f, (*it)->getY()));
 			transform[i]->setAttitude(osg::Quat(0.0, osg::Vec3f(0, 0, 1)));
-			transform[i]->setScale(Vec3(0.1f,0.1f,0.1f));
+			transform[i]->setScale(Vec3(0.07f,0.07f,0.07f));
 			transform[i]->addChild(airboat_aligned);
 			root->addChild(transform[i]);
 		}
@@ -486,8 +500,11 @@ struct Graphics
 		double **input = createInput(m_track->l, m_track->r, m_track->N);
 
 		osg::ref_ptr<osg::Vec4Array> shared_colors = new osg::Vec4Array;
-		shared_colors->push_back(osg::Vec4(0.0f,0.0f,0.0f,1.0f));
-		
+		shared_colors->push_back(osg::Vec4(0.850, 0.843, 0.866, 1.0f));
+	//	shared_colors->push_back(osg::Vec4(0.788, 0.756, 0.756, 1.0f));
+
+		shared_colors->push_back(osg::Vec4(0.937, 0.862, 0.862, 1.0f));
+
 		osg::ref_ptr<osg::Vec3Array> shared_normals = new osg::Vec3Array;
 		shared_normals->push_back(osg::Vec3(0.0f,-1.0f,0.0f));
 
