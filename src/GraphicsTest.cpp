@@ -22,6 +22,7 @@
 #include <osgGA/NodeTrackerManipulator>
 #include <osgGA/KeySwitchMatrixManipulator>
 #include <osgGA/TrackballManipulator>
+#include <osgGA/TerrainManipulator>
 
 #include <osgViewer/Viewer>
 #include <osgViewer/ViewerEventHandlers>
@@ -93,10 +94,23 @@ double countDownTime = -5;
 osg::ref_ptr<osg::Geode> countDownGeode = new osg::Geode;
 osg::ref_ptr<osgText::Text> countDownText = new osgText::Text;
 
+
+
 // This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
 {
-	// Init the viewer and other shit
+	struct MapDim{
+	float lowX, lowY, highX, highY;
+	float length, width;
+	MapDim(float lowX, float lowY, float highX, float highY){
+		this->lowX = lowX;
+		this->lowY = lowY;
+		this->highX = highX;
+		this->highY = highY;
+		this->width = highX - lowX;
+		this->length = highY - lowY;
+	}
+};// Init the viewer and other shit
 	osgViewer::Viewer startupScene(GameState *world)
 	{
 		osgViewer::Viewer viewer;
@@ -107,11 +121,17 @@ struct Graphics
 
 		//Create Track  and load in scene
 		osg::Geometry* polyGeom = new osg::Geometry();
-		createTrack(polyGeom, world);
+		MapDim *m = createTrack(polyGeom, world);
+		printf("HERE minM is %f\n", m->lowX);
 		scene->addChild(polyGeom);
 
 		//Create souls and load in scene
 		loadSouls(scene, world);
+
+		//Load heightmap
+		osg::ref_ptr<osg::Node> heightNode = new osg::Node();
+		heightNode = createHeightField("heightmap.ppm", m);
+		scene->addChild(heightNode);
 
 		//Library debug
 		std::deque<std::string> libs = osgDB::Registry::instance()->getLibraryFilePathList();
@@ -122,29 +142,6 @@ struct Graphics
 		osg::ref_ptr<Node> airboat = osgDB::readNodeFile("models/airboat.obj");
 		std::cout << "Node PTR: "<< airboat << std::endl;
 
-		//Set up ui minimap
-		osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
-
-		unsigned int width, height;
-		wsi->getScreenResolution(osg::GraphicsContext::ScreenIdentifier(0),
-								 width, height);
-		osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
-		traits->x = 0;
-		traits->y = 0;
-		traits->width = width;
-		traits->height = height;
-		traits->windowDecoration = true;
-		traits->doubleBuffer = true;
-		traits->sharedContext = 0;
-
-		osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
-		if(gc.valid()){
-			gc->setClearColor(osg::Vec4f(0.2f,0.2f,0.6f,1.0f));
-			gc->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		}else{
-			printf("graphicswindow not created successfully");
-		}
-		
 		//Create timer, position, and soul count text
 		timeText = createText(osg::Vec3(650.0f, 750.0f, 0.0f),
 								 "00:00",
@@ -194,11 +191,61 @@ struct Graphics
 		osg::ref_ptr<osgViewer::WindowSizeHandler> handler = new osgViewer::WindowSizeHandler();
 
 		viewer.getCamera()->setClearColor(osg::Vec4(0.8f,0.8f,0.8f,0.95f));
+	//	viewer.setCameraManipulator(new osgGA::TerrainManipulator);
 		
 		///Add everything to viewer
 		viewer.setSceneData(scene);
 
 		return viewer;
+	}
+
+	osg::Node* createHeightField(std::string heightFile, MapDim* m)
+	{
+		osg::Image* heightMap = osgDB::readImageFile(heightFile);
+		osg::HeightField* heightField = new osg::HeightField();
+		heightField->allocate(heightMap->s(), heightMap->t());
+	//	heightField->setOrigin(osg::Vec3(m.lowX + (m.width/2),
+						//					m.lowY + (m.length/2), 0.0));
+		heightField->setRotation(Quat(M_PI/2, osg::Vec3f(-1,0,0)));
+		heightField->setXInterval(2.5f);
+    heightField->setOrigin(osg::Vec3(-1000, -100, 2000));
+		heightField->setYInterval(2.5f);
+	   for (int r = 0; r < heightField->getNumRows(); r++) {
+			for (int c = 0; c < heightField->getNumColumns(); c++) {
+				heightField->setHeight(c, r, ((*heightMap->data(c, r)) / 255.0f) * 200.0f);
+			}
+        }
+
+	heightMap = osgDB::readImageFile("heightMap.ppm");
+
+    osg::HeightField* heightField2 = new osg::HeightField();
+    heightField2->allocate(heightMap->s(), heightMap->t());
+	heightField2->setRotation(Quat(M_PI/2, osg::Vec3f(-1,0,0)));
+//							Quat(M_PI/2, osg::Vec3f(0,1,0)) *
+//							Quat(M_PI/2, osg::Vec3f(0,0,1)));
+    heightField2->setXInterval(2.5f);
+   // heightField2->setOrigin(osg::Vec3(-heightMap->s() / 2, 500, heightMap->t() / 2));
+	heightField2->setOrigin(osg::Vec3(-1000, -100, 2000));
+	heightField2->setYInterval(2.5f);
+	   for (int r = 0; r < heightField->getNumRows(); r++) {
+			for (int c = 0; c < heightField->getNumColumns(); c++) {
+				heightField->setHeight(c, r, ((*heightMap->data(c, r)) / 255.0f) * 200.0f);
+			}
+        }
+
+		osg::Geode* geode = new osg::Geode();
+		geode->addDrawable(new osg::ShapeDrawable(heightField));
+
+		geode->addDrawable(new osg::ShapeDrawable(heightField2));
+		osg::Texture2D* tex = new osg::Texture2D(osgDB::readImageFile("color.ppm"));
+		tex->setFilter(osg::Texture2D::MIN_FILTER,osg::Texture2D::LINEAR_MIPMAP_LINEAR);
+		tex->setFilter(osg::Texture2D::MAG_FILTER,osg::Texture2D::LINEAR);
+		tex->setWrap(osg::Texture::WRAP_S, osg::Texture::REPEAT);
+		tex->setWrap(osg::Texture::WRAP_T, osg::Texture::REPEAT);
+		geode->getOrCreateStateSet()->setTextureAttributeAndModes(0, tex);
+
+		return geode;
+
 	}
 
 	osgViewer::Viewer* createView(int x, int y, int w, int h, osg::Node* scene)
@@ -335,12 +382,33 @@ struct Graphics
 		return i;
 	}
 	
-	int createVertices(double **input, osg::Vec3Array* vertices, int size) 
+	int createVertices(double **input, osg::Vec3Array* vertices, int size, 
+					   MapDim *m) 
 	{
 		int numCoords = size;
+		float minX;
+		float maxX;
+		float minY;
+		float maxY;
+
 		for (int i = 0; i < numCoords; i++) {
+			float x = input[i][0];
+			float y = input[i][1];
 			vertices->push_back(osg::Vec3(input[i][0], 0, input[i][1]));
+			if(minX > x){
+				minX = x;
+				printf("minx changed to %f\n", minX);
+			}else if(maxX < x){
+				maxX = x;
+			}
+			if(minY > y){
+				minY = y;
+			}else if(minY < y){
+				maxY = y;
+			}
 		}
+		m = new MapDim(minX, minY, maxX, maxY); 
+		printf("here minX is %f\n", m->lowX);
 		return numCoords;
 	}
 
@@ -520,11 +588,11 @@ struct Graphics
 		myBarGeode->addDrawable(myBar.get());
 		return i + 1;
 	}
-			
-				
+					
 
-	void createTrack(osg::Geometry* polyGeom, GameState* world)
+	MapDim* createTrack(osg::Geometry* polyGeom, GameState* world)
 	{
+		MapDim *m;
 		Track *m_track = world->m_track;
 		double **input = createInput(m_track->l, m_track->r, m_track->N);
 
@@ -538,17 +606,20 @@ struct Graphics
 		shared_normals->push_back(osg::Vec3(0.0f,-1.0f,0.0f));
 
 		osg::Vec3Array* vertices = new osg::Vec3Array;
-		int numCoords = createVertices(input, vertices, m_track->N * 2);
+		int numCoords = createVertices(input, vertices, m_track->N * 2, m);
+		printf("x is %f width is %f\n", m->lowX, m->width);
 
 		polyGeom->setVertexArray(vertices);
 		polyGeom->setColorArray(shared_colors.get(), osg::Array::BIND_OVERALL);
 		polyGeom->setNormalArray(shared_normals.get(), osg::Array::BIND_OVERALL);
 
 		polyGeom->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::QUAD_STRIP,0,numCoords));
+		return m;
 	}
 
 	void update(GameState* world) 
 	{
+		
 		//printf("in update\n");
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it) 
 		{
@@ -639,6 +710,7 @@ struct Graphics
 		}
 		updatePositionBar(1000, world);
 		updateSouls(world);
+		
 	}
 	int getPosition(GameState* world)
 	{
@@ -656,6 +728,102 @@ struct Graphics
 		return pos;
 	}
 };
+struct Color {
+	double r;
+	double g;
+	double b;
+	Color(double r, double g, double b){
+		this->r = r;
+		this->g = g;
+		this->b = b;
+	}
+};
+struct ColorKey {
+	double min;
+	double max;
+	Color *c;
+	//Elevation 1 is lowest, 4 is highest
+	ColorKey(double min, double max, int elevation){
+		this->min = min;
+		this->max = max;
+		if(elevation == 1) {
+			this->c = new Color(77,77,79); //water blue
+		} else if (elevation == 2) {
+			this->c = new Color(129,129,135); //desert brown
+		} else if (elevation == 3) {
+			this->c = new Color(140,140,144); //lush green
+		} else if (elevation == 4) {
+			this->c = new Color(201,193,193); //less lush green
+		} else if (elevation == 5) {
+			this->c = new Color(217,215,221); //snow white
+		}
+	}
+	int include(double z){
+		if(z >= this->min && z <= this->max){
+			return 1;
+		} 
+		return 0;
+	}
+};
+
+
+
+struct Bounds {
+	double max;
+	double min;
+	double diff;
+	Bounds (double max, double min){
+		this->max = max;
+		this->min = min;
+		this->diff = max - min;
+	}
+};
+/*
+Struct heightMap
+{
+	double** heightMap;
+	double** smallHeightMap;
+
+	void createHeightMap(int numX, int numY, Map map)
+	{
+		heightMap = new double*[numY];
+		for(int i =0; i<numX; i++){
+			heightMap[i] = new double
+		double heightMap[numY][numX] = {0};
+		double smallHeightMap[numY/2][numX/2];
+
+	Bounds integrateMaps()
+	{
+		int scale = mapChunkSize / smallChunkSize;
+		double max = terrainMap[0][0];
+		double min = terrainMap[0][0];
+		for (int i = 0; i < mapChunkSize; i++){
+			for (int j = 0; j < mapChunkSize; j++){
+				int sI = std::min(i / scale, smallChunkSize - 1);
+				int sJ = std::min(j / scale, smallChunkSize - 1);
+				double value = (terrainMap[i][j] * 0.3) + 
+							   (0.7 * smallHeightMap[sI][sJ]);
+				terrainMap[i][j] = value;
+				if (value > max) {
+					max = value;
+				} else if (value < min) {
+					min = value;
+				}
+			}		
+		}
+		
+		//keep values positive
+		for (int i = 0; i < mapChunkSize; i++) {
+			for (int j = 0; j < mapChunkSize; j++){
+				terrainMap[i][j] += std::abs(min);
+			}
+		}
+		
+		return Bounds(max + std::abs(min), 0);
+	}
+}
+*/
+
 
 int main(int argc, char** argv)
 {
@@ -672,6 +840,11 @@ int main(int argc, char** argv)
 	Track *m_track = new Track(1000,2.5f,17.0f,4, seed);
 	m_track->addTrackToWorld(*m_world);
 	GameState *gState = new GameState(*m_track);
+
+	Map map = m_track->getMap(2, 2, 30);
+	//heightMap h;
+//	h.createHeightMap(map.x_n, map.y_n, map);
+	printf("%u by %u grid\n", map.x_n, map.y_n);
 
 	//Add souls to track
 	int numSouls = 6;
