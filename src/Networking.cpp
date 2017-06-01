@@ -295,10 +295,10 @@ void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> g
 	// And add the ptree to the ptree list
 	for (int i = 0; i < soulNum; i++)
 	{
-		pt.put("collected" + std::to_string(i), world->souls->at(i).collected);
-		pt.put("sPositionX" + std::to_string(i), world->souls->at(i).rigidBody->GetPosition().x);
-		pt.put("sPositionY" + std::to_string(i), world->souls->at(i).rigidBody->GetPosition().y);
-		pt.put("sOrientation" + std::to_string(i), world->souls->at(i).rigidBody->GetAngle());
+		pt.put("collected" + std::to_string(i), world->souls->at(i)->collected);
+		pt.put("sPositionX" + std::to_string(i), world->souls->at(i)->rigidBody->GetPosition().x);
+		pt.put("sPositionY" + std::to_string(i), world->souls->at(i)->rigidBody->GetPosition().y);
+		pt.put("sOrientation" + std::to_string(i), world->souls->at(i)->rigidBody->GetAngle());
 	}
 
 	// Convert ptree into a stringstream
@@ -443,10 +443,10 @@ void GameStatePatch::applyPatch(GameState *world)
 	for (int i = 0; i < soulNum; i++)
 	{
 		// Collected
-		world->souls->at(i).collected = soulPatches->at(i)->_collected;
+		world->souls->at(i)->collected = soulPatches->at(i)->_collected;
 
 		// Orientation & Position
-		world->souls->at(i).rigidBody->SetTransform(b2Vec2(soulPatches->at(i)->_sposx, soulPatches->at(i)->_sposy), soulPatches->at(i)->_sorient);
+		world->souls->at(i)->rigidBody->SetTransform(b2Vec2(soulPatches->at(i)->_sposx, soulPatches->at(i)->_sposy), soulPatches->at(i)->_sorient);
 	}
 }
 
