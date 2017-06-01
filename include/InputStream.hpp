@@ -14,6 +14,7 @@
 #include "GameState.hpp"
 
 #define MAX_FRAMES 50
+#define FRAME_LAG 1
 
 class GameState;
 class AI;
@@ -101,6 +102,7 @@ public:
 	// Used for debugging
 	int getCurrentFrameNumber();
 	void setCurrentFrameNumber(int targetFrameNumber);
+	int getBufferSize();
 
 	// Need deltaTime to make sure that all machines are inputting at the same rate.
 	// If one machine is running slower, then it will fill its input by duplicating the most recent command to keep a constant framerate.

@@ -266,6 +266,10 @@ void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> g
 	int playerNum = world->boats->size();
 	pt.put("playerNum", playerNum);
 
+	// Get the latest frome number
+	int latestFrameNum = world->boats->at(0).inputStream->getCurrentFrameNumber();
+	pt.put("frameNum", latestFrameNum);
+
 	// For each player, encode the information into a ptree
 	// And add the ptree to the ptree list
 	for (int i = 0; i < playerNum; i++)
@@ -337,6 +341,8 @@ void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePat
 		int playerNum = pt.get<int>("playerNum", 0.0f);
 		GameStatePatch *aPatch = new GameStatePatch(playerNum);
 
+		int frameNum = pt.get<int>("frameNum", 0.0f);
+
 		// Iterates through the boat list
 		for (int i = 0; i < playerNum; i++)
 		{
@@ -355,7 +361,7 @@ void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePat
 			// Current Souls
 			int souls = pt.get<int>("currentSouls" + std::to_string(i));
 			
-			BoatPatch *aBoatPatch = new BoatPatch(velx, vely, rotvel, orient, posx, posy, souls);
+			BoatPatch *aBoatPatch = new BoatPatch(velx, vely, rotvel, orient, posx, posy, souls, frameNum);
 			aPatch->boatPatches->push_back(aBoatPatch);
 		}
 
@@ -365,7 +371,7 @@ void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePat
 }
 
 // Constructor
-BoatPatch::BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient, float32 posx, float32 posy, int souls)
+BoatPatch::BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient, float32 posx, float32 posy, int souls, int frame)
 {
 	_velx = velx;
 	_vely = vely;
@@ -374,6 +380,7 @@ BoatPatch::BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient,
 	_posx = posx;
 	_posy = posy;
 	_souls = souls;
+	_frame = frame;
 }
 
 // Applies the patches to original gamestate
@@ -392,6 +399,9 @@ void GameStatePatch::applyPatch(GameState *world)
 
 		// Current Souls
 		world->boats->at(i).currentSouls = boatPatches->at(i)->_souls;
+
+		// Frame Number
+		world->boats->at(i).inputStream->setCurrentFrameNumber(boatPatches->at(i)->_frame);
 	}
 }
 
@@ -478,52 +488,6 @@ int receiveDatagram(void *buffer, size_t bufferSize, int receivePortNum)
 
 	return msgLen;
 }
-
-/* Function for accepting a datagram
-int receiveDatagramAddr(void *buffer, size_t bufferSize, int receivePortNum, in_addr *serverAddressBuffer)
-{
-	// Initialize some values
-	int msgLen, reuseTrue;
-	socklen_t senderLength;
-	struct sockaddr_in receiverAddress, senderAddress;
-
-	// Creates socket file descriptor for socket communication
-	int socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
-	if (socketDescriptor < 0)
-		error("ERROR opening socket");
-
-	// This prevents the socket from hogging space in case it is not closed prematurely
-	reuseTrue = 1;
-	if (setsockopt(socketDescriptor, SOL_SOCKET, SO_REUSEADDR, &reuseTrue, sizeof(int)) == -1) 
-		error("ERROR socket options");
-
-	// Sets up the server address stuff and actually binds to a socket
-	receiverAddress.sin_family = AF_INET;
-	receiverAddress.sin_addr.s_addr = INADDR_ANY;
-	receiverAddress.sin_port = htons(receivePortNum);
-	if (bind(socketDescriptor, (struct sockaddr *) &receiverAddress, sizeof(receiverAddress)) < 0)
-		error("ERROR on binding");
-		 
-	// Listens to socket with the socketDescriptor and can accept up to 5 connections in queue
-	listen(socketDescriptor, 5);
-	senderLength = sizeof(senderAddress);
-
-	// Receives the actual message
-	msgLen = recvfrom(socketDescriptor, buffer, bufferSize, 0, (struct sockaddr *)&senderAddress, &senderLength);
-
-	// Stores the server address into the buffer
-	*serverAddressBuffer = senderAddress.sin_addr;
-
-	if (msgLen < 0)
-		error("ERROR on receiving");
-
-	//std::cout << "Received message of length " << std::to_string(msgLen) << "\n";
-
-	// Close descriptor and return the message
-	close(socketDescriptor);
-
-	return msgLen;
-} */
 
 /*****************
 * TCP Networking *

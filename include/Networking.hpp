@@ -51,8 +51,11 @@ struct BoatPatch
 	// Current Souls
 	int _souls;
 
+	// Current Frame Number
+	int _frame;
+
 	// Constructor
-	BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient, float32 posx, float32 posy, int souls);
+	BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient, float32 posx, float32 posy, int souls, int frame);
 };
 
 struct GameStatePatch
@@ -79,7 +82,6 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 void receiveInputStream(GameState *world, bool isHost, std::vector<int> *playerDiscardList);
 void sendDatagram(void *msgObject, size_t objLen, in_addr *serverAddressBuffer, int destPortNum);
 int receiveDatagram(void *buffer, size_t bufferSize, int receivePortNum);
-//int receiveDatagramAddr(void *buffer, size_t bufferSize, int receivePortNum, in_addr *serverAddressBuffer);
 void sendStream(void *msgObject, size_t objLen, in_addr *serverAddressBuffer, int destPortNum);
 int receiveStream(void *buffer, size_t bufferSize, int receivePortNum);
 int receiveStreamAddr(void *buffer, size_t bufferSize, int receivePortNum, in_addr *serverAddressBuffer);

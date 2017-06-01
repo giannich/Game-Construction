@@ -206,6 +206,12 @@ void InputStream::setCurrentFrameNumber(int targetFrameNumber)
 	currentFrameNumber = targetFrameNumber;
 }
 
+// Gets the current frame number
+int InputStream::getBufferSize()
+{
+	return circular_buffer.size();
+}
+
 void LocalPlayerInputStream::update(float deltaT, GameState &gs) {
 	SDL_Event e;
 	while(SDL_PollEvent(&e)) {
@@ -279,9 +285,13 @@ void AIInputStream::update(float deltaTime, GameState &gs) {
 // GIANNI'S CHANGE
 void NetworkPlayerInputStream::update(float deltaTime, GameState &gs) {
 	// Here we grab the inputstate by using readSingleState on the latest frame number
-	int latestFrame = getCurrentFrameNumber() - 1;
+	//int latestFrame = getCurrentFrameNumber() - 0 - 1;
+	if (getCurrentFrameNumber() > 10)
+		lastInputState = readSingleState(getCurrentFrameNumber() - FRAME_LAG);
+	else
+		lastInputState = readSingleState(getCurrentFrameNumber() - 1);
 	//std::cout << "In network update for player number " << std::to_string(playerNum) << " looking for frame number: " << std::to_string(latestFrame) << "\n";
-	lastInputState = readSingleState(latestFrame);
+	//lastInputState = readSingleState(oldestFrame);
 
 	// Only broadcast if it is a network inputstream at host level
 	if (isBroadcasting)
