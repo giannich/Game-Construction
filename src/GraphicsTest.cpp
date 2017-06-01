@@ -935,10 +935,11 @@ int main(int argc, char** argv)
 	}
 
 	// If host, will only run networkreceiving thread, otherwise if client will also run gamestate receiving thread
+	bool isReady;
 	std::queue<GameStatePatch *> gsp_queue;
 	std::thread networkReceivingThread(receiveInputStream, gState, isHost, &playerDiscardList);
 	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, isHost, &gsp_queue);
-	std::thread gamePrepThread(gamePrep, isHost, &playerTypeList, &broadcastList);
+	std::thread gamePrepThread(gamePrep, isHost, &playerTypeList, &broadcastList, &isReady);
 
 	// Start the osg Viewer and finish graphics init
 	osgViewer::Viewer viewer = g.startupScene(gState);
@@ -951,6 +952,9 @@ int main(int argc, char** argv)
 		std::cout << "Receiving Connection to server\n";
 		receiveStream(buffer, sizeof(int), ACK_CLIENT_PORT);
 	}
+	else
+		while(!isReady)
+			std::cout << "Clients are not ready yet!\n";
 
 	//Main game loop
 	int stopper = 0;

@@ -180,7 +180,7 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 	return randomSeed;
 }
 
-void gamePrep(bool isHost, std::vector<int> *playerTypeList, std::vector <std::pair<in_addr, int>> *broadcastList)
+void gamePrep(bool isHost, std::vector<int> *playerTypeList, std::vector <std::pair<in_addr, int>> *broadcastList, bool *isReady)
 {
 	// Server
 	if(isHost)
@@ -205,8 +205,9 @@ void gamePrep(bool isHost, std::vector<int> *playerTypeList, std::vector <std::p
 			std::cout << "Broadcasts size is " << std::to_string(broadcastList->size()) << "\n";
 			sendStream(buffer, sizeof(int), &broadcastList->at(i).first, ACK_CLIENT_PORT);
 		}
-
 	}
+
+	*isReady = true;
 }
 
 /***************

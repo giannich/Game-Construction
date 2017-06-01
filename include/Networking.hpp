@@ -100,7 +100,7 @@ void error(const char *msg);
 void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> gamestateBroadcastList);
 void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePatch *> *gsp_queue);
 unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, int>> *broadcastList, std::vector <std::pair<in_addr, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList, bool *isHost);
-void gamePrep(bool isHost, std::vector<int> *playerTypeList, std::vector <std::pair<in_addr, int>> *broadcastList);
+void gamePrep(bool isHost, std::vector<int> *playerTypeList, std::vector <std::pair<in_addr, int>> *broadcastList, bool *isReady);
 void receiveInputStream(GameState *world, bool isHost, std::vector<int> *playerDiscardList);
 void sendDatagram(void *msgObject, size_t objLen, in_addr *serverAddressBuffer, int destPortNum);
 int receiveDatagram(void *buffer, size_t bufferSize, int receivePortNum);
