@@ -715,7 +715,7 @@ int main(int argc, char** argv)
 		{
 			playerDiscardList.push_back(i);
 			std::cout << "Made local boat at position number " << std::to_string(i) << "\n";
-			Boat *local_boat = new LocalBoat(startPos, *m_world, nullptr, i, &broadcastList);
+			Boat *local_boat = new LocalBoat(startPos, *m_world, nullptr, i, &broadcastList, gState);
 			gState->addPlayer(local_boat);
 			myBoat = i;
 		}
@@ -724,7 +724,7 @@ int main(int argc, char** argv)
 		else if (playerTypeList.at(i) == 1)
 		{
 			std::cout << "Made network boat at position number " << std::to_string(i) << "\n";
-			Boat *net_boat = new NetworkBoat(startPos, *m_world, nullptr, i, &broadcastList, isBroadcasting);
+			Boat *net_boat = new NetworkBoat(startPos, *m_world, nullptr, i, &broadcastList, isBroadcasting, gState);
 			gState->addPlayer(net_boat);
 		}
 
@@ -734,7 +734,7 @@ int main(int argc, char** argv)
 			playerDiscardList.push_back(i);
 			std::cout << "Made ai boat at position number " << std::to_string(i) << "\n";
 			AI *ai = new AI_1_0(m_track,i,numBoats,17.0f);
-			Boat *ai_boat = new AIBoat(startPos, *m_world, ai, i, &broadcastList);
+			Boat *ai_boat = new AIBoat(startPos, *m_world, ai, i, &broadcastList, gState);
 			gState->addPlayer(ai_boat);
 		}	
 	}

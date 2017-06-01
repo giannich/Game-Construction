@@ -197,7 +197,7 @@ void Networking::broadcastInputStream()
 
 	// Broadcasts the outputlist to all the destination addresses
 	for (unsigned int i = 0; i < broadcastSize; i++)
-		sendDatagram(outputList, MAX_FRAMES + 8, &broadcastTargets->at(i).first, broadcastTargets->at(i).second);
+		sendDatagram(outputList, MAX_FRAMES + 12, &broadcastTargets->at(i).first, broadcastTargets->at(i).second);
 }
 
 // Receives a datagram and decodes it to the correct InputStream
@@ -205,7 +205,7 @@ void Networking::broadcastInputStream()
 void receiveInputStream(GameState *world, bool isHost, std::vector<int> *playerDiscardList)
 {
 	// Mallocs the encodedInputStream 
-	char *encodedInputStream = (char *) malloc((MAX_FRAMES + 8) * sizeof(char));
+	char *encodedInputStream = (char *) malloc((MAX_FRAMES + 12) * sizeof(char));
 	unsigned int playerNumber;
 	int receivePortNum;
 
@@ -219,7 +219,7 @@ void receiveInputStream(GameState *world, bool isHost, std::vector<int> *playerD
 	{
 		//std::cout << "Waiting on new packets\n";
 		// Receives a datagram
-		receiveDatagram(encodedInputStream, MAX_FRAMES + 8, receivePortNum);
+		receiveDatagram(encodedInputStream, MAX_FRAMES + 12, receivePortNum);
 
 		// Decode the Player Number
 		playerNumber = ((unsigned int) (encodedInputStream[MAX_FRAMES + 4]) & 255) +
