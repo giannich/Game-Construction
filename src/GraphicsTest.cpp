@@ -39,6 +39,7 @@
 #include "GameState.hpp"
 #include "Soul.hpp"
 #include "AI_1_0.hpp"
+#include "AI_1_4.hpp"
 #include "Networking.hpp"
 #include "FinishLine.hpp"
 
@@ -728,15 +729,35 @@ int main(int argc, char** argv)
 			gState->addPlayer(net_boat);
 		}
 
-		// AI Player
+		// AI Player Type 1
 		else if (playerTypeList.at(i) == 2)
 		{
 			playerDiscardList.push_back(i);
-			std::cout << "Made ai boat at position number " << std::to_string(i) << "\n";
+			std::cout << "Made ai boat of type 1 at position number " << std::to_string(i) << "\n";
 			AI *ai = new AI_1_0(m_track,i,numBoats,17.0f);
 			Boat *ai_boat = new AIBoat(startPos, *m_world, ai, i, &broadcastList, gState);
 			gState->addPlayer(ai_boat);
-		}	
+		}
+
+		// AI Player Type 2
+		else if (playerTypeList.at(i) == 3)
+		{
+			playerDiscardList.push_back(i);
+			std::cout << "Made ai boat of type 2 at position number " << std::to_string(i) << "\n";
+			AI *ai = new AI_1_4(m_track,i,numBoats,1.0f,0.6f,0.4f);
+			Boat *ai_boat = new AIBoat(startPos, *m_world, ai, i, &broadcastList, gState);
+			gState->addPlayer(ai_boat);
+		}
+
+		// AI Player Type 3
+		else if (playerTypeList.at(i) == 4)
+		{
+			playerDiscardList.push_back(i);
+			std::cout << "Made ai boat of type 3 at position number " << std::to_string(i) << "\n";
+			AI *ai = new AI_1_4(m_track,i,numBoats,1.0f,0.8f,0.5f);
+			Boat *ai_boat = new AIBoat(startPos, *m_world, ai, i, &broadcastList, gState);
+			gState->addPlayer(ai_boat);
+		}
 	}
 
 	// If host, will only run networkreceiving thread, otherwise if client will also run gamestate receiving thread

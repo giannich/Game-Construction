@@ -27,13 +27,11 @@ extern int h_errno;
 unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, int>> *broadcastList, std::vector <std::pair<in_addr, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList, bool *isHost)
 {
 	int playerNum;
-	int expectedPlayerNums;
-	int aiPlayerNums;
 	int totalNumberOfPlayers;
 	unsigned int randomSeed;
 
 	// Client or host
-	if(!strcmp(argv[1], "host") && (argc == 4))
+	if(!strcmp(argv[1], "host") && (argc == 6))
 	{
 		std::cout << "I am a host\n";
 		*isHost = true;
@@ -45,7 +43,7 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 	}
 	else
 	{
-		std::cout << "Usage: ./gtest <host> <playerNums> <aiPlayerNums>\n";
+		std::cout << "Usage: ./gtest <host> <playerNums> <aiPlayerType1> <aiPlayerType2> <aiPlayerType3>\n";
 		std::cout << "Usage: ./gtest <client> <serverIPAddress> <aiPlayerNums>\n";
 		exit(1);
 	}
@@ -53,10 +51,12 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 	if(*isHost)
 	{
 		// Expected number of players
-		expectedPlayerNums = atoi(argv[2]);
+		int expectedPlayerNums = atoi(argv[2]);
 
 		// Number of AI players
-		aiPlayerNums = atoi(argv[3]);
+		int aiPlayerType1 = atoi(argv[3]);
+		int aiPlayerType2 = atoi(argv[4]);
+		int aiPlayerType3 = atoi(argv[5]);
 
 		// Player number for host is always 0
 		playerNum = 0;
@@ -95,19 +95,18 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 			std::cout << "Successfully created player number " << std::to_string(i) << "\n";
 		}
 
-		/* Waiting on acks
-		for(int i = 1; i <= expectedPlayerNums; i++)
-		{
-			std::cout << "Waiting on acks\n";
-			receiveStream(intArrBuffer, bufferSize * 2, SERVER_PORT);
-		} */
-
 		// Loop for creating ai players
-		for(int i = 0; i < aiPlayerNums; i++)
+		for(int i = 0; i < aiPlayerType1; i++)
 			playerTypeList->push_back(2);
 
+		for(int i = 0; i < aiPlayerType2; i++)
+			playerTypeList->push_back(3);
+
+		for(int i = 0; i < aiPlayerType3; i++)
+			playerTypeList->push_back(4);
+
 		// Finally sends players a message indicating the total number of players and the random seed
-		totalNumberOfPlayers = expectedPlayerNums + aiPlayerNums + 1;
+		totalNumberOfPlayers = expectedPlayerNums + aiPlayerType1 + aiPlayerType2 + aiPlayerType3 + 1;
 		randomSeed = time(NULL);
 		unsigned int *unsignedBuffer = (unsigned int *) malloc(sizeof(unsigned int) * 2);
 		unsignedBuffer[0] = totalNumberOfPlayers;
@@ -187,7 +186,6 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 
 // Encodes the InputState and broadcasts it to everyone in the broadcast list
 // This will be called by the LocalPlayerInputStream, AIInputStream, and NetworkPlayerInputStream
-// TODO: FIGURE OUT WHERE TO CALL THIS!!!
 void Networking::broadcastInputStream()
 {
 	//std::cout << "Sending a new InputStream packet to " << std::to_string(broadcastSize) << " other receivers\n";
@@ -241,20 +239,6 @@ void receiveInputStream(GameState *world, bool isHost, std::vector<int> *playerD
 /*************
 * GameStates *
 *************/
-
-/* 
-Name:						Type:			Getter:					Setter:
-
-- Linear Velocity X			b2Vec2			GetLinearVelocity()		SetLinearVelocity(const b2Vec2& v)
-- Rotational Velocity 		float32			GetAngularVelocity()	SetAngularVelocity(float32 omega)
-- Orientation 				float32			GetAngle()				SetTransform(const b2Vec2& position, float32 angle)
-- Position 					b2Vec2			GetPosition()			SetTransform(const b2Vec2& position, float32 angle)
-- Current Souls 			Int 			currentSouls 			currentSouls
-- InputStream 				InputStream 	inputStream 			inputStream
-
-http://stackoverflow.com/questions/2114466/creating-json-arrays-in-boost-using-property-trees
-
-*/
 
 // Encodes a GameState and sends it through UDP
 void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> gamestateBroadcastList)
