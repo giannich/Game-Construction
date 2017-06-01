@@ -285,9 +285,10 @@ struct Graphics
 		osg::ref_ptr<Node> airboat = osgDB::readNodeFile("models/3d-model.3ds");
 
 		osg::PositionAttitudeTransform *airboat_aligned = new PositionAttitudeTransform;
-		airboat_aligned->setPosition(Vec3f(0.0f,-0.6f,0.0f));
+		airboat_aligned->setPosition(Vec3f(0.0f,-8.0f,0.0f));
 	//	airboat_aligned->setAttitude(Quat(M_PI / 2.0f, Vec3f(-1, 0, 0)) * Quat(M_PI / 2.0f,Vec3f(0,-1,0))); // This might change if we import a different model
-		airboat_aligned->setAttitude(Quat(M_PI / 2.0f, Vec3f(-1, 0, 0)));
+		airboat_aligned->setAttitude(Quat(M_PI / 2.0f, Vec3f(-1, 0, 0)) * Quat(M_PI,Vec3f(0,1,0)));
+		airboat_aligned->setScale(Vec3f(0.35f,0.35f,0.35f));
 	//	osg::Material *red = new osg::Material;
 	//	osg::Material *red = new osg::Material(osgDB::readImageFile("models/model.mtl"));
 	//	red->setDiffuse(osg::Material::FRONT, Vec4(0.3f, 0.0f, 0.0f, 0.2f));
