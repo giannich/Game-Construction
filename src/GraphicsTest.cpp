@@ -240,6 +240,20 @@ struct Graphics
 		
 	}
 
+	void updateSouls(GameState *world){
+		for(auto it = world->souls->begin(); it != world->souls->end(); ++it)
+		{
+			int i = it - world->souls->begin();
+			if(transformSouls[i]){
+				//if not disabled check if colleced
+				if((*it)->collected == true){
+					transformSouls[i]->setScale(Vec3(0.0,0.0,0.0));
+					transformSouls[i] = NULL;
+				}
+			}
+		}
+	}
+
 	osgText::Text* createText(const osg::Vec3& pos,
 							  const std::string& content,
 						      float size)
@@ -617,6 +631,7 @@ struct Graphics
 			updateMyMaxSpeedBar(baseSpeed + (soulSpeed * myNumSouls));
 		}
 		updatePositionBar(1000, world);
+		updateSouls(world);
 	}
 	int getPosition(GameState* world)
 	{
