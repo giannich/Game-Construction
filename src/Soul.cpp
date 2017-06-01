@@ -34,9 +34,6 @@ void Soul::update(float deltaT){
 }
 
 Soul::~Soul() {
-	int *p;
-	p = NULL;
-	*p;
 	std::cout << "Don't call ~Soul!!" << std::endl;
 }
 
