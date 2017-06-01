@@ -39,6 +39,7 @@ public:
 	float getX();
 	float getY();
 	float getRot();
+	float getSpeed();
 	void addSoul();
 };
 

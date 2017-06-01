@@ -135,3 +135,7 @@ float Boat::getRot() {
 	return rigidBody->GetAngle();
 }
 
+float Boat::getSpeed() {
+	return rigidBody->GetLinearSpeed().Length();
+}
+
