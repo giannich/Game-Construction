@@ -24,7 +24,6 @@ Soul::Soul(b2Vec2 initPos, float radius, b2World &world_ref) {
 }
 
 void Soul::update(float deltaT){ 
-	std::cout << "update!" << collected << std::endl;
 	if(collected) {
 		std::cout << "Disabling collision for Soul!" << std::endl;
 		b2Fixture *fd = rigidBody->GetFixtureList();
