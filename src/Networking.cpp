@@ -266,9 +266,14 @@ void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> g
 	int playerNum = world->boats->size();
 	pt.put("playerNum", playerNum);
 
+	// Get the number of souls
+	int soulNum = world->souls->size();
+	pt.put("soulNum", soulNum);
+
 	// Get the latest frome number
 	int latestFrameNum = world->boats->at(0).inputStream->getCurrentFrameNumber();
 	pt.put("frameNum", latestFrameNum);
+
 
 	// For each player, encode the information into a ptree
 	// And add the ptree to the ptree list
@@ -284,6 +289,16 @@ void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> g
 		pt.put("positionX" + std::to_string(i), playerBoat.rigidBody->GetPosition().x);
 		pt.put("positionY" + std::to_string(i), playerBoat.rigidBody->GetPosition().y);
 		pt.put("currentSouls" + std::to_string(i), playerBoat.currentSouls);
+	}
+
+	// For each soul, encode the information into a ptree
+	// And add the ptree to the ptree list
+	for (int i = 0; i < soulNum; i++)
+	{
+		pt.put("collected" + std::to_string(i), world->souls->at(i).collected);
+		pt.put("sPositionX" + std::to_string(i), world->souls->at(i).rigidBody->GetPosition().x);
+		pt.put("sPositionY" + std::to_string(i), world->souls->at(i).rigidBody->GetPosition().y);
+		pt.put("sOrientation" + std::to_string(i), world->souls->at(i).rigidBody->GetAngle());
 	}
 
 	// Convert ptree into a stringstream
@@ -339,8 +354,9 @@ void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePat
 
 		// Gets the player number, and if it fails, will get 0
 		int playerNum = pt.get<int>("playerNum", 0.0f);
+		int soulNum = pt.get<int>("soulNum", 0.0f);
 		int frameNum = pt.get<int>("frameNum", 0.0f);
-		GameStatePatch *aPatch = new GameStatePatch(playerNum, frameNum);
+		GameStatePatch *aPatch = new GameStatePatch(playerNum, soulNum, frameNum);
 
 		// Iterates through the boat list
 		for (int i = 0; i < playerNum; i++)
@@ -360,8 +376,24 @@ void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePat
 			// Current Souls
 			int souls = pt.get<int>("currentSouls" + std::to_string(i));
 			
+			// Creates and Pushes back the boatpatch
 			BoatPatch *aBoatPatch = new BoatPatch(velx, vely, rotvel, orient, posx, posy, souls);
 			aPatch->boatPatches->push_back(aBoatPatch);
+		}
+
+		for (int i = 0; i < soulNum; i++)
+		{
+			// Collected Status
+			bool collected = pt.get<bool>("collected" + std::to_string(i));
+			
+			// Orientation and Position
+			float32 sorient = pt.get<float32>("sOrientation" + std::to_string(i));
+			float32 sposx = pt.get<float32>("sPositionX" + std::to_string(i));
+			float32 sposy = pt.get<float32>("sPositionY" + std::to_string(i));
+
+			// Creates and Pushes back the soulpatch
+			SoulPatch *aSoulPatch = new SoulPatch(collected, sorient, sposx, sposy);
+			aPatch->soulPatches->push_back(aSoulPatch);
 		}
 
 		// Finally push the gamestatepatch into the queue
@@ -381,6 +413,15 @@ BoatPatch::BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient,
 	_souls = souls;
 }
 
+// Constructor
+SoulPatch::SoulPatch(bool collected, float32 sorient, float32 sposx, float32 sposy)
+{
+	_collected = collected;
+	_sorient = sorient;
+	_sposx = sposx;
+	_sposy = sposy;
+}
+
 // Applies the patches to original gamestate
 void GameStatePatch::applyPatch(GameState *world)
 {
@@ -397,6 +438,15 @@ void GameStatePatch::applyPatch(GameState *world)
 
 		// Current Souls
 		world->boats->at(i).currentSouls = boatPatches->at(i)->_souls;
+	}
+
+	for (int i = 0; i < soulNum; i++)
+	{
+		// Collected
+		world->souls->at(i).collected = soulPatches->at(i)->_collected;
+
+		// Orientation & Position
+		world->souls->at(i).rigidBody->SetTransform(b2Vec2(soulPatches->at(i)->_sposx, soulPatches->at(i)->_sposy), soulPatches->at(i)->_sorient);
 	}
 }
 
