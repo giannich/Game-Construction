@@ -7,6 +7,8 @@
 #include <osg/PositionAttitudeTransform>
 #include <osg/Quat>
 
+#include <time.h>
+
 #include <osgDB/ReadFile>
 #include <deque>
 
@@ -57,6 +59,31 @@ osg::ref_ptr<osg::Camera> normCamera = new osg::Camera;
 
 PositionAttitudeTransform *transform[maxNumBoats];
 PositionAttitudeTransform *transformSouls[maxNumSouls];
+
+time_t startTime;
+osg::ref_ptr<osgText::Text> timeText = new osgText::Text;
+osg::ref_ptr<osg::Geode> timeGeode = new osg::Geode;
+
+osg::ref_ptr<osg::Geode>posGeode = new osg::Geode;
+osg::ref_ptr<osgText::Text> posText = new osgText::Text;
+
+osg::ref_ptr<osg::Geode> soulsTextGeode = new osg::Geode;
+osg::ref_ptr<osgText::Text> soulsText = new osgText::Text;
+
+PositionAttitudeTransform *mySpeedBar;
+PositionAttitudeTransform *myMaxSpeedBar;
+osg::ref_ptr<osg::Geode> speedBarGeode = new osg::Geode;
+
+osg::Box *maxSpeedBox = new osg::Box;
+double speedBarHeight = 600;
+double speedBarWidth = 8; 
+
+PositionAttitudeTransform *posBarBoats[maxNumBoats];
+
+double maxSpeed = 75;
+double soulSpeed = 4.7;
+double baseSpeed = 50;
+int myNumSouls = -1;
 
 // This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
@@ -109,75 +136,53 @@ struct Graphics
 		}else{
 			printf("graphicswindow not created successfully");
 		}
-
-		osg::ref_ptr<osg::Camera> miniCamera = new osg::Camera;
-		miniCamera->setGraphicsContext(gc.get());
-		miniCamera->setViewport(new osg::Viewport((width * 4 / 5), 0,
-											  (width / 5), (height / 5)));
-		GLenum buffer = traits->doubleBuffer ? GL_BACK : GL_FRONT;
-		miniCamera->setDrawBuffer(buffer);
-		miniCamera->setReadBuffer(buffer);
 		
-	//	miniCamera->setViewMatrixAsLookAt({500,500,0}, bound.center(), up);
-		Vec3f rU = {-1,0,0};
-
-		viewer.addSlave(miniCamera.get(), 
-					//	osg::Matrixd::translate(0, .5, -0.7),
-						osg::Matrixd(),
-						osg::Matrixd::scale(1,1,1)*
-						osg::Matrixd::translate(0,0,100)*
-						osg::Matrixd::rotate(3.14/4, rU)
-						);
-					//	osg::Matrixd::scale(0.3, 0.3, 1.0));
-					//	osg::Matrixd::scale(0.2, 0.2, 1.0) * 
-					//		osg::Matrixd::translate(0, 0, -20));
-						//	osg::Matrixd::rotate(-3.14/4, rU));
-											
-		
-		//miniCamera->setViewMatrixAsLookAt({0,0,0},bound.center(), up);
-		//miniCamera->getOrCreateStateSet()->setMode(GL_LIGHTING,
-												 //  osg::StateAttribute::OFF);
-
-		//Create timer in up right
-		osg::ref_ptr<osg::Geode> textGeode = new osg::Geode;
-		textGeode->addDrawable(createText(osg::Vec3(650.0f, 750.0f, 0.0f),
+		//Create timer, position, and soul count text
+		timeText = createText(osg::Vec3(650.0f, 750.0f, 0.0f),
 								 "00:00",
-								 40.0f));
+								 40.0f);
+		posText = createText(osg::Vec3(710.0f, 700.0f, 0.0f),
+							 "1st",
+							 40.0f);
+		soulsText = createText(osg::Vec3(10.0f, 750.0f, 0.0f),
+							   "0 souls",
+							   40.0f);
+		timeGeode->addDrawable(timeText);
+		posGeode->addDrawable(posText);
+		soulsTextGeode->addDrawable(soulsText);
+
+		//create speed
+		createSpeedBar(0);
+		osg::Geode *myBarGeode = new osg::Geode;
+		int numBoatsHere = createPositionBar(1000, world, scene, myBarGeode);
 		
 		//Set up hud camera and ui
 		osg::Camera* hudCamera = createHUDCamera(0, 800, 0, 800);
-		hudCamera->addChild(textGeode.get());
+		hudCamera->addChild(timeGeode.get());
+		hudCamera->addChild(posGeode.get());
+		hudCamera->addChild(soulsTextGeode.get());
+
+		hudCamera->addChild(myBarGeode);
+		hudCamera->addChild(speedBarGeode);
+
+		hudCamera->addChild(myMaxSpeedBar);
+		hudCamera->addChild(mySpeedBar);
+
+		printf("posBarBoats is %u\n", numBoatsHere);
+		for (int i = 0; i < numBoatsHere; i++){
+			hudCamera->addChild(posBarBoats[i]);
+		}
+
 		hudCamera->getOrCreateStateSet()->setMode(GL_LIGHTING, 
 											   osg::StateAttribute::OFF);
 		hudCamera->setRenderOrder(osg::Camera::POST_RENDER);
-		//scene->addChild(hudCamera);
-	//	scene->addChild(miniCamera);
+		scene->addChild(hudCamera);
 
 		//Customize viewer
 		osg::ref_ptr<osgViewer::WindowSizeHandler> handler = new osgViewer::WindowSizeHandler();
 
-	//	viewer.setUpViewInWindow(500, 50, 800, 800);
-
-		//Set up camera
-		normCamera->setGraphicsContext(gc.get());
-		normCamera->setViewport(new osg::Viewport(0, 0, width, height));
-		normCamera->setDrawBuffer(buffer);
-		normCamera->setReadBuffer(buffer);
-
-		normCamera->setRenderOrder(osg::Camera::PRE_RENDER);
+		viewer.getCamera()->setClearColor(osg::Vec4(0.8f,0.8f,0.8f,0.95f));
 		
-		unsigned int num;
-		num = viewer.findSlaveIndexForCamera(normCamera);
-		printf("***************%u\n\n", num);
-
-		viewer.getCamera()->setClearColor(osg::Vec4(0.8f,0.8f,0.8f,0.8f));
-		
-		//double angle = boat.getRot();
-		viewer.addSlave(normCamera.get(), osg::Matrixd(),
-						osg::Matrixd::scale(1.0,1.0,1.0));
-	//	viewer.getCamera()->setRenderOrder(osg::Camera::PRE_RENDER);
-	
-
 		///Add everything to viewer
 		viewer.setSceneData(scene);
 
@@ -302,7 +307,186 @@ struct Graphics
 		}
 		return numCoords;
 	}
+
+	Vec3f getBoxCenter(double botX, double botY, double botZ,
+					  double width, double height)
+	{
+		return Vec3f(botX + (width/2), botY + (height/2), botZ);
+	}
 	
+	void createSpeedBar(double mySpeed)
+	{
+		double barHeight = speedBarHeight;
+		double barWidth = speedBarWidth;
+
+		double botX = 20;
+		double botY = 30;
+
+		Vec3f maxSpeedCenter = getBoxCenter(botX, botY, 0.0,
+											barWidth, barHeight);
+
+		Vec3f maxSpeedHalf(barWidth, barHeight/2, 0.1);
+		
+		osg::ref_ptr<osg::ShapeDrawable> maxSpeedShape = new osg::ShapeDrawable;
+		
+		maxSpeedBox->set(maxSpeedCenter, maxSpeedHalf);
+
+		maxSpeedShape->setShape(maxSpeedBox);
+		maxSpeedShape->setColor(osg::Vec4(0.788, 0.756, 0.756, 1.0f));
+
+		speedBarGeode->addDrawable(maxSpeedShape.get());
+
+		//make my max speed tick
+		osg::Box *myMaxSpeedBox = new osg::Box(osg::Vec3(0.0f, 0.0f, 0.0f),
+												10, 15, 3);
+		osg::ref_ptr<osg::ShapeDrawable> myMaxSpeedShape = new osg::ShapeDrawable;
+		myMaxSpeedShape->setShape(myMaxSpeedBox);
+		myMaxSpeedShape->setColor(osg::Vec4(0.505, 0.505, 0.529, 1.0f));	
+		
+		osg::ref_ptr<osg::Geode> myMaxSpeedGeode = new osg::Geode;
+		myMaxSpeedGeode->addDrawable(myMaxSpeedShape.get());
+
+		myMaxSpeedBar = new PositionAttitudeTransform;
+		myMaxSpeedBar->addChild(myMaxSpeedGeode);
+			
+		//make my speed tick
+		osg::Box *mySpeedBox = new osg::Box(osg::Vec3(0.0f, 0.0f, 0.0f),
+											15, 15, 3);
+		
+		osg::ref_ptr<osg::ShapeDrawable> mySpeedShape = new osg::ShapeDrawable;
+		mySpeedShape->setShape(mySpeedBox);
+		mySpeedShape->setColor(osg::Vec4(0.0f, 0.f, 0.0f, 1.0f));
+
+		osg::ref_ptr<osg::Geode> mySpeedGeode = new osg::Geode;
+		mySpeedGeode->addDrawable(mySpeedShape.get());
+
+		mySpeedBar = new PositionAttitudeTransform;
+		double posY = mySpeed * barHeight / maxSpeed;
+		mySpeedBar->setPosition(Vec3f(30 + barWidth/2 - 2, posY, 0.1));
+		mySpeedBar->addChild(mySpeedGeode);
+	}
+
+	void updateMyMaxSpeedBar(double mySpeed)
+	{
+		double mySpeedRatio = mySpeed / maxSpeed;
+		double barHeight = speedBarHeight;
+		double barWidth = speedBarWidth;
+
+		double mySpeedHeight = mySpeed * barHeight / maxSpeed;
+
+		double botX = 20;
+		double botY = 30;
+
+		float posY = (mySpeed / maxSpeed) * barHeight + botY;
+		myMaxSpeedBar->setPosition(Vec3f(20 + barWidth/2, posY, 0.1));
+	}
+
+	void updateSpeedBar(double mySpeed)
+	{
+
+		double mySpeedRatio = mySpeed / maxSpeed;
+		double barHeight = speedBarHeight;
+		double barWidth = speedBarWidth;
+
+		double mySpeedHeight = mySpeed * barHeight / maxSpeed;
+
+		double botX = 20;
+		double botY = 30;
+
+		Vec3f mySpeedCenter = getBoxCenter(botX - 2, botY+mySpeedHeight, 0.0, 
+										   barWidth + 3, 2);
+		
+		float posY = (mySpeed / maxSpeed) * barHeight + botY;
+		mySpeedBar->setPosition(Vec3f(20 + barWidth/2, posY, 0.1));
+	}
+
+	void updatePositionBar(double maxSeg, GameState* world)
+	{
+
+		double botX = 770;
+		double botY = 30;
+
+		double barHeight = speedBarHeight;
+		double barWidth = speedBarWidth;
+
+		for(auto it=world->boats->begin(); it!= world->boats->end(); ++it)
+		{
+			int i = it - world->boats->begin();
+			float posY = (it->segPosition * barHeight / maxSeg ) + botY;
+			posBarBoats[i]->setPosition(Vec3(botX + (barWidth/2), posY, 0.1));
+		}
+	}	
+
+	int createPositionBar(double maxSeg, GameState* world, Group* root,
+						   osg::Geode*  myBarGeode)
+	{
+		double allBoatSeg[maxNumBoats];
+		double mySeg;
+		int allBoatCounter = 0;
+
+		double botX = 770;
+		double botY = 30;
+
+		double oRadius = 5;
+		double mRadius = 6; 
+
+		double barHeight = speedBarHeight;
+		double barWidth = speedBarWidth;
+
+		osg::ref_ptr<osg::ShapeDrawable> oShape = new osg::ShapeDrawable;
+		osg::ref_ptr<osg::ShapeDrawable> mShape = new osg::ShapeDrawable;
+
+		osg::Sphere *oS = new osg::Sphere(osg::Vec3(0.0f, 0.0f, 0.0f), oRadius);
+		osg::Sphere *mS = new osg::Sphere(osg::Vec3(0.0f, 0.0f, 0.0f), mRadius);
+
+		oShape->setShape(oS);
+		mShape->setShape(mS);
+
+		oShape->setColor(osg::Vec4(0.505, 0.505, 0.529, 1.0f));
+		mShape->setColor(osg::Vec4(0.301, 0.301, 0.309, 1.0f));
+
+		osg::ref_ptr<osg::Geode> oGeode = new osg::Geode;
+		oGeode->addDrawable(oShape.get());
+
+		osg::ref_ptr<osg::Geode> mGeode = new osg::Geode;
+		mGeode->addDrawable(mShape.get());
+
+		int i = 0;
+
+		double yOff = 30;
+
+		for(auto it=world->boats->begin(); it!= world->boats->end(); ++it)
+		{
+			i = it - world->boats->begin();
+			float posY = (it->segPosition * barHeight / maxSeg) + yOff;
+			printf("posy: %f\n", posY);
+			posBarBoats[i] = new PositionAttitudeTransform;
+			posBarBoats[i]->setPosition(Vec3(botX + (barWidth/2), posY, 0.1));  
+			if(i != myBoat){
+				posBarBoats[i]->addChild(oGeode);
+			}else{
+				posBarBoats[i]->addChild(mGeode);	
+			}
+		}
+	
+		//createBar
+
+		Vec3f barCenter = getBoxCenter(botX, botY, 0.0, barWidth, barHeight);
+		Vec3f barHalf(barWidth, barHeight/2, 0.1);
+		
+		osg::Box *myBox = new osg::Box;
+		myBox->set(barCenter, barHalf);
+		
+		osg::ref_ptr<osg::ShapeDrawable> myBar = new osg::ShapeDrawable;
+		myBar->setShape(myBox);
+		myBar->setColor(osg::Vec4(0.788, 0.756, 0.756, 1.0f));
+
+		myBarGeode->addDrawable(myBar.get());
+		return i + 1;
+	}
+			
+				
+
 	void createTrack(osg::Geometry* polyGeom, GameState* world)
 	{
 		Track *m_track = world->m_track;
@@ -339,6 +523,77 @@ struct Graphics
 			transform[i]->setPosition(Vec3(x, 0.5f, y));
 			transform[i]->setAttitude(Quat(rot, Vec3f(0, -1, 0)));
 		}
+		time_t curTime;
+		time(&curTime);
+		int sec = (int) difftime(curTime, startTime);
+		int min = sec / 60;
+		sec = sec % 60;
+		std::string minS;
+		std::string secS;
+		if (min < 10){
+			minS = "0" + std::to_string(min);
+		}else{
+			minS = std::to_string(min);
+		}
+
+		if(sec < 10){
+			secS = "0" + std::to_string(sec);
+		}else{
+			secS = std::to_string(sec);
+		}
+		std::string timeS = minS + ":" + secS;
+		timeText = NULL;
+		timeText = createText(osg::Vec3(650.0f, 750.0f, 0.0f),
+							  timeS, 40.04f);
+		timeGeode->removeDrawables(0);
+		timeGeode->addDrawable(timeText);
+
+		int pos = getPosition(world);
+		std::string posString;
+		if(pos == 1){
+			posString = "1st";
+		}else if (pos == 2){
+			posString = "2nd";
+		}else if (pos == 3){
+			posString = "3rd";
+		}else{
+			posString = std::to_string(pos) + "th";
+		}
+		posText = NULL;
+		posText = createText(osg::Vec3(700.0f, 700.0f, 0.0f),
+				  posString, 40.0f);
+		posGeode->removeDrawables(0);
+		posGeode->addDrawable(posText);
+
+		Boat myBoatObj = (*(world->boats))[myBoat];
+		std::string soulString = std::to_string(myNumSouls) + " souls";
+		soulsText = NULL;
+		soulsText = createText(osg::Vec3(10.0f, 750.0f, 0.0f),
+					           soulString, 40.0f);
+		soulsTextGeode->removeDrawables(0);
+		soulsTextGeode->addDrawable(soulsText);
+
+		updateSpeedBar(myBoatObj.getSpeed());
+		if ((int) myBoatObj.currentSouls > myNumSouls){
+			myNumSouls = myBoatObj.currentSouls;
+			updateMyMaxSpeedBar(baseSpeed + (soulSpeed * myNumSouls));
+		}
+		updatePositionBar(1000, world);
+	}
+	int getPosition(GameState* world)
+	{
+		int pos = 1;
+		Boat myBoatObj = (*(world->boats))[myBoat];
+		float mySeg = myBoatObj.segPosition;
+		for (auto it = world->boats->begin(); it != world->boats->end(); ++it){
+			int i = it - world->boats->begin();
+			if (i != myBoat){
+			   if(it->segPosition >	mySeg){
+				   pos++;
+			   }
+			}
+		}
+		return pos;
 	}
 };
 
@@ -469,6 +724,7 @@ int main( int argc, char** argv)
 	int i = 0;
 	float oldAngle = 0; 
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+	time(&startTime);
 	while(!viewer.done()) 
 	{
 		stopper++;
