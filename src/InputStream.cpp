@@ -146,6 +146,12 @@ void InputStream::encodeInputStates(char *outputList)
 	outputList[MAX_FRAMES + 5] = (char) (playerNum >> 8);
 	outputList[MAX_FRAMES + 6] = (char) (playerNum >> 16);
 	outputList[MAX_FRAMES + 7] = (char) (playerNum >> 24);
+
+	// Encode Soul Number
+	outputList[MAX_FRAMES + 8] = (char) (world->boats->at(playerNum)->currentSouls);
+	outputList[MAX_FRAMES + 9] = (char) (world->boats->at(playerNum)->currentSouls >> 8);
+	outputList[MAX_FRAMES + 10] = (char) (world->boats->at(playerNum)->currentSouls >> 16);
+	outputList[MAX_FRAMES + 11] = (char) (world->boats->at(playerNum)->currentSouls >> 24);
 }
 
 // Reads a bunch of InputStates
@@ -158,6 +164,14 @@ void InputStream::decodeInputStates(char *outputList)
 						((unsigned int) (outputList[MAX_FRAMES + 1] << 8) & 65280) +
 						((unsigned int) (outputList[MAX_FRAMES + 2] << 16) & 16711680) +
 						((unsigned int) (outputList[MAX_FRAMES + 3] << 24) & 4278190080);
+
+	// Decode Soul Number
+	int soulNumber;
+
+	soulNumber = ((unsigned int) (outputList[MAX_FRAMES + 8]) & 255) +
+				 ((unsigned int) (outputList[MAX_FRAMES + 9] << 8) & 65280) +
+				 ((unsigned int) (outputList[MAX_FRAMES + 10] << 16) & 16711680) +
+				 ((unsigned int) (outputList[MAX_FRAMES + 11] << 24) & 4278190080);
 						
 	int framesDifference = latestFrameNumber - currentFrameNumber;
 
@@ -190,8 +204,12 @@ void InputStream::decodeInputStates(char *outputList)
 	//std::cout << "Starting from index: " << std::to_string(startFromIndex) << "\n";
 	//std::cout << "For a total of frames: " << std::to_string(framesDifference) << "\n";
 
+	// Overwrites InputStream
 	for (int i = 0; i < framesDifference; i++)
 		writeSingleState(InputState(outputList[startFromIndex + i]));
+
+	// Overwrites SoulNum
+	world->boats->at(playerNum)->currentSouls = soulNumber;
 
 }
 

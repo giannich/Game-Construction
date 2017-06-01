@@ -45,28 +45,28 @@ public:
 
 class LocalBoat: public Boat {
 public:
-	LocalBoat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer) : 
+	LocalBoat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer, GameState *gstate) : 
 	Boat(initPos, m_world, ai1, pNum)
 	{
-		inputStream = new LocalPlayerInputStream(playerNum, broadcastPointer);
+		inputStream = new LocalPlayerInputStream(playerNum, broadcastPointer, gstate);
 	}
 };
 
 class NetworkBoat: public Boat {
 public:
-	NetworkBoat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer, bool isBroadcasting) : 
+	NetworkBoat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer, bool isBroadcasting, GameState *gstate) : 
 	Boat(initPos, m_world, ai1, pNum)
 	{
-		inputStream = new NetworkPlayerInputStream(playerNum, broadcastPointer, isBroadcasting);
+		inputStream = new NetworkPlayerInputStream(playerNum, broadcastPointer, isBroadcasting, gstate);
 	}
 };
 
 class AIBoat: public Boat {
 public:
-	AIBoat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer) : 
+	AIBoat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer, GameState *gstate) : 
 	Boat(initPos, m_world, ai1, pNum)
 	{
-		inputStream = new AIInputStream(playerNum, ai1, broadcastPointer);
+		inputStream = new AIInputStream(playerNum, ai1, broadcastPointer, gstate);
 	}
 };
 

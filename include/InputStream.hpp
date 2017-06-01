@@ -70,13 +70,15 @@ class InputStream {
 public:
 	InputState lastInputState;
 	Networking *networkingHandler;
+	GameState *world;
 	unsigned int playerNum;
 	
 	// Constructor
 	// TODO: Needs to change so that it can accept an external broadcastlist pointer
-	InputStream()
+	InputStream(GameState *gstate)
 	{
 		currentFrameNumber = 0;
+		world = gstate;
 	}
 
 	// Returns a single InputState from InputStream
@@ -119,7 +121,7 @@ public:
 	// Need some SDL Data?
 	// Send commands to remote host if necessary
 	//InputState updateInputState(float deltaTime, GameState &gs);
-	LocalPlayerInputStream(int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer) : InputStream()
+	LocalPlayerInputStream(int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer, GameState *gstate) : InputStream(gstate)
 	{ 
 		playerNum = pNum;
 		networkingHandler = new Networking(broadcastPointer, this);
@@ -131,7 +133,7 @@ public:
 class AIInputStream: public InputStream {
 public:
 	AI *ai;
-	AIInputStream(int pNum, AI *ai1, std::vector <std::pair<in_addr, int>> *broadcastPointer) : ai(ai1), InputStream()
+	AIInputStream(int pNum, AI *ai1, std::vector <std::pair<in_addr, int>> *broadcastPointer, GameState *gstate) : ai(ai1), InputStream(gstate)
 	{ 
 		playerNum = pNum;
 		networkingHandler = new Networking(broadcastPointer, this);
@@ -145,7 +147,7 @@ public:
 // Network Player InputStream
 class NetworkPlayerInputStream: public InputStream {
 public:
-	NetworkPlayerInputStream(int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer, bool broadcast) : InputStream()
+	NetworkPlayerInputStream(int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer, bool broadcast, GameState *gstate) : InputStream(gstate)
 	{ 
 		playerNum = pNum; 
 		networkingHandler = new Networking(broadcastPointer, this);
