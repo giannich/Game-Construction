@@ -93,6 +93,15 @@ double countDownTime = -5;
 osg::ref_ptr<osg::Geode> countDownGeode = new osg::Geode;
 osg::ref_ptr<osgText::Text> countDownText = new osgText::Text;
 
+std::vector<double> finishTimes; 
+std::vector<int> finishedPlayers;
+
+int myFinishPlace = -1;
+double myFinishTime;
+bool allBoatsFinished = false;
+
+
+
 
 
 // This stub will be swapped out to whatever our OSG implementation becomes
@@ -215,27 +224,10 @@ struct Graphics
 			}
         }
 
-	heightMap = osgDB::readImageFile("heightMap.ppm");
-
-    osg::HeightField* heightField2 = new osg::HeightField();
-    heightField2->allocate(heightMap->s(), heightMap->t());
-	heightField2->setRotation(Quat(M_PI/2, osg::Vec3f(-1,0,0)));
-//							Quat(M_PI/2, osg::Vec3f(0,1,0)) *
-//							Quat(M_PI/2, osg::Vec3f(0,0,1)));
-    heightField2->setXInterval(2.5f);
-   // heightField2->setOrigin(osg::Vec3(-heightMap->s() / 2, 500, heightMap->t() / 2));
-	heightField2->setOrigin(osg::Vec3(-1000, -100, 2000));
-	heightField2->setYInterval(2.5f);
-	   for (int r = 0; r < heightField->getNumRows(); r++) {
-			for (int c = 0; c < heightField->getNumColumns(); c++) {
-				heightField->setHeight(c, r, ((*heightMap->data(c, r)) / 255.0f) * 200.0f);
-			}
-        }
-
+  
 		osg::Geode* geode = new osg::Geode();
 		geode->addDrawable(new osg::ShapeDrawable(heightField));
 
-		geode->addDrawable(new osg::ShapeDrawable(heightField2));
 		osg::Texture2D* tex = new osg::Texture2D(osgDB::readImageFile("color.ppm"));
 		tex->setFilter(osg::Texture2D::MIN_FILTER,osg::Texture2D::LINEAR_MIPMAP_LINEAR);
 		tex->setFilter(osg::Texture2D::MAG_FILTER,osg::Texture2D::LINEAR);
@@ -582,6 +574,21 @@ struct Graphics
 		return i + 1;
 	}
 					
+	int getPosition(GameState* world)
+	{
+		int pos = 1;
+		Boat *myBoatObj = world->boats->at(myBoat);
+		float mySeg = myBoatObj->segPosition;
+		for (auto it = world->boats->begin(); it != world->boats->end(); ++it){
+			int i = it - world->boats->begin();
+			if (i != myBoat){
+			   if((*it)->segPosition > mySeg){
+				   pos++;
+			   }
+			}
+		}
+		return pos;
+	}
 
 	MapDim* createTrack(osg::Geometry* polyGeom, GameState* world)
 	{
@@ -610,9 +617,85 @@ struct Graphics
 		return m;
 	}
 
-	void update(GameState* world) 
+	
+	void ShowTotalEndScreen(){
+		std::sort (finishTimes.begin(), finishTimes.end());
+		std::string text;
+		for(int i = 0; i < finishTimes.size(); i++){
+			int sec = (int) finishTimes[i];
+			int min = sec/60;
+			sec = sec%60;
+			std::string minS;
+			std::string secS;
+			if (min < 10){
+				minS = "0" + std::to_string(min);
+			}else{
+				minS = std::to_string(min);
+			}
+
+			if(sec < 10){
+				secS = "0" + std::to_string(sec);
+			}else{
+				secS = std::to_string(sec);
+			}
+			std::string timeS = minS + ":" + secS;
+			if(finishTimes[i] == myFinishTime){
+				text += timeS + "<- you\n";
+			}else{
+				text += timeS + "\n";
+			}
+		}
+		countDownText = NULL;
+		countDownText = createText(osg::Vec3(200.0f, 650.0f, 0.0f),
+				text, 20.0f);
+		countDownGeode->removeDrawables(0);
+		countDownGeode->addDrawable(countDownText);
+	}
+
+
+	void showMyEndScreen(int totalNumberBoats)
 	{
-		
+		std::string text;
+		int pos = myFinishPlace;
+		if(myFinishPlace == 1){
+			text =  "Congratulations!"
+				    "You are the coolest and fastest"
+					"ferryman there is!"
+					"You're cordially invited to"
+					"stay in hell and do this forever!"
+					"Have fun serving the underworld"
+					"FOR ETERNITY!";
+		}else if(pos == 2){
+			text = "Congratulations for ..."
+				    "almost making it."
+					"But you didn't, so you don't"
+					"get anything."
+					"Such is life."
+					"Enjoy eternal purgatory!";
+		}else if(pos == totalNumberBoats - 1){
+			text = "Last place huh?"
+					"Why even bother?"
+					"We don't need you"
+					"underachievers here."
+					"Go back to Earth and"
+					"celebrate pooping on"
+					"company time in your 9-5 job!";
+		}else{
+			text = "You were __ place."
+					"You were so middle-of-the-pack"
+					"generic we didn't write anything"
+					"specific fo you."
+					"Enjoy eternal purgatory!";
+		}
+		countDownText = createText(osg::Vec3(200.0f, 650.0f, 0.0f),
+								   text, 20.0f);
+		countDownGeode->addDrawable(countDownText);
+	}
+
+
+	void updateNormal(GameState *world)
+	{
+			
 		//printf("in update\n");
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it) 
 		{
@@ -705,21 +788,58 @@ struct Graphics
 		updateSouls(world);
 		
 	}
-	int getPosition(GameState* world)
+	void update(GameState* world) 
 	{
-		int pos = 1;
-		Boat *myBoatObj = world->boats->at(myBoat);
-		float mySeg = myBoatObj->segPosition;
-		for (auto it = world->boats->begin(); it != world->boats->end(); ++it){
-			int i = it - world->boats->begin();
-			if (i != myBoat){
-			   if((*it)->segPosition > mySeg){
-				   pos++;
-			   }
+		
+		if(!allBoatsFinished){
+			int i;
+			bool justFinished = false;
+			//Check if boats finished race	
+			for(auto it = world->boats->begin(); it != world->boats->end(); ++it)
+			{
+				i = it - world->boats->begin();
+				bool exists = std::find(std::begin(finishedPlayers),
+										std::end(finishedPlayers),
+										i) != std::end(finishedPlayers);
+				//it just finished race, add time to finished arrays
+				if(!exists && (*it)->finishedRace){
+	
+				   time_t curTime;
+				   time(&curTime);
+				   double fTime = (int) difftime(curTime, startTime);
+				finishTimes.push_back(fTime);
+						if(i == myBoat){
+							 myFinishPlace = getPosition(world);
+							 //change startTime to reflect end time
+							 time(&startTime);
+							 myFinishTime = fTime;
+							 justFinished = true;
+						}
+				}
+			}
+			int totalNumberBoats = i + 1;
+			if(finishedPlayers.size() == totalNumberBoats){
+				allBoatsFinished = true;
+			}
+			if(myFinishPlace < 0){
+			//if i'm still racing
+				updateNormal(world);
+			}
+			//if i just finished
+			if(justFinished){
+				showMyEndScreen(totalNumberBoats);
+			}
+		}//if all boats already finished
+		else{
+			//if i have already viewed my end screen for 30 seconds
+			time_t curTime;
+			time(&curTime);
+			if(difftime(curTime, startTime) > 30){
+				ShowTotalEndScreen();
 			}
 		}
-		return pos;
 	}
+
 };
 struct Color {
 	double r;
@@ -984,7 +1104,7 @@ int main(int argc, char** argv)
 		
 		//Update graphics camera
 		
-		Boat *boat = (*(gState->boats))[1];
+		Boat *boat = (*(gState->boats))[myBoat];
 		float x = boat->getX();
 		float y = boat->getY();
 		//double angle = boat.getRot();
