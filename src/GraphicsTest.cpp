@@ -251,11 +251,12 @@ int main(int argc, char** argv)
 	GameState *gState = new GameState(*m_track);
 
 	//Add souls to track
-	vec2* soulPos = m_track->getInitialSoulPositions(5);
-	for(int i = 0; i < 5; ++i) {
+	vec2* soulPos = m_track->getInitialSoulPositions(1);
+	for(int i = 0; i < 1; ++i) {
 		Soul *s = new Soul(b2Vec2(soulPos[i].x, soulPos[i].y), 5.0f, *m_world);
 		std::cout << "(x,y): " << soulPos[i].x << ", " << soulPos[i].y << std::endl;
 		gState->addSoul(*s);
+		delete s;
 	}
 
 	//Add finish line to track
@@ -384,4 +385,5 @@ int main(int argc, char** argv)
 		viewer.frame();
 		std::this_thread::sleep_until(now + ++i * std::chrono::duration<double>(timestep));
 	}
+	return 0;
 }

@@ -31,7 +31,7 @@ void SoulCollisionHandler::handleCollision(EType other) {
 		case BoatType: {
 			std::cout << parent << std::endl;
 			parent->collected = true;
-			std::cout << "Delete Soul!" << std::endl;
+			std::cout << "Delete Soul!" << parent->collected << std::endl;
 		}
 			break;
 		default:
