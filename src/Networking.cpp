@@ -234,7 +234,7 @@ void receiveInputStream(GameState *world, bool isHost, std::vector<int> *playerD
 		//std::cout << "Received packet from player number " << std::to_string(playerNumber) << "\n";
 
 		// Decode the InputStream in the right boat
-		world->boats->at(playerNumber).inputStream->decodeInputStates(encodedInputStream);
+		world->boats->at(playerNumber)->inputStream->decodeInputStates(encodedInputStream);
 	}
 }
 
@@ -267,7 +267,7 @@ void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> g
 	pt.put("playerNum", playerNum);
 
 	// Get the latest frome number
-	int latestFrameNum = world->boats->at(0).inputStream->getCurrentFrameNumber();
+	int latestFrameNum = world->boats->at(0)->inputStream->getCurrentFrameNumber();
 	pt.put("frameNum", latestFrameNum);
 
 	// For each player, encode the information into a ptree
@@ -275,7 +275,7 @@ void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> g
 	for (int i = 0; i < playerNum; i++)
 	{
 		// It is still a pointer here, so I don't think we can dynamically do this...
-		Boat playerBoat = world->boats->at(i);
+		Boat playerBoat = *(world->boats->at(i));
 
 		pt.put("linearVelocityX" + std::to_string(i), playerBoat.rigidBody->GetLinearVelocity().x);
 		pt.put("linearVelocityY" + std::to_string(i), playerBoat.rigidBody->GetLinearVelocity().y);
@@ -387,16 +387,16 @@ void GameStatePatch::applyPatch(GameState *world)
 	for (int i = 0; i < playerNum; i++)
 	{
 		// Linear Velocity
-		world->boats->at(i).rigidBody->SetLinearVelocity(b2Vec2(boatPatches->at(i)->_velx, boatPatches->at(i)->_vely));
+		world->boats->at(i)->rigidBody->SetLinearVelocity(b2Vec2(boatPatches->at(i)->_velx, boatPatches->at(i)->_vely));
 
 		// Rotational Velocity
-		world->boats->at(i).rigidBody->SetAngularVelocity(boatPatches->at(i)->_rotvel);
+		world->boats->at(i)->rigidBody->SetAngularVelocity(boatPatches->at(i)->_rotvel);
 
 		// Orientation & Position
-		world->boats->at(i).rigidBody->SetTransform(b2Vec2(boatPatches->at(i)->_posx, boatPatches->at(i)->_posy), boatPatches->at(i)->_orient);
+		world->boats->at(i)->rigidBody->SetTransform(b2Vec2(boatPatches->at(i)->_posx, boatPatches->at(i)->_posy), boatPatches->at(i)->_orient);
 
 		// Current Souls
-		world->boats->at(i).currentSouls = boatPatches->at(i)->_souls;
+		world->boats->at(i)->currentSouls = boatPatches->at(i)->_souls;
 	}
 }
 

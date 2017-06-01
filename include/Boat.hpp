@@ -27,6 +27,7 @@ class Boat
 	BoatCollisionHandler *collisionHandler;
 	float forwardForce();
 public:
+	bool finishedRace;
 	int currentSouls;
 	bool disabled;
 	int playerNum;

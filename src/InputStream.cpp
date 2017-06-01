@@ -215,7 +215,7 @@ int InputStream::getBufferSize()
 void LocalPlayerInputStream::update(float deltaT, GameState &gs) {
 	SDL_Event e;
 	while(SDL_PollEvent(&e)) {
-		InputState iState = (*gs.boats)[playerNum].inputStream->lastInputState;
+		InputState iState = (*gs.boats)[playerNum]->inputStream->lastInputState;
 		switch (e.type) {
 			case SDL_KEYDOWN: 
 				switch (e.key.keysym.sym) {
@@ -273,8 +273,7 @@ void LocalPlayerInputStream::update(float deltaT, GameState &gs) {
 }
 
 void AIInputStream::update(float deltaTime, GameState &gs) {
-	b2Body *rigidBody = (*gs.boats)[playerNum].rigidBody;
-	lastInputState = ai->getCommand(*gs.boats);
+	lastInputState = ai->getCommand(gs.boats);
 
 	// Writes in the inputstate and broadcasts it
 	writeSingleState(lastInputState);

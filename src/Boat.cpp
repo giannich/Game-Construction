@@ -11,6 +11,7 @@
 
 Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 {
+	finishedRace = false;
 	playerNum = pNum;
 	currentSouls = 0;
 	soulCollectionRadius = 5.0f;
@@ -86,7 +87,7 @@ void Boat::update(float deltaT, GameState &gs)
 	else
 		inputState = inputStream->readSingleState(inputStream->getCurrentFrameNumber() - 1);
 
-	if (!this->disabled) {
+	if (!disabled) {
 		switch (inputState.acc)
 		{
 			case Accelerating: {

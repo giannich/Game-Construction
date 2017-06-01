@@ -20,12 +20,12 @@ AI_1_4::AI_1_4(Track *t, int my_player, int num_boats, float width, float accele
 	accThreshold = acceleratingThreshold;
 	revThreshold = reversingThreshold;
 }
-InputState AI_1_4::getCommand(std::vector<Boat>& boats)
+InputState AI_1_4::getCommand(std::vector<Boat*>* boats)
 {
-	vec2 pos(boats[myPlayer].rigidBody->GetPosition().x, boats[myPlayer].rigidBody->GetPosition().y);
-	vec2 vel(boats[myPlayer].rigidBody->GetLinearVelocity().x, boats[myPlayer].rigidBody->GetLinearVelocity().y);
-	float ang = boats[myPlayer].rigidBody->GetAngle();
-	float seg = boats[myPlayer].segPosition;
+	vec2 pos(boats->at(myPlayer)->rigidBody->GetPosition().x, boats->at(myPlayer)->rigidBody->GetPosition().y);
+	vec2 vel(boats->at(myPlayer)->rigidBody->GetLinearVelocity().x, boats->at(myPlayer)->rigidBody->GetLinearVelocity().y);
+	float ang = boats->at(myPlayer)->rigidBody->GetAngle();
+	float seg = boats->at(myPlayer)->segPosition;
 	
 	int I = N-1;
 	float timeToCrash = std::numeric_limits<float>::infinity();

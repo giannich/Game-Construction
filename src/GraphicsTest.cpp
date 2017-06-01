@@ -29,7 +29,7 @@
 #include "Boat.hpp"
 #include "GameState.hpp"
 #include "Soul.hpp"
-#include "AI_1_0.hpp"
+#include "AI_1_4.hpp"
 #include "Networking.hpp"
 #include "FinishLine.hpp"
 
@@ -87,10 +87,10 @@ struct Graphics
 		//Set up camera
 		viewer.getCamera()->setClearColor(osg::Vec4(0.8f,0.8f,0.8f,0.8f));
 	
-		Boat boat = (*(world->boats))[myBoat];
-		float x = boat.getX();
-		float y = -boat.getY();
-		double angle = boat.getRot() + M_PI/2;
+		Boat *boat = (*(world->boats))[myBoat];
+		float x = boat->getX();
+		float y = -boat->getY();
+		double angle = boat->getRot() + M_PI/2;
 		//double angle = boat.getRot();
 		Vec3f newEye, newCent;
 
@@ -153,8 +153,8 @@ struct Graphics
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it){
 			int i = it - world->boats->begin();
 			transform[i] = new PositionAttitudeTransform;
-			transform[i]->setPosition(Vec3(it->getX(), 0.5f, it->getY()));
-			transform[i]->setAttitude(Quat(it->getRot(), Vec3f(0, -1, 0)));
+			transform[i]->setPosition(Vec3((*it)->getX(), 0.5f, (*it)->getY()));
+			transform[i]->setAttitude(Quat((*it)->getRot(), Vec3f(0, -1, 0)));
 			if (i != myBoat) {
 				transform[i]->addChild(anotherGeode);
 			} else {
@@ -221,9 +221,9 @@ struct Graphics
 		//printf("in update\n");
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it) 
 		{
-			float x = it->getX();
-			float y = it->getY();
-			float rot = M_PI/2 + it->getRot();
+			float x = (*it)->getX();
+			float y = (*it)->getY();
+			float rot = M_PI/2 + (*it)->getRot();
 
 			int i = it - world->boats->begin();
 		//	printf("modify boat %d\n", i);
@@ -259,12 +259,13 @@ int main(int argc, char** argv)
 	}
 
 	//Add finish line to track
-	int finishLineSeg = 980;
+	int finishLineSeg = 80;
 	vec2 finishL = m_track->l[finishLineSeg];
 	vec2 finishR = m_track->r[finishLineSeg];
-	vec2 finishM = mul(add(finishL,finishR),2.0f);
+	vec2 finishM = mul(add(finishL,finishR),0.5f);
 	b2Vec2 finishLinePos = b2Vec2(finishM.x, finishM.y);
-	FinishLine *finish = new FinishLine(finishLinePos, 11.0f, *m_world);
+	std::cout << "Finish line at: (" << finishM.x << ", " << finishM.y << ")" << std::endl;
+	FinishLine *finish = new FinishLine(finishLinePos, 17.0f, *m_world);
 
 	//Initialize Contact Listener for physics
 	ContactListener contactListener;
@@ -300,7 +301,7 @@ int main(int argc, char** argv)
 			playerDiscardList.push_back(i);
 			std::cout << "Made local boat at position number " << std::to_string(i) << "\n";
 			Boat *local_boat = new LocalBoat(startPos, *m_world, nullptr, i, &broadcastList);
-			gState->addPlayer(*local_boat);
+			gState->addPlayer(local_boat);
 			myBoat = i;
 		}
 
@@ -309,7 +310,7 @@ int main(int argc, char** argv)
 		{
 			std::cout << "Made network boat at position number " << std::to_string(i) << "\n";
 			Boat *net_boat = new NetworkBoat(startPos, *m_world, nullptr, i, &broadcastList, isBroadcasting);
-			gState->addPlayer(*net_boat);
+			gState->addPlayer(net_boat);
 		}
 
 		// AI Player
@@ -317,9 +318,9 @@ int main(int argc, char** argv)
 		{
 			playerDiscardList.push_back(i);
 			std::cout << "Made ai boat at position number " << std::to_string(i) << "\n";
-			AI *ai = new AI_1_0(m_track,i,numBoats);
+			AI *ai = new AI_1_4(m_track,i,numBoats,17.0f);
 			Boat *ai_boat = new AIBoat(startPos, *m_world, ai, i, &broadcastList);
-			gState->addPlayer(*ai_boat);
+			gState->addPlayer(ai_boat);
 		}	
 	}
 
@@ -377,11 +378,11 @@ int main(int argc, char** argv)
 		
 		//Update graphics camera
 		
-		Boat boat = (*(gState->boats))[myBoat];
-		float x = boat.getX();
-		float y = boat.getY();
+		Boat *boat = (*(gState->boats))[myBoat];
+		float x = boat->getX();
+		float y = boat->getY();
 		//double angle = boat.getRot();
-		double angle =  (boat.getRot() * .25) + (oldAngle * .75);
+		double angle =  (boat->getRot() * .25) + (oldAngle * .75);
 
 		Vec3f newEye = {(float)(x - 20*cos(angle)), 10, 
 				  (float)(y - 20*sin(angle))};

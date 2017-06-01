@@ -11,5 +11,5 @@ public:
 	Track *track;
 	int myPlayer;
 	int numBoats;
-	virtual InputState getCommand(std::vector<Boat>&) = 0;
+	virtual InputState getCommand(std::vector<Boat*>*) = 0;
 };
