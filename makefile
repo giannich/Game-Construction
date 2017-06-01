@@ -4,7 +4,7 @@ LIB_PATH = lib
 PLUGIN_PATH = lib/osgPlugins-3.4.0
 #PLUGINS := $(basename $(notdir $(wildcard $(PLUGIN_PATH)/*.so)))
 LINK_PLUGINS := $(addprefix -l, $(subst osgdb_,,$(PLUGINS)))
-LIB_FLAGS = -std=c++11 -losgDB -losgViewer -losg -lOpenThreads -losgUtil -losgGA $(LINK_PLUGINS) $(LIB_PATH)/libBox2d.a
+LIB_FLAGS = -std=c++11 -losgDB -losgViewer -losg -lOpenThreads -losgUtil -losgText -losgGA $(LINK_PLUGINS) $(LIB_PATH)/libBox2d.a
 CC_FLAGS = -rpath . -g
 EXECUTABLE = gtest
 
