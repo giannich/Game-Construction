@@ -203,40 +203,36 @@ struct Graphics
 	{
 		osg::Image* heightMap = osgDB::readImageFile(heightFile);
 		osg::HeightField* heightField = new osg::HeightField();
-		heightField->allocate(heightMap->s(), heightMap->t());
-	//	heightField->setOrigin(osg::Vec3(m.lowX + (m.width/2),
-						//					m.lowY + (m.length/2), 0.0));
-		heightField->setRotation(Quat(M_PI/2, osg::Vec3f(-1,0,0)));
-		heightField->setXInterval(2.5f);
-    heightField->setOrigin(osg::Vec3(-1000, -100, 2000));
-		heightField->setYInterval(2.5f);
-	   for (int r = 0; r < heightField->getNumRows(); r++) {
-			for (int c = 0; c < heightField->getNumColumns(); c++) {
-				heightField->setHeight(c, r, ((*heightMap->data(c, r)) / 255.0f) * 200.0f);
-			}
-        }
-
-	heightMap = osgDB::readImageFile("heightMap.ppm");
-
-    osg::HeightField* heightField2 = new osg::HeightField();
-    heightField2->allocate(heightMap->s(), heightMap->t());
-	heightField2->setRotation(Quat(M_PI/2, osg::Vec3f(-1,0,0)));
-//							Quat(M_PI/2, osg::Vec3f(0,1,0)) *
-//							Quat(M_PI/2, osg::Vec3f(0,0,1)));
-    heightField2->setXInterval(2.5f);
-   // heightField2->setOrigin(osg::Vec3(-heightMap->s() / 2, 500, heightMap->t() / 2));
-	heightField2->setOrigin(osg::Vec3(-1000, -100, 2000));
-	heightField2->setYInterval(2.5f);
-	   for (int r = 0; r < heightField->getNumRows(); r++) {
-			for (int c = 0; c < heightField->getNumColumns(); c++) {
-				heightField->setHeight(c, r, ((*heightMap->data(c, r)) / 255.0f) * 200.0f);
-			}
-        }
-
+		osg::HeightField* heightField2 = new osg::HeightField();
 		osg::Geode* geode = new osg::Geode();
-		geode->addDrawable(new osg::ShapeDrawable(heightField));
+		if(heightMap) {
+			heightField->allocate(heightMap->s(), heightMap->t());
+			heightField->setRotation(Quat(M_PI/2, osg::Vec3f(-1,0,0)));
+			heightField->setXInterval(2.5f);
+			heightField->setOrigin(osg::Vec3(-1000, -100, 2000));
+			heightField->setYInterval(2.5f);
+			for (int r = 0; r < heightField->getNumRows(); r++) {
+				for (int c = 0; c < heightField->getNumColumns(); c++) {
+					heightField->setHeight(c, r, ((*heightMap->data(c, r)) / 255.0f) * 200.0f);
+				}
+			}
 
-		geode->addDrawable(new osg::ShapeDrawable(heightField2));
+			heightMap = osgDB::readImageFile("heightMap.ppm");
+
+			heightField2->allocate(heightMap->s(), heightMap->t());
+			heightField2->setRotation(Quat(M_PI/2, osg::Vec3f(-1,0,0)));
+			heightField2->setXInterval(2.5f);
+			heightField2->setOrigin(osg::Vec3(-1000, -100, 2000));
+			heightField2->setYInterval(2.5f);
+			for (int r = 0; r < heightField->getNumRows(); r++) {
+				for (int c = 0; c < heightField->getNumColumns(); c++) {
+					heightField->setHeight(c, r, ((*heightMap->data(c, r)) / 255.0f) * 200.0f);
+				}
+			}
+
+			geode->addDrawable(new osg::ShapeDrawable(heightField));
+			geode->addDrawable(new osg::ShapeDrawable(heightField2));
+		}
 		osg::Texture2D* tex = new osg::Texture2D(osgDB::readImageFile("color.ppm"));
 		tex->setFilter(osg::Texture2D::MIN_FILTER,osg::Texture2D::LINEAR_MIPMAP_LINEAR);
 		tex->setFilter(osg::Texture2D::MAG_FILTER,osg::Texture2D::LINEAR);
@@ -245,7 +241,6 @@ struct Graphics
 		geode->getOrCreateStateSet()->setTextureAttributeAndModes(0, tex);
 
 		return geode;
-
 	}
 
 	osgViewer::Viewer* createView(int x, int y, int w, int h, osg::Node* scene)
