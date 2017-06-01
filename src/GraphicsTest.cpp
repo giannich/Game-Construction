@@ -53,6 +53,8 @@ const int maxNumSouls = 10;
 Vec3f up = {0,1,0};
 unsigned int myBoat = 0;
 
+osg::ref_ptr<osg::Camera> normCamera = new osg::Camera; 
+
 PositionAttitudeTransform *transform[maxNumBoats];
 PositionAttitudeTransform *transformSouls[maxNumSouls];
 
@@ -117,9 +119,19 @@ struct Graphics
 		miniCamera->setReadBuffer(buffer);
 		
 	//	miniCamera->setViewMatrixAsLookAt({500,500,0}, bound.center(), up);
+		Vec3f rU = {-1,0,0};
 
-		viewer.addSlave(miniCamera.get(), osg::Matrixd(),
-						osg::Matrixd::scale(5.0, 5.0, 5.0));
+		viewer.addSlave(miniCamera.get(), 
+					//	osg::Matrixd::translate(0, .5, -0.7),
+						osg::Matrixd(),
+						osg::Matrixd::scale(1,1,1)*
+						osg::Matrixd::translate(0,0,100)*
+						osg::Matrixd::rotate(3.14/4, rU)
+						);
+					//	osg::Matrixd::scale(0.3, 0.3, 1.0));
+					//	osg::Matrixd::scale(0.2, 0.2, 1.0) * 
+					//		osg::Matrixd::translate(0, 0, -20));
+						//	osg::Matrixd::rotate(-3.14/4, rU));
 											
 		
 		//miniCamera->setViewMatrixAsLookAt({0,0,0},bound.center(), up);
@@ -147,32 +159,24 @@ struct Graphics
 	//	viewer.setUpViewInWindow(500, 50, 800, 800);
 
 		//Set up camera
-		osg::ref_ptr<osg::Camera> normCamera = new osg::Camera;
 		normCamera->setGraphicsContext(gc.get());
 		normCamera->setViewport(new osg::Viewport(0, 0, width, height));
 		normCamera->setDrawBuffer(buffer);
 		normCamera->setReadBuffer(buffer);
 
 		normCamera->setRenderOrder(osg::Camera::PRE_RENDER);
+		
+		unsigned int num;
+		num = viewer.findSlaveIndexForCamera(normCamera);
+		printf("***************%u\n\n", num);
 
 		viewer.getCamera()->setClearColor(osg::Vec4(0.8f,0.8f,0.8f,0.8f));
 		
-		Boat boat = (*(world->boats))[myBoat];
-		float x = boat.getX();
-		float y = -boat.getY();
-		double angle = boat.getRot() + M_PI/2;
 		//double angle = boat.getRot();
-		Vec3f newEye, newCent;
-
-		newEye = {(float)(x - 200*cos(angle)), 50, 
-				  (float)(y - 200*sin(angle))};
-		newCent = {(float)(x+ 50*cos(angle)),0,
-				   (float)(y + 50*sin(angle))};
-		normCamera->setViewMatrixAsLookAt(newEye,newCent,up);
-
 		viewer.addSlave(normCamera.get(), osg::Matrixd(),
-						osg::Matrixd::scale(1.0, 1.0, 1.0));
-
+						osg::Matrixd::scale(1.0,1.0,1.0));
+	//	viewer.getCamera()->setRenderOrder(osg::Camera::PRE_RENDER);
+	
 
 		///Add everything to viewer
 		viewer.setSceneData(scene);
@@ -507,7 +511,12 @@ int main( int argc, char** argv)
 				   (float)(y + 5*sin(angle))};
 		
 		oldAngle = angle;
+	//	normCamera->setViewMatrixAsLookAt(newEye, newCent, up);
+	//	viewer.removeSlave(1);
+	//	viewer.addSlave(normCamera);
+	//	viewer.getSlave(0)._camera->setViewMatrixAsLookAt(newEye, newCent, up);
 		viewer.getCamera()->setViewMatrixAsLookAt(newEye, newCent, up);
+		
 	
 		viewer.frame();
 		std::this_thread::sleep_until(now + ++i * std::chrono::duration<double>(timestep));
