@@ -405,7 +405,7 @@ struct Graphics
 		for(auto it=world->boats->begin(); it!= world->boats->end(); ++it)
 		{
 			int i = it - world->boats->begin();
-			float posY = (it->segPosition * barHeight / maxSeg ) + botY;
+			float posY = ((*it)->segPosition * barHeight / maxSeg ) + botY;
 			posBarBoats[i]->setPosition(Vec3(botX + (barWidth/2), posY, 0.1));
 		}
 	}	
@@ -451,7 +451,7 @@ struct Graphics
 		for(auto it=world->boats->begin(); it!= world->boats->end(); ++it)
 		{
 			i = it - world->boats->begin();
-			float posY = (it->segPosition * barHeight / maxSeg) + yOff;
+			float posY = ((*it)->segPosition * barHeight / maxSeg) + yOff;
 			printf("posy: %f\n", posY);
 			posBarBoats[i] = new PositionAttitudeTransform;
 			posBarBoats[i]->setPosition(Vec3(botX + (barWidth/2), posY, 0.1));  
@@ -558,7 +558,7 @@ struct Graphics
 		posGeode->removeDrawables(0);
 		posGeode->addDrawable(posText);
 
-		Boat myBoatObj = (*(world->boats))[myBoat];
+		Boat *myBoatObj = world->boats->at(myBoat);
 		std::string soulString = std::to_string(myNumSouls) + " souls";
 		soulsText = NULL;
 		soulsText = createText(osg::Vec3(10.0f, 750.0f, 0.0f),
@@ -566,9 +566,9 @@ struct Graphics
 		soulsTextGeode->removeDrawables(0);
 		soulsTextGeode->addDrawable(soulsText);
 
-		updateSpeedBar(myBoatObj.getSpeed());
-		if ((int) myBoatObj.currentSouls > myNumSouls){
-			myNumSouls = myBoatObj.currentSouls;
+		updateSpeedBar(myBoatObj->getSpeed());
+		if ((int) myBoatObj->currentSouls > myNumSouls){
+			myNumSouls = myBoatObj->currentSouls;
 			updateMyMaxSpeedBar(baseSpeed + (soulSpeed * myNumSouls));
 		}
 		updatePositionBar(1000, world);
@@ -576,12 +576,12 @@ struct Graphics
 	int getPosition(GameState* world)
 	{
 		int pos = 1;
-		Boat myBoatObj = (*(world->boats))[myBoat];
-		float mySeg = myBoatObj.segPosition;
+		Boat *myBoatObj = world->boats->at(myBoat);
+		float mySeg = myBoatObj->segPosition;
 		for (auto it = world->boats->begin(); it != world->boats->end(); ++it){
 			int i = it - world->boats->begin();
 			if (i != myBoat){
-			   if(it->segPosition >	mySeg){
+			   if((*it)->segPosition > mySeg){
 				   pos++;
 			   }
 			}

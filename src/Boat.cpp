@@ -68,12 +68,11 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 }
 
 float Boat::forwardForce() {
-	int soulCount = std::min(currentSouls,BOAT_MAX_SOULS);
-	return 6.5f + 0.6f*soulCount;
+	return 6.5f + 0.6f * currentSouls;
 }
 
 void Boat::addSoul() {
-	currentSouls += 1;
+	currentSouls = std::min(5, currentSouls+1);
 	std::cout << "Now have " << currentSouls << " Souls" << std::endl;
 }
 
