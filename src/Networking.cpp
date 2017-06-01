@@ -401,7 +401,7 @@ void GameStatePatch::applyPatch(GameState *world)
 		world->boats->at(i).currentSouls = boatPatches->at(i)->_souls;
 
 		// Frame Number
-		world->boats->at(i).inputStream->setCurrentFrameNumber(boatPatches->at(i)->_frame);
+		//world->boats->at(i).inputStream->setCurrentFrameNumber(boatPatches->at(i)->_frame);
 	}
 }
 

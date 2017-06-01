@@ -80,7 +80,7 @@ char InputState::toChar()
 // Reads a single InputState
 InputState InputStream::readSingleState(int targetFrameNumber)
 {
-	//std::cout << "In readSingleState looking for frame number: " << std::to_string(targetFrameNumber) << "\n";
+	std::cout << "In readSingleState looking for frame number: " << std::to_string(targetFrameNumber) << "\n";
 	
 	// Try catch block
 	try
@@ -286,8 +286,8 @@ void AIInputStream::update(float deltaTime, GameState &gs) {
 void NetworkPlayerInputStream::update(float deltaTime, GameState &gs) {
 	// Here we grab the inputstate by using readSingleState on the latest frame number
 	//int latestFrame = getCurrentFrameNumber() - 0 - 1;
-	if (getCurrentFrameNumber() > 10)
-		lastInputState = readSingleState(getCurrentFrameNumber() - FRAME_LAG);
+	if (getCurrentFrameNumber() > FRAME_LAG)
+		lastInputState = readSingleState(getCurrentFrameNumber() - FRAME_LAG - 1);
 	else
 		lastInputState = readSingleState(getCurrentFrameNumber() - 1);
 	//std::cout << "In network update for player number " << std::to_string(playerNum) << " looking for frame number: " << std::to_string(latestFrame) << "\n";

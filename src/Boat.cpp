@@ -79,7 +79,13 @@ void Boat::addSoul() {
 void Boat::update(float deltaT, GameState &gs)
 {
 	inputStream->update(deltaT, gs);
-	InputState inputState = inputStream->lastInputState;
+	InputState inputState;
+
+	if (inputStream->getCurrentFrameNumber() > FRAME_LAG)
+		inputState = inputStream->readSingleState(inputStream->getCurrentFrameNumber() - FRAME_LAG - 1);
+	else
+		inputState = inputStream->readSingleState(inputStream->getCurrentFrameNumber() - 1);
+
 	if (!this->disabled) {
 		switch (inputState.acc)
 		{

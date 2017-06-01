@@ -14,7 +14,7 @@
 #include "GameState.hpp"
 
 #define MAX_FRAMES 50
-#define FRAME_LAG 1
+#define FRAME_LAG 10
 
 class GameState;
 class AI;
