@@ -94,6 +94,15 @@ double countDownTime = -5;
 osg::ref_ptr<osg::Geode> countDownGeode = new osg::Geode;
 osg::ref_ptr<osgText::Text> countDownText = new osgText::Text;
 
+std::vector<double> finishTimes; 
+std::vector<int> finishedPlayers;
+
+int myFinishPlace = -1;
+double myFinishTime;
+bool allBoatsFinished = false;
+
+
+
 
 
 // This stub will be swapped out to whatever our OSG implementation becomes
@@ -590,6 +599,21 @@ struct Graphics
 		return i + 1;
 	}
 					
+	int getPosition(GameState* world)
+	{
+		int pos = 1;
+		Boat *myBoatObj = world->boats->at(myBoat);
+		float mySeg = myBoatObj->segPosition;
+		for (auto it = world->boats->begin(); it != world->boats->end(); ++it){
+			int i = it - world->boats->begin();
+			if (i != myBoat){
+			   if((*it)->segPosition > mySeg){
+				   pos++;
+			   }
+			}
+		}
+		return pos;
+	}
 
 	MapDim* createTrack(osg::Geometry* polyGeom, GameState* world)
 	{
@@ -618,9 +642,87 @@ struct Graphics
 		return m;
 	}
 
-	void update(GameState* world) 
+	
+	void ShowTotalEndScreen(){
+		std::sort (finishTimes.begin(), finishTimes.end());
+		std::string text;
+		for(int i = 0; i < finishTimes.size(); i++){
+			int sec = (int) finishTimes[i];
+			int min = sec/60;
+			sec = sec%60;
+			std::string minS;
+			std::string secS;
+			if (min < 10){
+				minS = "0" + std::to_string(min);
+			}else{
+				minS = std::to_string(min);
+			}
+
+			if(sec < 10){
+				secS = "0" + std::to_string(sec);
+			}else{
+				secS = std::to_string(sec);
+			}
+			std::string timeS = minS + ":" + secS;
+			if(finishTimes[i] == myFinishTime){
+				text += timeS + "<- you\n";
+			}else{
+				text += timeS + "\n";
+			}
+		}
+		countDownText = NULL;
+		countDownText = createText(osg::Vec3(200.0f, 650.0f, 0.0f),
+				text, 20.0f);
+		countDownGeode->removeDrawables(0);
+		countDownGeode->addDrawable(countDownText);
+	}
+
+
+	void showMyEndScreen(int totalNumberBoats)
 	{
+		std::string text;
+		std::string text2;
+		std::string text3;
+		std::string text4;
+		int pos = myFinishPlace;
+		if(myFinishPlace == 1){
+			text =  "Congratulations!";
+			text2=	"You're cordially invited to";
+			text3 =	"stay in hell and do this";
+			text4 = "FOREVER!";
+		}else if(pos == 2){
+			text = "Congratulations for ...";
+			text2=  "almost making it.";
+			text3=		"But you didn't, so you lose.";
+			text4=		"Enjoy eternal purgatory!";
+		}else if(pos == totalNumberBoats - 1){
+			text = "Last place huh?";
+			text2=	"You're kicked out!";
+			text3=	"Go back to Earth and enjoy Earthly pleasures";
+			text4=	"like pooping on company time!";
+		}else{
+			text = "You were __ place.";
+			text2=		"You were so middle-of-the-pack";
+			text3=		"generic we didn't write anything";
+			text4= "Enjoy mediocrity";	
+		}
+		countDownText = createText(osg::Vec3(200.0f, 650.0f, 0.0f),
+								   text, 20.0f);
+		osg::ref_ptr<osgText::Text> oText2 = createText(osg::Vec3(200.0f, 620.0f, 0.0f), text2, 20.0f);
 		
+		osg::ref_ptr<osgText::Text> oText3 = createText(osg::Vec3(200.0f, 590.0f, 0.0f), text3, 20.0f);
+		osg::ref_ptr<osgText::Text> oText4 = createText(osg::Vec3(200.0f, 560.0f, 0.0f), text4, 20.0f);
+		countDownGeode->addDrawable(countDownText);
+		countDownGeode->addDrawable(oText2);
+
+		countDownGeode->addDrawable(oText3);
+		countDownGeode->addDrawable(oText4);
+	}
+
+
+	void updateNormal(GameState *world)
+	{
+			
 		//printf("in update\n");
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it) 
 		{
@@ -714,21 +816,61 @@ struct Graphics
 		updateSouls(world);
 		
 	}
-	int getPosition(GameState* world)
+	void update(GameState* world) 
 	{
-		int pos = 1;
-		Boat *myBoatObj = world->boats->at(myBoat);
-		float mySeg = myBoatObj->segPosition;
-		for (auto it = world->boats->begin(); it != world->boats->end(); ++it){
-			int i = it - world->boats->begin();
-			if (i != myBoat){
-			   if((*it)->segPosition > mySeg){
-				   pos++;
-			   }
+		
+		if(!allBoatsFinished){
+			int i;
+			bool justFinished = false;
+			//Check if boats finished race	
+			for(auto it = world->boats->begin(); it != world->boats->end(); ++it)
+			{
+				i = it - world->boats->begin();
+				bool exists = std::find(std::begin(finishedPlayers),
+										std::end(finishedPlayers),
+										i) != std::end(finishedPlayers);
+				//it just finished race, add time to finished arrays
+				if(!exists && (*it)->finishedRace){
+	
+				   time_t curTime;
+				   time(&curTime);
+				   double fTime = (int) difftime(curTime, startTime);
+				finishTimes.push_back(fTime);
+						if(i == myBoat){
+							 myFinishPlace = getPosition(world);
+							 //change startTime to reflect end time
+							 time(&startTime);
+							 myFinishTime = fTime;
+							 justFinished = true;
+						}
+				}
+			}
+			int totalNumberBoats = i + 1;
+			if(finishedPlayers.size() == totalNumberBoats){
+				allBoatsFinished = true;
+			}
+			if(myFinishPlace < 0){
+			//if i'm still racing
+				updateNormal(world);
+			}
+			//if i just finished
+			if(justFinished){
+				showMyEndScreen(totalNumberBoats);
+			}
+		}//if all boats already finished
+		/*
+		else{
+			//if i have already viewed my end screen for 30 seconds
+			time_t curTime;
+			time(&curTime);
+			if(difftime(curTime, startTime) > 30){
+			//	ShowTotalEndScreen();
+
 			}
 		}
-		return pos;
+		*/
 	}
+
 };
 struct Color {
 	double r;
