@@ -118,10 +118,10 @@ struct Graphics
 		osg::ref_ptr<osg::Geode> myGeode = new osg::Geode;
 		myGeode->addDrawable(myShape.get());
 
-		std::vector<Soul> *souls = world->souls;
+		std::vector<Soul*> *souls = world->souls;
 		for (int i = 0; i < std::min<int>(souls->size(), maxNumSouls); i++) {
 			transformSouls[i] = new PositionAttitudeTransform;
-			transformSouls[i]->setPosition(Vec3(souls->at(i).getX(), 0.5f, souls->at(i).getY()));
+			transformSouls[i]->setPosition(Vec3(souls->at(i)->getX(), 0.5f, souls->at(i)->getY()));
 			transformSouls[i]->addChild(myGeode);
 			root->addChild(transformSouls[i]);
 		}
@@ -251,11 +251,11 @@ int main(int argc, char** argv)
 	GameState *gState = new GameState(*m_track);
 
 	//Add souls to track
-	vec2* soulPos = m_track->getInitialSoulPositions(5);
-	for(int i = 0; i < 5; ++i) {
+	int numSouls = 6;
+	vec2* soulPos = m_track->getInitialSoulPositions(numSouls);
+	for(int i = 0; i < numSouls; ++i) {
 		Soul *s = new Soul(b2Vec2(soulPos[i].x, soulPos[i].y), 5.0f, *m_world);
-		std::cout << "(x,y): " << soulPos[i].x << ", " << soulPos[i].y << std::endl;
-		gState->addSoul(*s);
+		gState->addSoul(s);
 	}
 
 	//Add finish line to track
@@ -394,4 +394,5 @@ int main(int argc, char** argv)
 		viewer.frame();
 		std::this_thread::sleep_until(now + ++i * std::chrono::duration<double>(timestep));
 	}
+	return 0;
 }

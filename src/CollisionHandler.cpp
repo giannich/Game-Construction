@@ -28,11 +28,10 @@ void BoatCollisionHandler::handleCollision(EType other) {
 
 void SoulCollisionHandler::handleCollision(EType other) {
 	switch(other) {
-		case BoatType: {
+		case BoatType: 
 			parent->collected = true;
-			std::cout << "Delete Soul!" << std::endl;
+			std::cout << "Delete Soul!" << parent->collected << std::endl;
 			break;
-		}
 		default:
 			std::cout << "Soul hit a " << other << std::endl;
 			break;

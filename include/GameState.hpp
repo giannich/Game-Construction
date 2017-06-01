@@ -21,10 +21,10 @@ class GameState {
 public:
     Track *m_track;
     std::vector<Boat> *boats;
-    std::vector<Soul> *souls;
+    std::vector<Soul*> *souls;
     GameState(Track&);
     void addPlayer(Boat&);
-    void addSoul(Soul&);
+    void addSoul(Soul*);
     void update(float);
     void printDebugInfo();
 };
