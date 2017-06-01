@@ -4,6 +4,7 @@
 
 Soul::Soul(b2Vec2 initPos, float radius, b2World &world_ref) {
 	collected = false;
+	needsDelete = false;
 	collisionHandler = new SoulCollisionHandler(this);
     //Create rigidbody
     {
@@ -24,12 +25,12 @@ Soul::Soul(b2Vec2 initPos, float radius, b2World &world_ref) {
 }
 
 void Soul::update(float deltaT){ 
-	if(collected) {
+	if(needsDelete) {
 		b2Fixture *fd = rigidBody->GetFixtureList();
 		b2Filter filterData = fd->GetFilterData();
 		filterData.maskBits = 0x0000;
 		fd->SetFilterData(filterData);
-		collected = false;
+		needsDelete = false;
 	}
 }
 

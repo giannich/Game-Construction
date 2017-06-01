@@ -29,7 +29,7 @@
 #include "Boat.hpp"
 #include "GameState.hpp"
 #include "Soul.hpp"
-#include "AI_1_4.hpp"
+#include "AI_1_0.hpp"
 #include "Networking.hpp"
 #include "FinishLine.hpp"
 
@@ -259,12 +259,11 @@ int main(int argc, char** argv)
 	}
 
 	//Add finish line to track
-	int finishLineSeg = 80;
+	int finishLineSeg = 980;
 	vec2 finishL = m_track->l[finishLineSeg];
 	vec2 finishR = m_track->r[finishLineSeg];
 	vec2 finishM = mul(add(finishL,finishR),0.5f);
 	b2Vec2 finishLinePos = b2Vec2(finishM.x, finishM.y);
-	std::cout << "Finish line at: (" << finishM.x << ", " << finishM.y << ")" << std::endl;
 	FinishLine *finish = new FinishLine(finishLinePos, 17.0f, *m_world);
 
 	//Initialize Contact Listener for physics
@@ -318,7 +317,7 @@ int main(int argc, char** argv)
 		{
 			playerDiscardList.push_back(i);
 			std::cout << "Made ai boat at position number " << std::to_string(i) << "\n";
-			AI *ai = new AI_1_4(m_track,i,numBoats,17.0f);
+			AI *ai = new AI_1_0(m_track,i,numBoats,17.0f);
 			Boat *ai_boat = new AIBoat(startPos, *m_world, ai, i, &broadcastList);
 			gState->addPlayer(ai_boat);
 		}	
