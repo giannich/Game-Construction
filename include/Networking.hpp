@@ -10,6 +10,9 @@
 #define SERVER_PORT 12345
 #define CLIENT_PORT 12346
 #define GAMESTATE_PORT 12347
+#define ACK_SERVER_PORT 12350
+#define ACK_CLIENT_PORT 12351
+
 
 class InputStream;
 
@@ -97,6 +100,7 @@ void error(const char *msg);
 void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> gamestateBroadcastList);
 void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePatch *> *gsp_queue);
 unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, int>> *broadcastList, std::vector <std::pair<in_addr, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList, bool *isHost);
+void gamePrep(bool isHost, std::vector<int> *playerTypeList, std::vector <std::pair<in_addr, int>> *broadcastList);
 void receiveInputStream(GameState *world, bool isHost, std::vector<int> *playerDiscardList);
 void sendDatagram(void *msgObject, size_t objLen, in_addr *serverAddressBuffer, int destPortNum);
 int receiveDatagram(void *buffer, size_t bufferSize, int receivePortNum);

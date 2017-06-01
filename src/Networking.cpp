@@ -180,6 +180,35 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 	return randomSeed;
 }
 
+void gamePrep(bool isHost, std::vector<int> *playerTypeList, std::vector <std::pair<in_addr, int>> *broadcastList)
+{
+	// Server
+	if(isHost)
+	{
+		int playerNums = 0;
+		int *buffer = (int *) malloc(sizeof(int));
+		for (int i = 0; i < playerTypeList->size(); i++)
+			if (playerTypeList->at(i) == 1)
+				playerNums++;
+
+		std::cout << "There are a total of " << std::to_string(playerNums) << " players\n";
+
+		for (int i = 0; i < playerNums; i++)
+		{
+			std::cout << "Accepting Connection from player number " << std::to_string(i) << "\n";
+			receiveStream(buffer, sizeof(int), ACK_SERVER_PORT);
+		}
+
+		for (int i = 0; i < playerNums; i++)
+		{
+			std::cout << "Sending Connection from player number " << std::to_string(i) << "\n";
+			std::cout << "Broadcasts size is " << std::to_string(broadcastList->size()) << "\n";
+			sendStream(buffer, sizeof(int), &broadcastList->at(i).first, ACK_CLIENT_PORT);
+		}
+
+	}
+}
+
 /***************
 * InputStreams *
 ***************/

@@ -770,9 +770,19 @@ int main(int argc, char** argv)
 	std::queue<GameStatePatch *> gsp_queue;
 	std::thread networkReceivingThread(receiveInputStream, gState, isHost, &playerDiscardList);
 	std::thread gamestateReceivingThread(receiveGameStateInfo, gState, isHost, &gsp_queue);
+	std::thread gamePrepThread(gamePrep, isHost, &playerTypeList, &broadcastList);
 
 	// Start the osg Viewer and finish graphics init
 	osgViewer::Viewer viewer = g.startupScene(gState);
+
+	if(!isHost)
+	{
+		int *buffer = (int *) malloc(sizeof(int));
+		std::cout << "Sending Connection to server\n";
+		sendStream(buffer, sizeof(int), &broadcastList.at(0).first, ACK_SERVER_PORT);
+		std::cout << "Receiving Connection to server\n";
+		receiveStream(buffer, sizeof(int), ACK_CLIENT_PORT);
+	}
 
 	//Main game loop
 	int stopper = 0;
@@ -808,6 +818,8 @@ int main(int argc, char** argv)
 
 		//Take input from gamestate patch queue, if present
 		while(!gsp_queue.empty()) {
+			if(gsp_queue.front()->frame > stopper)
+				break;
 			if(gsp_queue.front()->frame == stopper) {
 				std::cout << "good update" << std::endl;
 				gsp_queue.front()->applyPatch(gState);
