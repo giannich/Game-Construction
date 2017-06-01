@@ -956,6 +956,8 @@ int main(int argc, char** argv)
 		while(!isReady)
 			std::cout << "Clients are not ready yet!\n";
 
+	std::this_thread::sleep_until(std::chrono::system_clock::now() + std::chrono::duration<double>(5));
+
 	//Main game loop
 	int stopper = 0;
 	float timestep = 1/60.0f;
@@ -991,14 +993,19 @@ int main(int argc, char** argv)
 		//Take input from gamestate patch queue, if present
 		while(!gsp_queue.empty()) {
 			if(gsp_queue.front()->frame > stopper)
-				break;
-			if(gsp_queue.front()->frame == stopper) {
+			{
+				stopper = gsp_queue.front()->frame;
+				gsp_queue.front()->applyPatch(gState);
+				delete gsp_queue.front();
+				gsp_queue.pop();
+			}
+			else if(gsp_queue.front()->frame == stopper) {
 				std::cout << "good update" << std::endl;
 				gsp_queue.front()->applyPatch(gState);
 				delete gsp_queue.front();
 				gsp_queue.pop();
 			}
-			if(gsp_queue.front()->frame < stopper) {
+			else if(gsp_queue.front()->frame < stopper) {
 				std::cout << "Late update!" << std::endl;
 				gsp_queue.front()->applyPatch(gState);
 				std::this_thread::sleep_until(now + (stopper - gsp_queue.front()->frame) * std::chrono::duration<double>(timestep));
