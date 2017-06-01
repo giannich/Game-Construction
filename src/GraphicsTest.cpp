@@ -1011,7 +1011,7 @@ int main(int argc, char** argv)
 		
 		//Update graphics camera
 		
-		Boat *boat = (*(gState->boats))[1];
+		Boat *boat = (*(gState->boats))[myBoat];
 		float x = boat->getX();
 		float y = boat->getY();
 		//double angle = boat.getRot();
