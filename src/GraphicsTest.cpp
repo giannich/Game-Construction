@@ -88,6 +88,10 @@ double soulSpeed = 4.7;
 double baseSpeed = 50;
 int myNumSouls = -1;
 
+double countDownTime = -5;
+osg::ref_ptr<osg::Geode> countDownGeode = new osg::Geode;
+osg::ref_ptr<osgText::Text> countDownText = new osgText::Text;
+
 // This stub will be swapped out to whatever our OSG implementation becomes
 struct Graphics
 {
@@ -118,7 +122,6 @@ struct Graphics
 		std::cout << "Node PTR: "<< airboat << std::endl;
 
 		//Set up ui minimap
-		//Set up minimap camera
 		osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
 
 		unsigned int width, height;
@@ -150,10 +153,14 @@ struct Graphics
 							 40.0f);
 		soulsText = createText(osg::Vec3(10.0f, 750.0f, 0.0f),
 							   "0 souls",
-							   40.0f);
+							   20.0f);
+		countDownText = createText(osg::Vec3(250.0f, 650.0f, 0.0f),
+								   "get ready ...",
+								   30.0f);
 		timeGeode->addDrawable(timeText);
 		posGeode->addDrawable(posText);
 		soulsTextGeode->addDrawable(soulsText);
+		countDownGeode->addDrawable(countDownText);
 
 		//create speed
 		createSpeedBar(0);
@@ -165,6 +172,7 @@ struct Graphics
 		hudCamera->addChild(timeGeode.get());
 		hudCamera->addChild(posGeode.get());
 		hudCamera->addChild(soulsTextGeode.get());
+		hudCamera->addChild(countDownGeode.get());
 
 		hudCamera->addChild(myBarGeode);
 		hudCamera->addChild(speedBarGeode);
@@ -533,30 +541,50 @@ struct Graphics
 			transform[i]->setPosition(Vec3(x, 0.5f, y));
 			transform[i]->setAttitude(Quat(rot + M_PI / 2.0f, Vec3f(0, -1, 0)));
 		}
-		time_t curTime;
-		time(&curTime);
-		int sec = (int) difftime(curTime, startTime);
-		int min = sec / 60;
-		sec = sec % 60;
-		std::string minS;
-		std::string secS;
-		if (min < 10){
-			minS = "0" + std::to_string(min);
-		}else{
-			minS = std::to_string(min);
-		}
+		if (countDownTime > 0){
+			time_t curTime;
+			time(&curTime);
+			int sec = (int) difftime(curTime, startTime);
+			int min = sec / 60;
+			sec = sec % 60;
+			std::string minS;
+			std::string secS;
+			if (min < 10){
+				minS = "0" + std::to_string(min);
+			}else{
+				minS = std::to_string(min);
+			}
 
-		if(sec < 10){
-			secS = "0" + std::to_string(sec);
-		}else{
-			secS = std::to_string(sec);
+			if(sec < 10){
+				secS = "0" + std::to_string(sec);
+			}else{
+				secS = std::to_string(sec);
+			}
+			std::string timeS = minS + ":" + secS;
+			timeText = NULL;
+			timeText = createText(osg::Vec3(650.0f, 750.0f, 0.0f),
+								  timeS, 40.00f);
+			timeGeode->removeDrawables(0);
+			timeGeode->addDrawable(timeText);
+		}else if (countDownTime == -1 || countDownTime == -2 || 
+				  countDownTime == -3 ){
+			std::string sec = std::to_string((int)(countDownTime * -1)) + "...";
+			countDownText = NULL;
+			countDownText = createText(osg::Vec3(350.0f, 650.0f, 0.0f),
+									   sec, 60.0f);
+			countDownGeode->removeDrawables(0);
+			countDownGeode->addDrawable(countDownText);
+		}else if (countDownTime == -0.5){
+			countDownText = NULL;
+			countDownText = createText(osg::Vec3(350.0f, 650.0f, 0.0f),
+									   "go!!!", 40.0f);
+			countDownGeode->removeDrawables(0);
+			countDownGeode->addDrawable(countDownText);
+		}else if(countDownTime == 0){
+			countDownText = NULL;
+			countDownGeode->removeDrawables(0);
 		}
-		std::string timeS = minS + ":" + secS;
-		timeText = NULL;
-		timeText = createText(osg::Vec3(650.0f, 750.0f, 0.0f),
-							  timeS, 40.04f);
-		timeGeode->removeDrawables(0);
-		timeGeode->addDrawable(timeText);
+									   	
 
 		int pos = getPosition(world);
 		std::string posString;
@@ -710,7 +738,6 @@ int main(int argc, char** argv)
 	int i = 0;
 	float oldAngle = 0; 
 	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-	time(&startTime);
 	while(!viewer.done()) 
 	{
 		stopper++;
@@ -719,7 +746,19 @@ int main(int argc, char** argv)
 		if (stopper == 300) {
 			for(auto it = gState->boats->begin(); it != gState->boats->end(); ++it) {
 				(*it)->disabled = false; //Enable input for all players
+				time(&startTime);
+				countDownTime = 0;
 			}
+		}else if (stopper == 120){
+			countDownTime = -3;
+		}else if (stopper == 180){
+			countDownTime = -2;
+		}else if (stopper == 240){
+			countDownTime = -1;
+		}else if (stopper == 280){
+			countDownTime = -0.5;
+		}else if(stopper == 301){
+			countDownTime = 1;
 		}
 
 		//Step the physics engine forward 1 frame
