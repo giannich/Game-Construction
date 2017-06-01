@@ -656,40 +656,42 @@ struct Graphics
 	void showMyEndScreen(int totalNumberBoats)
 	{
 		std::string text;
+		std::string text2;
+		std::string text3;
+		std::string text4;
 		int pos = myFinishPlace;
 		if(myFinishPlace == 1){
-			text =  "Congratulations!"
-				    "You are the coolest and fastest"
-					"ferryman there is!"
-					"You're cordially invited to"
-					"stay in hell and do this forever!"
-					"Have fun serving the underworld"
-					"FOR ETERNITY!";
+			text =  "Congratulations!";
+			text2=	"You're cordially invited to";
+			text3 =	"stay in hell and do this";
+			text4 = "FOREVER!";
 		}else if(pos == 2){
-			text = "Congratulations for ..."
-				    "almost making it."
-					"But you didn't, so you don't"
-					"get anything."
-					"Such is life."
-					"Enjoy eternal purgatory!";
+			text = "Congratulations for ...";
+			text2=  "almost making it.";
+			text3=		"But you didn't, so you lose.";
+			text4=		"Enjoy eternal purgatory!";
 		}else if(pos == totalNumberBoats - 1){
-			text = "Last place huh?"
-					"Why even bother?"
-					"We don't need you"
-					"underachievers here."
-					"Go back to Earth and"
-					"celebrate pooping on"
-					"company time in your 9-5 job!";
+			text = "Last place huh?";
+			text2=	"You're kicked out!";
+			text3=	"Go back to Earth and enjoy Earthly pleasures";
+			text4=	"like pooping on company time!";
 		}else{
-			text = "You were __ place."
-					"You were so middle-of-the-pack"
-					"generic we didn't write anything"
-					"specific fo you."
-					"Enjoy eternal purgatory!";
+			text = "You were __ place.";
+			text2=		"You were so middle-of-the-pack";
+			text3=		"generic we didn't write anything";
+			text4= "Enjoy mediocrity";	
 		}
 		countDownText = createText(osg::Vec3(200.0f, 650.0f, 0.0f),
 								   text, 20.0f);
+		osg::ref_ptr<osgText::Text> oText2 = createText(osg::Vec3(200.0f, 620.0f, 0.0f), text2, 20.0f);
+		
+		osg::ref_ptr<osgText::Text> oText3 = createText(osg::Vec3(200.0f, 590.0f, 0.0f), text3, 20.0f);
+		osg::ref_ptr<osgText::Text> oText4 = createText(osg::Vec3(200.0f, 560.0f, 0.0f), text4, 20.0f);
 		countDownGeode->addDrawable(countDownText);
+		countDownGeode->addDrawable(oText2);
+
+		countDownGeode->addDrawable(oText3);
+		countDownGeode->addDrawable(oText4);
 	}
 
 
@@ -830,14 +832,17 @@ struct Graphics
 				showMyEndScreen(totalNumberBoats);
 			}
 		}//if all boats already finished
+		/*
 		else{
 			//if i have already viewed my end screen for 30 seconds
 			time_t curTime;
 			time(&curTime);
 			if(difftime(curTime, startTime) > 30){
-				ShowTotalEndScreen();
+			//	ShowTotalEndScreen();
+
 			}
 		}
+		*/
 	}
 
 };
