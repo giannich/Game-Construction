@@ -52,7 +52,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 
 		b2FixtureDef fd;
 		fd.density = 0.0012f;
-		fd.restitution = 0.2f;
+		fd.restitution = -1.1f;
 
 		fd.shape = &front;
 		rigidBody->CreateFixture(&fd);

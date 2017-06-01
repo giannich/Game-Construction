@@ -6,6 +6,7 @@
 #include <osg/Group>
 #include <osg/PositionAttitudeTransform>
 #include <osg/Quat>
+#include <osg/Material>
 
 #include <osgDB/ReadFile>
 #include <deque>
@@ -70,6 +71,7 @@ struct Graphics
 		//Create souls and load in scene
 		loadSouls(scene, world);
 
+		//Library debug
 		std::deque<std::string> libs = osgDB::Registry::instance()->getLibraryFilePathList();
 		for(auto it = libs.begin(); it != libs.end(); ++it)
 			std::cout << "Lib pah: " << *it << std::endl;
@@ -133,33 +135,23 @@ struct Graphics
 	
 	Group* loadBoats(Group *root, GameState *world)
 	{
-		osg::ref_ptr<osg::ShapeDrawable> myShape = new osg::ShapeDrawable;
-		osg::ref_ptr<osg::ShapeDrawable> otherShape = new osg::ShapeDrawable;
+		osg::ref_ptr<Node> airboat = osgDB::readNodeFile("models/zelda.stl");
 
-		osg::Capsule *cap = new osg::Capsule(osg::Vec3(0.0f, 0.0f, 0.0f), 
-											 capLen, capWid);
-		myShape->setShape(cap);
-		otherShape->setShape(cap);
-
-		myShape->setColor(osg::Vec4(0.388f, 0.890f, 0.623f, 0.0f));
-		otherShape->setColor(osg::Vec4(0.8f, 0.0f, 0.0f, 0.0f));
-		
-		osg::ref_ptr<osg::Geode> myGeode = new osg::Geode;
-		myGeode->addDrawable(myShape.get());
-
-		osg::ref_ptr<osg::Geode> anotherGeode = new osg::Geode;
-		anotherGeode->addDrawable(otherShape.get());
+		osg::PositionAttitudeTransform *airboat_aligned = new PositionAttitudeTransform;
+		airboat_aligned->setPosition(Vec3f(0.0f,-6.0f,0.0f));
+		airboat_aligned->setAttitude(Quat(M_PI / 2.0f, Vec3f(-1, 0, 0)) * Quat(M_PI / 2.0f,Vec3f(0,-1,0))); // This might change if we import a different model
+		osg::Material *red = new osg::Material;
+		red->setDiffuse(osg::Material::FRONT, Vec4(0.3f, 0.0f, 0.0f, 1.0f));
+		airboat_aligned->getOrCreateStateSet()->setAttribute(red, osg::StateAttribute::OVERRIDE);
+		airboat_aligned->addChild(airboat);
 
 		for(auto it = world->boats->begin(); it != world->boats->end(); ++it){
 			int i = it - world->boats->begin();
 			transform[i] = new PositionAttitudeTransform;
-			transform[i]->setPosition(Vec3((*it)->getX(), 0.5f, (*it)->getY()));
-			transform[i]->setAttitude(Quat((*it)->getRot(), Vec3f(0, -1, 0)));
-			if (i != myBoat) {
-				transform[i]->addChild(anotherGeode);
-			} else {
-				transform[i]->addChild(myGeode);
-			}
+			transform[i]->setPosition(Vec3((*it)->getX(), 0.0f, (*it)->getY()));
+			transform[i]->setAttitude(osg::Quat(0.0, osg::Vec3f(0, 0, 1)));
+			transform[i]->setScale(Vec3(0.1f,0.1f,0.1f));
+			transform[i]->addChild(airboat_aligned);
 			root->addChild(transform[i]);
 		}
 		return transform[myBoat];
@@ -229,7 +221,7 @@ struct Graphics
 		//	printf("modify boat %d\n", i);
 		//	printf("set (%f, %f)\n", x, y);
 			transform[i]->setPosition(Vec3(x, 0.5f, y));
-			transform[i]->setAttitude(Quat(rot, Vec3f(0, -1, 0)));
+			transform[i]->setAttitude(Quat(rot + M_PI / 2.0f, Vec3f(0, -1, 0)));
 		}
 	}
 };
