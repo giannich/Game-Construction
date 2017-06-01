@@ -95,12 +95,12 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 			std::cout << "Successfully created player number " << std::to_string(i) << "\n";
 		}
 
-		// Waiting on acks
+		/* Waiting on acks
 		for(int i = 1; i <= expectedPlayerNums; i++)
 		{
 			std::cout << "Waiting on acks\n";
 			receiveStream(intArrBuffer, bufferSize * 2, SERVER_PORT);
-		}
+		} */
 
 		// Loop for creating ai players
 		for(int i = 0; i < aiPlayerNums; i++)
@@ -119,7 +119,7 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 
 		// Sends info to all players
 		for(int i = 0; i < expectedPlayerNums; i++)
-			sendStream(unsignedBuffer, sizeof(unsigned int) * 2, &broadcastList->at(i).first, broadcastList->at(i).second);
+			sendDatagram(unsignedBuffer, sizeof(unsigned int) * 2, &broadcastList->at(i).first, broadcastList->at(i).second);
 
 		free(intBuffer);
 		free(unsignedBuffer);
@@ -128,7 +128,6 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 	}
 	else // Client Code
 	{
-		std::cout << "hello\n";
 		// Server's ip address
 		char *destIPAddress = (char *) malloc(sizeof(char) * 16);
 		destIPAddress = argv[2];
@@ -147,11 +146,11 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 		receiveStream(intBuffer, bufferSize, CLIENT_PORT);
 		playerNum = *intBuffer;
 		std::cout << "Assigned to player number " << std::to_string(playerNum) << "\n";
-		sendStream(intArrBuffer, bufferSize * 2, hostAddress, SERVER_PORT);
+		//sendStream(intArrBuffer, bufferSize * 2, hostAddress, SERVER_PORT);
 
 		// Receives the total number of players and the seed number
 		unsigned int *unsignedBuffer = (unsigned int *) malloc(sizeof(unsigned int) * 2);
-		receiveStream(unsignedBuffer, sizeof(unsigned int) * 2, CLIENT_PORT);
+		receiveDatagram(unsignedBuffer, sizeof(unsigned int) * 2, CLIENT_PORT);
 		totalNumberOfPlayers = unsignedBuffer[0];
 		randomSeed = unsignedBuffer[1];
 		std::cout << "There are a total of " << std::to_string(totalNumberOfPlayers) << " players in this game\n";
@@ -160,7 +159,7 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 		// The broadcastlist will only have the server
 		broadcastList->push_back(std::make_pair(*hostAddress, SERVER_PORT));
 
-		// NEEDS TO CREATE NETWORK BOATS HERE IN A FOR LOOP
+		// Creates the playerTypeList
 		for (int i = 0; i < totalNumberOfPlayers; i++)
 		{
 			// If local
