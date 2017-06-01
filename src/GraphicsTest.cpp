@@ -340,12 +340,18 @@ int main(int argc, char** argv)
 	while(!viewer.done()) 
 	{
 		stopper++;
-		//if (stopper > 100)
-		//	break;
+
+		//End of pre-race countdown
+		if (stopper == 300) {
+			for(auto it = gState->boats->begin(); it != gState->boats->end(); ++it) {
+				(*it)->disabled = false; //Enable input for all players
+			}
+		}
+
 		//Step the physics engine forward 1 frame
 		m_world->Step(timestep,10,10);
-		//std::cout << "Position: " << m_boat->rigidBody->GetPosition().x << m_boat->rigidBody->GetPosition().y << std::endl;
 
+		//Take input from gamestate patch queue, if present
 		while(!gsp_queue.empty()) {
 			if(gsp_queue.front()->frame == stopper) {
 				std::cout << "good update" << std::endl;
@@ -354,7 +360,7 @@ int main(int argc, char** argv)
 				gsp_queue.pop();
 			}
 			if(gsp_queue.front()->frame < stopper) {
-				std::cout << "Missed update!" << std::endl;
+				std::cout << "Late update!" << std::endl;
 				gsp_queue.front()->applyPatch(gState);
 				std::this_thread::sleep_until(now + (stopper - gsp_queue.front()->frame) * std::chrono::duration<double>(timestep));
 				delete gsp_queue.front();

@@ -12,6 +12,7 @@
 Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 {
 	finishedRace = false;
+	disabled = true; //Start the race in a disabled state, then enable 5 seconds in
 	playerNum = pNum;
 	currentSouls = 0;
 	soulCollectionRadius = 5.0f;
@@ -19,7 +20,6 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 	reverseForce = -2.0f;
 	turnRate = 0.9f;
 	segPosition = -0.5;
-	disabled = false;
 
 	collisionHandler = new BoatCollisionHandler(this);
 	//Create rigidbody
