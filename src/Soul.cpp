@@ -25,12 +25,11 @@ Soul::Soul(b2Vec2 initPos, float radius, b2World &world_ref) {
 
 void Soul::update(float deltaT){ 
 	if(collected) {
-		std::cout << "Disabling collision for Soul!" << std::endl;
 		b2Fixture *fd = rigidBody->GetFixtureList();
 		b2Filter filterData = fd->GetFilterData();
 		filterData.maskBits = 0x0000;
 		fd->SetFilterData(filterData);
-		std::cout << fd->GetFilterData().categoryBits << " | " << fd->GetFilterData().maskBits << " | " << fd->GetFilterData().groupIndex << std::endl;
+		collected = false;
 	}
 }
 
