@@ -213,7 +213,7 @@ struct Graphics
 			heightField->setYInterval(2.5f);
 			for (int r = 0; r < heightField->getNumRows(); r++) {
 				for (int c = 0; c < heightField->getNumColumns(); c++) {
-					heightField->setHeight(c, r, ((*heightMap->data(c, r)) / 255.0f) * 200.0f);
+					heightField->setHeight(c, r, ((*heightMap->data(c, r)) / 255.0f) * 100.0f);
 				}
 			}
 
@@ -226,7 +226,7 @@ struct Graphics
 			heightField2->setYInterval(2.5f);
 			for (int r = 0; r < heightField->getNumRows(); r++) {
 				for (int c = 0; c < heightField->getNumColumns(); c++) {
-					heightField->setHeight(c, r, ((*heightMap->data(c, r)) / 255.0f) * 200.0f);
+					heightField->setHeight(c, r, ((*heightMap->data(c, r)) / 255.0f) * 100.0f);
 				}
 			}
 
