@@ -1,7 +1,6 @@
 #!/bin/bash
 
-#DYLIBS=`find lib/*.dylib -type f`
-DYLIBS=`find lib/osgPlugins-3.4.0/*.so -type f`
+DYLIBS=`find lib/*.dylib -type f`
 
 for lib in $DYLIBS; do
 	echo "Fixing $lib:"

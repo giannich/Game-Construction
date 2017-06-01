@@ -30,7 +30,7 @@ public:
 
 class FinishLineCollisionHandler : CollisionHandler {
 public:
-	FinishLineCollisionHandler() : CollisionHandler(FinishLineType) {}
+	FinishLineCollisionHandler(FinishLine *f) : CollisionHandler(FinishLineType) {}
 	void handleCollision(EType other);
 };
 

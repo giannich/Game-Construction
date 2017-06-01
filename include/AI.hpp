@@ -2,6 +2,7 @@
 
 #include "Track.hpp"
 #include "InputStream.hpp"
+#include "Soul.hpp"
 
 class Boat;
 

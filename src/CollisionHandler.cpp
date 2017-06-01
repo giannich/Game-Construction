@@ -9,7 +9,7 @@ void BoatCollisionHandler::handleCollision(EType other) {
 	switch (other) {
 		case SoulType:
 			std::cout << "a Soul!" << std::endl;
-			parent->pickingUpSoul = true;
+			parent->addSoul();
 			break;
 		case WallType:
 			std::cout << "the wall!" << std::endl;
@@ -20,7 +20,6 @@ void BoatCollisionHandler::handleCollision(EType other) {
 		case FinishLineType:
 			std::cout << "the Finish Line!" << std::endl;
 			parent->disabled = true;
-			parent->finishedRace = true;
 			break;
 		default:
 			break;
@@ -29,23 +28,15 @@ void BoatCollisionHandler::handleCollision(EType other) {
 
 void SoulCollisionHandler::handleCollision(EType other) {
 	switch(other) {
-		case BoatType: 
+		case BoatType: {
 			parent->collected = true;
-			parent->needsDelete = true;
-			std::cout << "Delete Soul!" << parent->collected << std::endl;
+			std::cout << "Delete Soul!" << std::endl;
 			break;
+		}
 		default:
 			std::cout << "Soul hit a " << other << std::endl;
 			break;
 	}
 }
 
-void FinishLineCollisionHandler::handleCollision(EType other) {
-	switch(other) {
-		case BoatType:
-			std::cout << "Boat crossed the finish line!" << std::endl;
-			break;
-		default:
-			break;
-	}
-}
+void FinishLineCollisionHandler::handleCollision(EType other) { }

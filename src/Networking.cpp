@@ -27,11 +27,13 @@ extern int h_errno;
 unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, int>> *broadcastList, std::vector <std::pair<in_addr, int>> *gamestateBroadcastList, std::vector<int> *playerTypeList, bool *isHost)
 {
 	int playerNum;
+	int expectedPlayerNums;
+	int aiPlayerNums;
 	int totalNumberOfPlayers;
 	unsigned int randomSeed;
 
 	// Client or host
-	if(!strcmp(argv[1], "host") && (argc == 6))
+	if(!strcmp(argv[1], "host") && (argc == 4))
 	{
 		std::cout << "I am a host\n";
 		*isHost = true;
@@ -43,7 +45,7 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 	}
 	else
 	{
-		std::cout << "Usage: ./gtest <host> <playerNums> <aiPlayerType1> <aiPlayerType2> <aiPlayerType3>\n";
+		std::cout << "Usage: ./gtest <host> <playerNums> <aiPlayerNums>\n";
 		std::cout << "Usage: ./gtest <client> <serverIPAddress> <aiPlayerNums>\n";
 		exit(1);
 	}
@@ -51,12 +53,10 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 	if(*isHost)
 	{
 		// Expected number of players
-		int expectedPlayerNums = atoi(argv[2]);
+		expectedPlayerNums = atoi(argv[2]);
 
 		// Number of AI players
-		int aiPlayerType1 = atoi(argv[3]);
-		int aiPlayerType2 = atoi(argv[4]);
-		int aiPlayerType3 = atoi(argv[5]);
+		aiPlayerNums = atoi(argv[3]);
 
 		// Player number for host is always 0
 		playerNum = 0;
@@ -95,18 +95,19 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 			std::cout << "Successfully created player number " << std::to_string(i) << "\n";
 		}
 
+		/* Waiting on acks
+		for(int i = 1; i <= expectedPlayerNums; i++)
+		{
+			std::cout << "Waiting on acks\n";
+			receiveStream(intArrBuffer, bufferSize * 2, SERVER_PORT);
+		} */
+
 		// Loop for creating ai players
-		for(int i = 0; i < aiPlayerType1; i++)
+		for(int i = 0; i < aiPlayerNums; i++)
 			playerTypeList->push_back(2);
 
-		for(int i = 0; i < aiPlayerType2; i++)
-			playerTypeList->push_back(3);
-
-		for(int i = 0; i < aiPlayerType3; i++)
-			playerTypeList->push_back(4);
-
 		// Finally sends players a message indicating the total number of players and the random seed
-		totalNumberOfPlayers = expectedPlayerNums + aiPlayerType1 + aiPlayerType2 + aiPlayerType3 + 1;
+		totalNumberOfPlayers = expectedPlayerNums + aiPlayerNums + 1;
 		randomSeed = time(NULL);
 		unsigned int *unsignedBuffer = (unsigned int *) malloc(sizeof(unsigned int) * 2);
 		unsignedBuffer[0] = totalNumberOfPlayers;
@@ -186,6 +187,7 @@ unsigned int gameSetup(int argc, char **argv, std::vector <std::pair<in_addr, in
 
 // Encodes the InputState and broadcasts it to everyone in the broadcast list
 // This will be called by the LocalPlayerInputStream, AIInputStream, and NetworkPlayerInputStream
+// TODO: FIGURE OUT WHERE TO CALL THIS!!!
 void Networking::broadcastInputStream()
 {
 	//std::cout << "Sending a new InputStream packet to " << std::to_string(broadcastSize) << " other receivers\n";
@@ -195,7 +197,7 @@ void Networking::broadcastInputStream()
 
 	// Broadcasts the outputlist to all the destination addresses
 	for (unsigned int i = 0; i < broadcastSize; i++)
-		sendDatagram(outputList, MAX_FRAMES + 12, &broadcastTargets->at(i).first, broadcastTargets->at(i).second);
+		sendDatagram(outputList, MAX_FRAMES + 8, &broadcastTargets->at(i).first, broadcastTargets->at(i).second);
 }
 
 // Receives a datagram and decodes it to the correct InputStream
@@ -203,7 +205,7 @@ void Networking::broadcastInputStream()
 void receiveInputStream(GameState *world, bool isHost, std::vector<int> *playerDiscardList)
 {
 	// Mallocs the encodedInputStream 
-	char *encodedInputStream = (char *) malloc((MAX_FRAMES + 12) * sizeof(char));
+	char *encodedInputStream = (char *) malloc((MAX_FRAMES + 8) * sizeof(char));
 	unsigned int playerNumber;
 	int receivePortNum;
 
@@ -217,7 +219,7 @@ void receiveInputStream(GameState *world, bool isHost, std::vector<int> *playerD
 	{
 		//std::cout << "Waiting on new packets\n";
 		// Receives a datagram
-		receiveDatagram(encodedInputStream, MAX_FRAMES + 12, receivePortNum);
+		receiveDatagram(encodedInputStream, MAX_FRAMES + 8, receivePortNum);
 
 		// Decode the Player Number
 		playerNumber = ((unsigned int) (encodedInputStream[MAX_FRAMES + 4]) & 255) +
@@ -232,13 +234,27 @@ void receiveInputStream(GameState *world, bool isHost, std::vector<int> *playerD
 		//std::cout << "Received packet from player number " << std::to_string(playerNumber) << "\n";
 
 		// Decode the InputStream in the right boat
-		world->boats->at(playerNumber)->inputStream->decodeInputStates(encodedInputStream);
+		world->boats->at(playerNumber).inputStream->decodeInputStates(encodedInputStream);
 	}
 }
 
 /*************
 * GameStates *
 *************/
+
+/* 
+Name:						Type:			Getter:					Setter:
+
+- Linear Velocity X			b2Vec2			GetLinearVelocity()		SetLinearVelocity(const b2Vec2& v)
+- Rotational Velocity 		float32			GetAngularVelocity()	SetAngularVelocity(float32 omega)
+- Orientation 				float32			GetAngle()				SetTransform(const b2Vec2& position, float32 angle)
+- Position 					b2Vec2			GetPosition()			SetTransform(const b2Vec2& position, float32 angle)
+- Current Souls 			Int 			currentSouls 			currentSouls
+- InputStream 				InputStream 	inputStream 			inputStream
+
+http://stackoverflow.com/questions/2114466/creating-json-arrays-in-boost-using-property-trees
+
+*/
 
 // Encodes a GameState and sends it through UDP
 void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> gamestateBroadcastList)
@@ -250,21 +266,12 @@ void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> g
 	int playerNum = world->boats->size();
 	pt.put("playerNum", playerNum);
 
-	// Get the number of souls
-	int soulNum = world->souls->size();
-	pt.put("soulNum", soulNum);
-
-	// Get the latest frome number
-	int latestFrameNum = world->boats->at(0)->inputStream->getCurrentFrameNumber();
-	pt.put("frameNum", latestFrameNum);
-
-
 	// For each player, encode the information into a ptree
 	// And add the ptree to the ptree list
 	for (int i = 0; i < playerNum; i++)
 	{
 		// It is still a pointer here, so I don't think we can dynamically do this...
-		Boat playerBoat = *(world->boats->at(i));
+		Boat playerBoat = world->boats->at(i);
 
 		pt.put("linearVelocityX" + std::to_string(i), playerBoat.rigidBody->GetLinearVelocity().x);
 		pt.put("linearVelocityY" + std::to_string(i), playerBoat.rigidBody->GetLinearVelocity().y);
@@ -273,16 +280,6 @@ void sendGameStateInfo(GameState *world, std::vector <std::pair<in_addr, int>> g
 		pt.put("positionX" + std::to_string(i), playerBoat.rigidBody->GetPosition().x);
 		pt.put("positionY" + std::to_string(i), playerBoat.rigidBody->GetPosition().y);
 		pt.put("currentSouls" + std::to_string(i), playerBoat.currentSouls);
-	}
-
-	// For each soul, encode the information into a ptree
-	// And add the ptree to the ptree list
-	for (int i = 0; i < soulNum; i++)
-	{
-		pt.put("collected" + std::to_string(i), world->souls->at(i)->collected);
-		pt.put("sPositionX" + std::to_string(i), world->souls->at(i)->rigidBody->GetPosition().x);
-		pt.put("sPositionY" + std::to_string(i), world->souls->at(i)->rigidBody->GetPosition().y);
-		pt.put("sOrientation" + std::to_string(i), world->souls->at(i)->rigidBody->GetAngle());
 	}
 
 	// Convert ptree into a stringstream
@@ -328,7 +325,7 @@ void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePat
 		ss << midString.substr(0, msgLen);
 
 		// Debugging info
-		//std::cout << ss.str();
+		std::cout << ss.str();
 
 		// Convert stringstream to a ptree
 		boost::property_tree::ptree pt;
@@ -338,9 +335,7 @@ void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePat
 
 		// Gets the player number, and if it fails, will get 0
 		int playerNum = pt.get<int>("playerNum", 0.0f);
-		int soulNum = pt.get<int>("soulNum", 0.0f);
-		int frameNum = pt.get<int>("frameNum", 0.0f);
-		GameStatePatch *aPatch = new GameStatePatch(playerNum, soulNum, frameNum);
+		GameStatePatch *aPatch = new GameStatePatch(playerNum);
 
 		// Iterates through the boat list
 		for (int i = 0; i < playerNum; i++)
@@ -360,24 +355,8 @@ void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePat
 			// Current Souls
 			int souls = pt.get<int>("currentSouls" + std::to_string(i));
 			
-			// Creates and Pushes back the boatpatch
 			BoatPatch *aBoatPatch = new BoatPatch(velx, vely, rotvel, orient, posx, posy, souls);
 			aPatch->boatPatches->push_back(aBoatPatch);
-		}
-
-		for (int i = 0; i < soulNum; i++)
-		{
-			// Collected Status
-			bool collected = pt.get<bool>("collected" + std::to_string(i));
-			
-			// Orientation and Position
-			float32 sorient = pt.get<float32>("sOrientation" + std::to_string(i));
-			float32 sposx = pt.get<float32>("sPositionX" + std::to_string(i));
-			float32 sposy = pt.get<float32>("sPositionY" + std::to_string(i));
-
-			// Creates and Pushes back the soulpatch
-			SoulPatch *aSoulPatch = new SoulPatch(collected, sorient, sposx, sposy);
-			aPatch->soulPatches->push_back(aSoulPatch);
 		}
 
 		// Finally push the gamestatepatch into the queue
@@ -397,40 +376,22 @@ BoatPatch::BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient,
 	_souls = souls;
 }
 
-// Constructor
-SoulPatch::SoulPatch(bool collected, float32 sorient, float32 sposx, float32 sposy)
-{
-	_collected = collected;
-	_sorient = sorient;
-	_sposx = sposx;
-	_sposy = sposy;
-}
-
 // Applies the patches to original gamestate
 void GameStatePatch::applyPatch(GameState *world)
 {
 	for (int i = 0; i < playerNum; i++)
 	{
 		// Linear Velocity
-		world->boats->at(i)->rigidBody->SetLinearVelocity(b2Vec2(boatPatches->at(i)->_velx, boatPatches->at(i)->_vely));
+		world->boats->at(i).rigidBody->SetLinearVelocity(b2Vec2(boatPatches->at(i)->_velx, boatPatches->at(i)->_vely));
 
 		// Rotational Velocity
-		world->boats->at(i)->rigidBody->SetAngularVelocity(boatPatches->at(i)->_rotvel);
+		world->boats->at(i).rigidBody->SetAngularVelocity(boatPatches->at(i)->_rotvel);
 
 		// Orientation & Position
-		world->boats->at(i)->rigidBody->SetTransform(b2Vec2(boatPatches->at(i)->_posx, boatPatches->at(i)->_posy), boatPatches->at(i)->_orient);
+		world->boats->at(i).rigidBody->SetTransform(b2Vec2(boatPatches->at(i)->_posx, boatPatches->at(i)->_posy), boatPatches->at(i)->_orient);
 
 		// Current Souls
-		world->boats->at(i)->currentSouls = boatPatches->at(i)->_souls;
-	}
-
-	for (int i = 0; i < soulNum; i++)
-	{
-		// Collected
-		world->souls->at(i)->collected = soulPatches->at(i)->_collected;
-
-		// Orientation & Position
-		world->souls->at(i)->rigidBody->SetTransform(b2Vec2(soulPatches->at(i)->_sposx, soulPatches->at(i)->_sposy), soulPatches->at(i)->_sorient);
+		world->boats->at(i).currentSouls = boatPatches->at(i)->_souls;
 	}
 }
 
@@ -517,6 +478,52 @@ int receiveDatagram(void *buffer, size_t bufferSize, int receivePortNum)
 
 	return msgLen;
 }
+
+/* Function for accepting a datagram
+int receiveDatagramAddr(void *buffer, size_t bufferSize, int receivePortNum, in_addr *serverAddressBuffer)
+{
+	// Initialize some values
+	int msgLen, reuseTrue;
+	socklen_t senderLength;
+	struct sockaddr_in receiverAddress, senderAddress;
+
+	// Creates socket file descriptor for socket communication
+	int socketDescriptor = socket(AF_INET, SOCK_DGRAM, 0);
+	if (socketDescriptor < 0)
+		error("ERROR opening socket");
+
+	// This prevents the socket from hogging space in case it is not closed prematurely
+	reuseTrue = 1;
+	if (setsockopt(socketDescriptor, SOL_SOCKET, SO_REUSEADDR, &reuseTrue, sizeof(int)) == -1) 
+		error("ERROR socket options");
+
+	// Sets up the server address stuff and actually binds to a socket
+	receiverAddress.sin_family = AF_INET;
+	receiverAddress.sin_addr.s_addr = INADDR_ANY;
+	receiverAddress.sin_port = htons(receivePortNum);
+	if (bind(socketDescriptor, (struct sockaddr *) &receiverAddress, sizeof(receiverAddress)) < 0)
+		error("ERROR on binding");
+		 
+	// Listens to socket with the socketDescriptor and can accept up to 5 connections in queue
+	listen(socketDescriptor, 5);
+	senderLength = sizeof(senderAddress);
+
+	// Receives the actual message
+	msgLen = recvfrom(socketDescriptor, buffer, bufferSize, 0, (struct sockaddr *)&senderAddress, &senderLength);
+
+	// Stores the server address into the buffer
+	*serverAddressBuffer = senderAddress.sin_addr;
+
+	if (msgLen < 0)
+		error("ERROR on receiving");
+
+	//std::cout << "Received message of length " << std::to_string(msgLen) << "\n";
+
+	// Close descriptor and return the message
+	close(socketDescriptor);
+
+	return msgLen;
+} */
 
 /*****************
 * TCP Networking *

@@ -9,7 +9,6 @@ class Soul {
 	SoulCollisionHandler *collisionHandler;
 public:
 	bool collected;
-	bool needsDelete;
 	b2Body *rigidBody;
 	Soul(b2Vec2, float, b2World&);
 	void update(float);

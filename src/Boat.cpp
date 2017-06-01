@@ -11,9 +11,6 @@
 
 Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 {
-	pickingUpSoul = false;
-	finishedRace = false;
-	disabled = true; //Start the race in a disabled state, then enable 5 seconds in
 	playerNum = pNum;
 	currentSouls = 0;
 	soulCollectionRadius = 5.0f;
@@ -21,6 +18,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 	reverseForce = -2.0f;
 	turnRate = 0.9f;
 	segPosition = -0.5;
+	disabled = false;
 
 	collisionHandler = new BoatCollisionHandler(this);
 	//Create rigidbody
@@ -53,7 +51,7 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 
 		b2FixtureDef fd;
 		fd.density = 0.0012f;
-		fd.restitution = -1.1f;
+		fd.restitution = 0.2f;
 
 		fd.shape = &front;
 		rigidBody->CreateFixture(&fd);
@@ -69,30 +67,20 @@ Boat::Boat(b2Vec2 initPos, b2World& m_world, AI *ai1, unsigned int pNum)
 }
 
 float Boat::forwardForce() {
-	return 6.5f + 0.6f * currentSouls;
+	int soulCount = std::min(currentSouls,BOAT_MAX_SOULS);
+	return 6.5f + 0.6f*soulCount;
 }
 
 void Boat::addSoul() {
-	currentSouls = std::min(5, currentSouls+1);
+	currentSouls += 1;
 	std::cout << "Now have " << currentSouls << " Souls" << std::endl;
 }
 
 void Boat::update(float deltaT, GameState &gs)
 {
 	inputStream->update(deltaT, gs);
-	InputState inputState;
-
-	if (inputStream->getCurrentFrameNumber() > FRAME_LAG)
-		inputState = inputStream->readSingleState(inputStream->getCurrentFrameNumber() - FRAME_LAG - 1);
-	else
-		inputState = inputStream->readSingleState(inputStream->getCurrentFrameNumber() - 1);
-
-	if (pickingUpSoul) {
-		addSoul();
-		pickingUpSoul = false;
-	}
-
-	if (!disabled) {
+	InputState inputState = inputStream->lastInputState;
+	if (!this->disabled) {
 		switch (inputState.acc)
 		{
 			case Accelerating: {
@@ -138,9 +126,5 @@ float Boat::getY() {
 
 float Boat::getRot() {
 	return rigidBody->GetAngle();
-}
-
-float Boat::getSpeed() {
-	return rigidBody->GetLinearVelocity().Length();
 }
 

@@ -14,7 +14,6 @@
 #include "GameState.hpp"
 
 #define MAX_FRAMES 50
-#define FRAME_LAG 5
 
 class GameState;
 class AI;
@@ -70,15 +69,13 @@ class InputStream {
 public:
 	InputState lastInputState;
 	Networking *networkingHandler;
-	GameState *world;
 	unsigned int playerNum;
 	
 	// Constructor
 	// TODO: Needs to change so that it can accept an external broadcastlist pointer
-	InputStream(GameState *gstate)
+	InputStream()
 	{
 		currentFrameNumber = 0;
-		world = gstate;
 	}
 
 	// Returns a single InputState from InputStream
@@ -104,7 +101,6 @@ public:
 	// Used for debugging
 	int getCurrentFrameNumber();
 	void setCurrentFrameNumber(int targetFrameNumber);
-	int getBufferSize();
 
 	// Need deltaTime to make sure that all machines are inputting at the same rate.
 	// If one machine is running slower, then it will fill its input by duplicating the most recent command to keep a constant framerate.
@@ -121,7 +117,7 @@ public:
 	// Need some SDL Data?
 	// Send commands to remote host if necessary
 	//InputState updateInputState(float deltaTime, GameState &gs);
-	LocalPlayerInputStream(int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer, GameState *gstate) : InputStream(gstate)
+	LocalPlayerInputStream(int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer) : InputStream()
 	{ 
 		playerNum = pNum;
 		networkingHandler = new Networking(broadcastPointer, this);
@@ -133,7 +129,7 @@ public:
 class AIInputStream: public InputStream {
 public:
 	AI *ai;
-	AIInputStream(int pNum, AI *ai1, std::vector <std::pair<in_addr, int>> *broadcastPointer, GameState *gstate) : ai(ai1), InputStream(gstate)
+	AIInputStream(int pNum, AI *ai1, std::vector <std::pair<in_addr, int>> *broadcastPointer) : ai(ai1), InputStream()
 	{ 
 		playerNum = pNum;
 		networkingHandler = new Networking(broadcastPointer, this);
@@ -147,7 +143,7 @@ public:
 // Network Player InputStream
 class NetworkPlayerInputStream: public InputStream {
 public:
-	NetworkPlayerInputStream(int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer, bool broadcast, GameState *gstate) : InputStream(gstate)
+	NetworkPlayerInputStream(int pNum, std::vector <std::pair<in_addr, int>> *broadcastPointer, bool broadcast) : InputStream()
 	{ 
 		playerNum = pNum; 
 		networkingHandler = new Networking(broadcastPointer, this);
