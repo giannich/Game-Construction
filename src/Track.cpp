@@ -185,12 +185,16 @@ vec2* Track::getInitialSoulPositions(int numSouls)
 {
 	vec2 *sp = new vec2[numSouls];
 	srand(time(NULL));
-	for (int i = 0; i < numSouls; i++)
+	for (int i = 0; i < (numSouls+1)/2; i++)
 	{
 		int seg = rand() % (N - 5) + 5;
 		float p1 = rand() / (float)RAND_MAX;
-		float p2 = rand() / (float)RAND_MAX;
-		sp[i] = add(add(mul(l[seg] , p1 * p2), mul(l[seg - 1], (1 - p1) * p2)), add(mul(r[seg] , p1*(1 - p2)),mul(r[seg - 1], (1 - p1)*(1 - p2))));
+		float p2 = rand() / (float)RAND_MAX / 2;
+
+		sp[2*i] = add(add(mul(l[seg] , p1 * p2), mul(l[seg - 1], (1 - p1) * p2)), add(mul(r[seg] , p1*(1 - p2)),mul(r[seg - 1], (1 - p1)*(1 - p2))));
+		p2+=0.5;
+		if(2*i+1 < numSouls)
+			sp[2*i+1] = add(add(mul(l[seg] , p1 * p2), mul(l[seg - 1], (1 - p1) * p2)), add(mul(r[seg] , p1*(1 - p2)),mul(r[seg - 1], (1 - p1)*(1 - p2))));
 	}
 	return sp;
 }
