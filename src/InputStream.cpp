@@ -80,7 +80,7 @@ char InputState::toChar()
 // Reads a single InputState
 InputState InputStream::readSingleState(int targetFrameNumber)
 {
-	std::cout << "In readSingleState looking for frame number: " << std::to_string(targetFrameNumber) << "\n";
+	//std::cout << "In readSingleState looking for frame number: " << std::to_string(targetFrameNumber) << "\n";
 	
 	// Try catch block
 	try

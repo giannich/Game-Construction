@@ -51,25 +51,24 @@ struct BoatPatch
 	// Current Souls
 	int _souls;
 
-	// Current Frame Number
-	int _frame;
-
 	// Constructor
-	BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient, float32 posx, float32 posy, int souls, int frame);
+	BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient, float32 posx, float32 posy, int souls);
 };
 
 struct GameStatePatch
 {
 	int playerNum;
+	int frame;
 	std::vector<BoatPatch *> *boatPatches;
 
 	// Apply the patches
 	void applyPatch(GameState *world);
 
 	// Constructor
-	GameStatePatch(int pNum)
+	GameStatePatch(int pNum, int fNum)
 	{
 		playerNum = pNum;
+		frame = fNum;
 		boatPatches = new std::vector<BoatPatch *>();
 	}
 };

@@ -339,9 +339,8 @@ void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePat
 
 		// Gets the player number, and if it fails, will get 0
 		int playerNum = pt.get<int>("playerNum", 0.0f);
-		GameStatePatch *aPatch = new GameStatePatch(playerNum);
-
 		int frameNum = pt.get<int>("frameNum", 0.0f);
+		GameStatePatch *aPatch = new GameStatePatch(playerNum, frameNum);
 
 		// Iterates through the boat list
 		for (int i = 0; i < playerNum; i++)
@@ -361,7 +360,7 @@ void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePat
 			// Current Souls
 			int souls = pt.get<int>("currentSouls" + std::to_string(i));
 			
-			BoatPatch *aBoatPatch = new BoatPatch(velx, vely, rotvel, orient, posx, posy, souls, frameNum);
+			BoatPatch *aBoatPatch = new BoatPatch(velx, vely, rotvel, orient, posx, posy, souls);
 			aPatch->boatPatches->push_back(aBoatPatch);
 		}
 
@@ -371,7 +370,7 @@ void receiveGameStateInfo(GameState *world, bool isHost, std::queue<GameStatePat
 }
 
 // Constructor
-BoatPatch::BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient, float32 posx, float32 posy, int souls, int frame)
+BoatPatch::BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient, float32 posx, float32 posy, int souls)
 {
 	_velx = velx;
 	_vely = vely;
@@ -380,7 +379,6 @@ BoatPatch::BoatPatch(float32 velx, float32 vely, float32 rotvel, float32 orient,
 	_posx = posx;
 	_posy = posy;
 	_souls = souls;
-	_frame = frame;
 }
 
 // Applies the patches to original gamestate
@@ -399,9 +397,6 @@ void GameStatePatch::applyPatch(GameState *world)
 
 		// Current Souls
 		world->boats->at(i).currentSouls = boatPatches->at(i)->_souls;
-
-		// Frame Number
-		//world->boats->at(i).inputStream->setCurrentFrameNumber(boatPatches->at(i)->_frame);
 	}
 }
 
