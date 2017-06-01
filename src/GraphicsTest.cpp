@@ -252,9 +252,9 @@ int main(int argc, char** argv)
 
 	//Add souls to track
 	int numSouls = 6;
-	vec2* soulPos = m_track->getInitialSoulPositions(numSouls);
+	//vec2* soulPos = m_track->getInitialSoulPositions(numSouls);
 	for(int i = 0; i < numSouls; ++i) {
-		Soul *s = new Soul(b2Vec2(soulPos[i].x, soulPos[i].y), 5.0f, *m_world);
+		Soul *s = new Soul(b2Vec2(0.0f, -250.0f * i), 5.0f, *m_world);
 		gState->addSoul(s);
 	}
 
@@ -344,7 +344,7 @@ int main(int argc, char** argv)
 		//	break;
 		//Step the physics engine forward 1 frame
 		m_world->Step(timestep,10,10);
-		//std::cout << "Position: " << m_boat->rigidBody->GetPosition().x << m_boat->rigidBody->GetPosition().y << std::endl;
+		std::cout << "speed: " << gState->boats->at(0)->rigidBody->GetLinearVelocity().Length() << std::endl;
 
 		while(!gsp_queue.empty()) {
 			if(gsp_queue.front()->frame == stopper) {
